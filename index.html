@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Cardápio online — confira os produtos e preços.">
+  <meta name="referrer" content="no-referrer">
+  <title>Cardápio</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+  <header class="topo">
+    <div class="container">
+      <h1><span class="chama">&#128293;</span> <span id="nomeLoja">Cardápio</span></h1>
+      <p class="slogan" id="sloganLoja"></p>
+      <div class="info-loja" id="infoLoja"></div>
+    </div>
+  </header>
+
+  <div class="barra">
+    <div class="container">
+      <input type="search" id="busca" class="busca" placeholder="Buscar item..." autocomplete="off" aria-label="Buscar item no cardápio">
+      <div class="chips" id="chips"></div>
+    </div>
+  </div>
+
+  <main class="container" id="cardapio">
+    <div class="vazio">Carregando cardápio...</div>
+  </main>
+
+  <footer class="rodape">
+    <div class="container">
+      <p id="atualizado"></p>
+      <p>Preços sujeitos a alteração sem aviso prévio.</p>
+    </div>
+  </footer>
+
+  <script src="assets/config.js"></script>
+  <script src="assets/db.js"></script>
+  <script>
+  (function () {
+    "use strict";
+
+    var CFG = window.APP_CONFIG || {};
+    var produtos = [];
+    var categoriaAtiva = "Todos";
+    var termo = "";
+
+    var elCardapio = document.getElementById("cardapio");
+    var elChips = document.getElementById("chips");
+    var elBusca = document.getElementById("busca");
+
+    function preencherCabecalho() {
+      document.title = "Cardápio | " + (CFG.nome || "");
+      document.getElementById("nomeLoja").textContent = CFG.nome || "Cardápio";
+      document.getElementById("sloganLoja").textContent = CFG.slogan || "";
+
+      var partes = [];
+      if (CFG.endereco) partes.push("&#128205; " + esc(CFG.endereco));
+      if (CFG.horario) partes.push("&#128337; " + esc(CFG.horario));
+      if (CFG.whatsapp) {
+        partes.push(
+          '<a href="https://wa.me/' + encodeURIComponent(CFG.whatsapp) +
+          '" target="_blank" rel="noopener noreferrer">&#128172; Falar conosco</a>'
+        );
+      }
+      document.getElementById("infoLoja").innerHTML = partes.join("");
+    }
+
+    function categorias() {
+      var vistas = [];
+      produtos.forEach(function (p) {
+        if (vistas.indexOf(p.categoria) === -1) vistas.push(p.categoria);
+      });
+      return vistas;
+    }
+
+    function desenharChips() {
+      var lista = ["Todos"].concat(categorias());
+      elChips.innerHTML = lista.map(function (c) {
+        return '<button type="button" class="chip' + (c === categoriaAtiva ? " ativo" : "") +
+               '" data-cat="' + esc(c) + '">' + esc(c) + "</button>";
+      }).join("");
+    }
+
+    function filtrar() {
+      var t = termo.trim().toLowerCase();
+      return produtos.filter(function (p) {
+        var casaCategoria = categoriaAtiva === "Todos" || p.categoria === categoriaAtiva;
+        var casaTermo = !t ||
+          p.nome.toLowerCase().indexOf(t) !== -1 ||
+          p.descricao.toLowerCase().indexOf(t) !== -1 ||
+          p.categoria.toLowerCase().indexOf(t) !== -1;
+        return casaCategoria && casaTermo;
+      });
+    }
+
+    function cardItem(p) {
+      var img = urlSegura(p.imagem_url);
+      var foto = img
+        ? '<img src="' + esc(img) + '" alt="" loading="lazy" referrerpolicy="no-referrer">'
+        : "&#127855;";
+      return '' +
+        '<article class="item' + (p.esgotado ? " esgotado" : "") + '">' +
+          '<div class="foto">' + foto + "</div>" +
+          '<div class="corpo">' +
+            '<h3 class="nome">' + esc(p.nome) + "</h3>" +
+            (p.descricao ? '<p class="desc">' + esc(p.descricao) + "</p>" : "") +
+            (p.esgotado ? '<span class="tag esgotado">Esgotado hoje</span>' : "") +
+          "</div>" +
+          '<div class="preco">' + moeda(p.preco) + "</div>" +
+        "</article>";
+    }
+
+    function desenhar() {
+      var lista = filtrar();
+      if (!lista.length) {
+        elCardapio.innerHTML = '<div class="vazio">Nenhum item encontrado.</div>';
+        return;
+      }
+      var grupos = {};
+      var ordem = [];
+      lista.forEach(function (p) {
+        if (!grupos[p.categoria]) { grupos[p.categoria] = []; ordem.push(p.categoria); }
+        grupos[p.categoria].push(p);
+      });
+      elCardapio.innerHTML = ordem.map(function (cat) {
+        return '<section><h2 class="categoria-titulo">' + esc(cat) + "</h2>" +
+               '<div class="grade">' + grupos[cat].map(cardItem).join("") + "</div></section>";
+      }).join("");
+    }
+
+    elBusca.addEventListener("input", function (e) {
+      termo = e.target.value;
+      desenhar();
+    });
+
+    elChips.addEventListener("click", function (e) {
+      var btn = e.target.closest(".chip");
+      if (!btn) return;
+      categoriaAtiva = btn.getAttribute("data-cat");
+      desenharChips();
+      desenhar();
+    });
+
+    (async function iniciar() {
+      preencherCabecalho();
+      try {
+        await DB.init();
+        produtos = await DB.listarProdutos(true);
+        desenharChips();
+        desenhar();
+        document.getElementById("atualizado").textContent =
+          "Atualizado em " + new Date().toLocaleDateString("pt-BR") +
+          (DB.modo === "demo" ? " — modo demonstração" : "");
+      } catch (e) {
+        console.error(e);
+        elCardapio.innerHTML =
+          '<div class="vazio">Não foi possível carregar o cardápio agora. Tente novamente em instantes.</div>';
+      }
+    })();
+  })();
+  </script>
+</body>
+</html>

@@ -11,10 +11,10 @@ window.APP_CONFIG = {
   lema:        "Bons amigos, boas cervejas, bons momentos.",
 
   /* --- Contato e localização (deixe "" para ocultar) --- */
-  endereco:    "",
-  horario:     "",
-  telefone:    "",
-  whatsapp:    "",                            // só dígitos, ex.: "5511999999999"
+  endereco:    "Antônio Silva Saladino, 875",
+  horario:     "Todos os dias, 16h às 2h",
+  telefone:    "(15) 98142-7143",
+  whatsapp:    "5515981427143",               // só dígitos, com 55 na frente
   instagram:   "frontbeer_adega",             // sem o @
   mapaUrl:     "",                            // link do Google Maps
 

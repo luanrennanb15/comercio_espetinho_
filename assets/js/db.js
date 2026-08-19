@@ -17,6 +17,9 @@ const DB = (() => {
   let modo = "demo";
   let sb = null;
 
+  /* Aceita o nome novo e os antigos, para não quebrar configurações existentes */
+  const CHAVE_API = CFG.supabaseChave || CFG.supabasePublishableKey || CFG.supabaseAnonKey || "";
+
   /* ------------------------------------------------------------------
      Cardápio de exemplo — valores ilustrativos.
      O proprietário limpa tudo no painel e cadastra o cardápio real.
@@ -165,10 +168,10 @@ const DB = (() => {
     get exemplos() { return JSON.parse(JSON.stringify(EXEMPLOS)); },
 
     async init() {
-      if (!CFG.supabaseUrl || !CFG.supabaseAnonKey) { modo = "demo"; return modo; }
+      if (!CFG.supabaseUrl || !CHAVE_API) { modo = "demo"; return modo; }
       try {
         if (!window.supabase) await carregarScript(CDN_SUPABASE);
-        sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey, {
+        sb = window.supabase.createClient(CFG.supabaseUrl, CHAVE_API, {
           auth: { persistSession: true, autoRefreshToken: true },
         });
         modo = "supabase";

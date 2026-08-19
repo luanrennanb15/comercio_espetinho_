@@ -45,6 +45,6 @@ window.APP_CONFIG = {
      NUNCA use aqui a Secret key (sb_secret_...) nem a service_role:
      elas ignoram todas as regras de segurança.
   ------------------------------------------------------------------ */
-  supabaseUrl:   "",
-  supabaseChave: "",
+  supabaseUrl:   "https://bocboymkebmmsvtiigob.supabase.co",
+  supabaseChave: "sb_publishable_DStcGK12mliyzcSPKYerNQ_0IiPnjzh",
 };

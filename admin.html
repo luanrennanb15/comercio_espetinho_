@@ -1,422 +1,244 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="robots" content="noindex, nofollow">
-  <meta name="referrer" content="no-referrer">
-  <title>Painel Interno</title>
-  <link rel="stylesheet" href="assets/style.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0A0908">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Painel Interno | Front Beer</title>
+
+<link rel="icon" href="assets/img/favicon.png" sizes="any">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap">
+
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/app.css">
+<link rel="stylesheet" href="assets/css/admin.css">
 </head>
-<body>
+<body data-pagina="produtos">
 
-  <!-- ============ LOGIN ============ -->
-  <section id="telaLogin" class="container">
-    <div class="caixa-login">
-      <h1>&#128293; Painel Interno</h1>
-      <p class="sub">Acesso restrito à equipe</p>
-      <div id="erroLogin" class="erro oculto"></div>
-      <form id="formLogin" autocomplete="on">
-        <div class="campo">
-          <label for="email">E-mail</label>
-          <input type="email" id="email" required autocomplete="username">
-        </div>
-        <div class="campo">
-          <label for="senha">Senha</label>
-          <input type="password" id="senha" required autocomplete="current-password">
-        </div>
-        <button type="submit" class="btn" style="width:100%">Entrar</button>
-      </form>
-      <div id="dicaDemo" class="aviso alerta oculto" style="margin-top:16px">
-        <strong>Modo demonstração.</strong> Entre com <code>admin@demo</code> / <code>espetinho</code>.
-        Os dados ficam salvos apenas neste navegador e não há segurança real —
-        configure o Supabase antes de usar de verdade.
+<!-- ==================== ACESSO ==================== -->
+<section class="acesso" id="telaAcesso">
+  <div class="acesso__caixa">
+    <img class="acesso__emblema" src="assets/img/emblema.png" alt="" width="74" height="74">
+    <h1 data-marca>Front Beer</h1>
+    <p class="acesso__sub">Painel Interno</p>
+
+    <div id="erroAcesso" class="nota nota--erro oculto" style="margin-bottom:16px"></div>
+
+    <form id="formAcesso" novalidate>
+      <div class="campo">
+        <label for="email">E-mail</label>
+        <input type="email" id="email" required autocomplete="username" placeholder="voce@exemplo.com">
       </div>
-    </div>
-  </section>
-
-  <!-- ============ PAINEL ============ -->
-  <section id="telaPainel" class="container oculto">
-    <div class="admin-topo">
-      <h1>&#128293; Painel Interno</h1>
-      <div class="acoes">
-        <a class="btn secundario pequeno" href="index.html" target="_blank" rel="noopener">Ver cardápio</a>
-        <button type="button" class="btn secundario pequeno" id="btnReajuste">Reajustar preços</button>
-        <button type="button" class="btn secundario pequeno" id="btnLimpar">Limpar cardápio</button>
-        <button type="button" class="btn secundario pequeno" id="btnSair">Sair</button>
+      <div class="campo">
+        <label for="senha">Senha</label>
+        <input type="password" id="senha" required autocomplete="current-password" placeholder="••••••••">
       </div>
-    </div>
+      <button type="submit" class="btn btn--bloco" id="btnEntrar">Entrar</button>
+    </form>
 
-    <div id="avisoModo" class="aviso"></div>
+    <div id="notaDemo" class="nota nota--ouro oculto" style="margin-top:18px">
+      <strong>Modo demonstração.</strong> Acesse com <code>admin@demo</code> e senha <code>frontbeer</code>.
+      Os dados ficam apenas neste navegador e não há segurança real — configure o Supabase antes de usar no dia a dia.
+    </div>
+  </div>
+</section>
+
+<!-- ==================== PAINEL ==================== -->
+<div class="app oculto" id="telaPainel">
+
+  <aside class="lateral" data-nav></aside>
+
+  <div class="conteudo">
+    <header class="barra" data-barra></header>
+
+    <main class="pagina">
+
+    <div id="notaModo" class="nota" style="margin-bottom:20px"></div>
+
+    <section class="indicadores" aria-label="Resumo do cardápio">
+      <div class="indicador"><div class="indicador__rotulo">Itens no cardápio</div><div class="indicador__valor" id="kpiTotal">0</div></div>
+      <div class="indicador indicador--ok"><div class="indicador__rotulo">Disponíveis</div><div class="indicador__valor" id="kpiDisponiveis">0</div></div>
+      <div class="indicador indicador--erro"><div class="indicador__rotulo">Esgotados</div><div class="indicador__valor" id="kpiEsgotados">0</div></div>
+      <div class="indicador"><div class="indicador__rotulo">Ocultos</div><div class="indicador__valor" id="kpiOcultos">0</div></div>
+      <div class="indicador indicador--ouro"><div class="indicador__rotulo">Preço médio</div><div class="indicador__valor" id="kpiMedia">—</div></div>
+    </section>
 
     <div class="ferramentas">
-      <input type="search" id="buscaAdmin" class="busca" placeholder="Buscar produto...">
-      <select id="filtroCategoria" class="busca" style="flex:0 1 190px"></select>
+      <div class="busca-caixa">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
+        </svg>
+        <input type="search" id="buscaAdmin" class="entrada" placeholder="Buscar produto..." autocomplete="off">
+      </div>
+      <select id="filtroCategoria" class="entrada" aria-label="Filtrar por categoria"></select>
+      <select id="filtroSituacao" class="entrada" aria-label="Filtrar por situação">
+        <option value="">Todas as situações</option>
+        <option value="disponivel">Disponíveis</option>
+        <option value="esgotado">Esgotados</option>
+        <option value="oculto">Ocultos</option>
+        <option value="alcoolico">Bebida alcoólica</option>
+      </select>
+      <span class="espaco"></span>
+      <button type="button" class="btn btn--fantasma btn--pequeno" id="btnRepor">Repor esgotados</button>
+      <button type="button" class="btn btn--fantasma btn--pequeno" id="btnReajuste">Reajustar preços</button>
+      <button type="button" class="btn btn--fantasma btn--pequeno" id="btnMais">Mais</button>
       <button type="button" class="btn" id="btnNovo">+ Novo produto</button>
     </div>
 
-    <div id="erroPainel" class="erro oculto"></div>
+    <div class="quadro">
+      <table class="tabela">
+        <thead>
+          <tr>
+            <th>Produto</th>
+            <th>Categoria</th>
+            <th>Preço</th>
+            <th>Situação</th>
+            <th style="text-align:right">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="corpoTabela"></tbody>
+      </table>
+      <div id="areaVazia"></div>
+    </div>
 
-    <table class="lista">
-      <thead>
-        <tr>
-          <th>Produto</th>
-          <th>Categoria</th>
-          <th>Preço</th>
-          <th>Situação</th>
-          <th>Ações</th>
-        </tr>
-      </thead>
-      <tbody id="corpoTabela"></tbody>
-    </table>
+    <p style="margin-top:14px;font-size:.8rem;color:var(--texto-fraco)" id="rodapeTabela"></p>
+    </main>
+  </div>
+</div>
 
-    <p id="resumo" class="aviso" style="margin-top:16px"></p>
-  </section>
-
-  <!-- ============ MODAL PRODUTO ============ -->
-  <div class="fundo-modal" id="modalProduto">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloModal">
-      <h2 id="tituloModal">Novo produto</h2>
-      <div id="erroModal" class="erro oculto"></div>
-      <form id="formProduto">
+<!-- ==================== MODAL: PRODUTO ==================== -->
+<div class="modal-fundo" id="modalProduto">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloProduto">
+    <div class="modal__cabeca">
+      <h2 id="tituloProduto">Novo produto</h2>
+      <button type="button" class="modal__fechar" data-fechar aria-label="Fechar">&times;</button>
+    </div>
+    <form id="formProduto" novalidate>
+      <div class="modal__corpo">
+        <div id="erroProduto" class="nota nota--erro oculto" style="margin-bottom:16px"></div>
         <input type="hidden" id="pId">
+
         <div class="campo">
-          <label for="pNome">Nome *</label>
-          <input type="text" id="pNome" required maxlength="80">
+          <label for="pNome">Nome do produto</label>
+          <input type="text" id="pNome" maxlength="80" required placeholder="Ex.: Espeto de Cupim">
         </div>
+
         <div class="campo">
           <label for="pDescricao">Descrição</label>
-          <textarea id="pDescricao" maxlength="180"></textarea>
+          <textarea id="pDescricao" maxlength="180" placeholder="Ex.: Fatiado, na brasa, com farofa"></textarea>
+          <small class="ajuda">Aparece em cinza abaixo do nome. Até 180 caracteres.</small>
         </div>
+
         <div class="linha">
           <div class="campo">
-            <label for="pCategoria">Categoria *</label>
-            <input type="text" id="pCategoria" list="listaCategorias" required maxlength="40">
+            <label for="pCategoria">Categoria</label>
+            <input type="text" id="pCategoria" list="listaCategorias" maxlength="40" required placeholder="Ex.: Cervejas">
             <datalist id="listaCategorias"></datalist>
           </div>
           <div class="campo">
-            <label for="pPreco">Preço (R$) *</label>
-            <input type="number" id="pPreco" step="0.01" min="0" required>
+            <label for="pPreco">Preço (R$)</label>
+            <input type="number" id="pPreco" step="0.01" min="0" required placeholder="0,00">
           </div>
         </div>
+
         <div class="linha">
           <div class="campo">
             <label for="pOrdem">Ordem de exibição</label>
             <input type="number" id="pOrdem" step="1" min="0" value="0">
+            <small class="ajuda">Menor número aparece primeiro.</small>
           </div>
           <div class="campo">
-            <label for="pImagem">URL da foto (opcional)</label>
+            <label for="pImagem">Foto (link)</label>
             <input type="text" id="pImagem" placeholder="https://...">
+            <small class="ajuda">Opcional. Deve começar com https://</small>
           </div>
         </div>
-        <div class="campo inline">
-          <input type="checkbox" id="pAtivo" checked>
-          <label for="pAtivo">Visível no cardápio</label>
-        </div>
-        <div class="campo inline">
-          <input type="checkbox" id="pEsgotado">
-          <label for="pEsgotado">Marcar como esgotado hoje</label>
-        </div>
-        <div class="campo inline">
-          <input type="checkbox" id="pAlcoolico">
-          <label for="pAlcoolico">Bebida alcoólica (exibe selo 18+ no cardápio)</label>
-        </div>
-        <div class="modal-acoes">
-          <button type="button" class="btn secundario" data-fechar>Cancelar</button>
-          <button type="submit" class="btn">Salvar</button>
-        </div>
-      </form>
-    </div>
-  </div>
 
-  <!-- ============ MODAL REAJUSTE ============ -->
-  <div class="fundo-modal" id="modalReajuste">
-    <div class="modal" role="dialog" aria-modal="true">
-      <h2>Reajustar preços em lote</h2>
-      <form id="formReajuste">
+        <label class="chave">
+          <input type="checkbox" id="pAtivo" checked>
+          <span>Visível no cardápio<small>Desmarque para esconder sem apagar o cadastro.</small></span>
+        </label>
+        <label class="chave">
+          <input type="checkbox" id="pEsgotado">
+          <span>Esgotado hoje<small>Continua no cardápio, marcado como indisponível.</small></span>
+        </label>
+        <label class="chave">
+          <input type="checkbox" id="pAlcoolico">
+          <span>Bebida alcoólica<small>Exibe o selo 18+ junto ao item.</small></span>
+        </label>
+      </div>
+      <div class="modal__pe">
+        <button type="button" class="btn btn--fantasma" data-fechar>Cancelar</button>
+        <button type="submit" class="btn" id="btnSalvar">Salvar produto</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ==================== MODAL: REAJUSTE ==================== -->
+<div class="modal-fundo" id="modalReajuste">
+  <div class="modal modal--estreito" role="dialog" aria-modal="true">
+    <div class="modal__cabeca">
+      <h2>Reajustar preços</h2>
+      <button type="button" class="modal__fechar" data-fechar aria-label="Fechar">&times;</button>
+    </div>
+    <form id="formReajuste" novalidate>
+      <div class="modal__corpo">
         <div class="campo">
           <label for="rCategoria">Aplicar em</label>
-          <select id="rCategoria"></select>
+          <select id="rCategoria" class="entrada"></select>
         </div>
         <div class="campo">
-          <label for="rPercentual">Percentual (%) — use negativo para reduzir</label>
-          <input type="number" id="rPercentual" step="0.1" value="5" required>
+          <label for="rPercentual">Percentual</label>
+          <input type="number" id="rPercentual" step="0.5" value="5" required>
+          <small class="ajuda">Use número negativo para reduzir. Ex.: -10 baixa 10%.</small>
         </div>
-        <p class="aviso">Os preços são arredondados para 2 casas decimais. Confira a lista depois de aplicar.</p>
-        <div class="modal-acoes">
-          <button type="button" class="btn secundario" data-fechar>Cancelar</button>
-          <button type="submit" class="btn">Aplicar</button>
-        </div>
-      </form>
+        <p class="nota" id="previaReajuste"></p>
+      </div>
+      <div class="modal__pe">
+        <button type="button" class="btn btn--fantasma" data-fechar>Cancelar</button>
+        <button type="submit" class="btn">Aplicar reajuste</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ==================== MODAL: MAIS ==================== -->
+<div class="modal-fundo" id="modalMais">
+  <div class="modal modal--estreito" role="dialog" aria-modal="true">
+    <div class="modal__cabeca">
+      <h2>Manutenção do cardápio</h2>
+      <button type="button" class="modal__fechar" data-fechar aria-label="Fechar">&times;</button>
+    </div>
+    <div class="modal__corpo">
+      <p class="nota nota--ouro" style="margin-bottom:16px">
+        Ao assumir o sistema, use <strong>Limpar cardápio</strong> uma única vez para apagar os itens de
+        exemplo e então cadastre os produtos reais da casa.
+      </p>
+      <button type="button" class="btn btn--fantasma btn--bloco" id="btnExportar" style="margin-bottom:10px">
+        Baixar cópia de segurança (.json)
+      </button>
+      <button type="button" class="btn btn--fantasma btn--bloco" id="btnExemplos" style="margin-bottom:10px">
+        Restaurar itens de exemplo
+      </button>
+      <button type="button" class="btn btn--perigo btn--bloco" id="btnLimpar">
+        Limpar cardápio (apagar tudo)
+      </button>
     </div>
   </div>
+</div>
 
-  <script src="assets/config.js"></script>
-  <script src="assets/db.js"></script>
-  <script>
-  (function () {
-    "use strict";
-
-    var produtos = [];
-    var $ = function (id) { return document.getElementById(id); };
-
-    function mostrarErro(el, msg) {
-      el.textContent = msg;
-      el.classList.remove("oculto");
-    }
-    function limparErro(el) {
-      el.textContent = "";
-      el.classList.add("oculto");
-    }
-    function abrir(id) { $(id).classList.add("aberto"); }
-    function fechar(id) { $(id).classList.remove("aberto"); }
-
-    /* ---------- Login ---------- */
-    $("formLogin").addEventListener("submit", async function (e) {
-      e.preventDefault();
-      limparErro($("erroLogin"));
-      try {
-        await DB.login($("email").value, $("senha").value);
-        $("senha").value = "";
-        await entrarNoPainel();
-      } catch (err) {
-        mostrarErro($("erroLogin"), err.message || "Não foi possível entrar.");
-      }
-    });
-
-    $("btnSair").addEventListener("click", async function () {
-      await DB.logout();
-      $("telaPainel").classList.add("oculto");
-      $("telaLogin").classList.remove("oculto");
-    });
-
-    /* ---------- Painel ---------- */
-    async function entrarNoPainel() {
-      $("telaLogin").classList.add("oculto");
-      $("telaPainel").classList.remove("oculto");
-      $("avisoModo").innerHTML = DB.modo === "demo"
-        ? "<strong>Modo demonstração:</strong> alterações ficam salvas somente neste navegador. Configure o Supabase em <code>assets/config.js</code> para valer em todos os dispositivos."
-        : "<strong>Conectado à nuvem.</strong> As alterações aparecem no cardápio de todos os clientes.";
-      await recarregar();
-    }
-
-    async function recarregar() {
-      limparErro($("erroPainel"));
-      try {
-        produtos = await DB.listarProdutos(false);
-        atualizarCategorias();
-        desenharTabela();
-      } catch (e) {
-        mostrarErro($("erroPainel"), "Falha ao carregar produtos: " + (e.message || e));
-      }
-    }
-
-    function listaCategorias() {
-      var cats = [];
-      produtos.forEach(function (p) { if (cats.indexOf(p.categoria) === -1) cats.push(p.categoria); });
-      return cats.sort(function (a, b) { return a.localeCompare(b, "pt-BR"); });
-    }
-
-    function atualizarCategorias() {
-      var cats = listaCategorias();
-      var atual = $("filtroCategoria").value;
-      $("filtroCategoria").innerHTML =
-        '<option value="">Todas as categorias</option>' +
-        cats.map(function (c) { return '<option value="' + esc(c) + '">' + esc(c) + "</option>"; }).join("");
-      $("filtroCategoria").value = cats.indexOf(atual) !== -1 ? atual : "";
-
-      $("listaCategorias").innerHTML =
-        cats.map(function (c) { return '<option value="' + esc(c) + '"></option>'; }).join("");
-
-      $("rCategoria").innerHTML =
-        '<option value="">Todos os produtos</option>' +
-        cats.map(function (c) { return '<option value="' + esc(c) + '">' + esc(c) + "</option>"; }).join("");
-    }
-
-    function filtrados() {
-      var t = $("buscaAdmin").value.trim().toLowerCase();
-      var cat = $("filtroCategoria").value;
-      return produtos.filter(function (p) {
-        return (!cat || p.categoria === cat) &&
-               (!t || p.nome.toLowerCase().indexOf(t) !== -1 || p.descricao.toLowerCase().indexOf(t) !== -1);
-      });
-    }
-
-    function desenharTabela() {
-      var lista = filtrados();
-      var corpo = $("corpoTabela");
-
-      if (!lista.length) {
-        corpo.innerHTML = '<tr><td colspan="5"><div class="vazio">Nenhum produto encontrado.</div></td></tr>';
-      } else {
-        corpo.innerHTML = lista.map(function (p) {
-          return '<tr class="' + (p.ativo ? "" : "inativo") + '">' +
-            '<td data-rotulo="Produto"><strong>' + esc(p.nome) + "</strong>" +
-              (p.descricao ? '<br><span class="desc" style="font-size:.8rem;color:var(--cinza)">' + esc(p.descricao) + "</span>" : "") +
-            "</td>" +
-            '<td data-rotulo="Categoria">' + esc(p.categoria) + "</td>" +
-            '<td data-rotulo="Preço">' + moeda(p.preco) + "</td>" +
-            '<td data-rotulo="Situação">' +
-              (p.esgotado ? '<span class="pastilha off">Esgotado</span>' : '<span class="pastilha ok">Disponível</span>') +
-              (p.ativo ? "" : ' <span class="pastilha off">Oculto</span>') +
-              (p.alcoolico ? ' <span class="tag maior">18+</span>' : "") +
-            "</td>" +
-            '<td data-rotulo="Ações"><div class="acoes">' +
-              '<button type="button" class="btn secundario pequeno" data-acao="esgotar" data-id="' + esc(p.id) + '">' +
-                (p.esgotado ? "Repor" : "Esgotou") + "</button>" +
-              '<button type="button" class="btn secundario pequeno" data-acao="editar" data-id="' + esc(p.id) + '">Editar</button>' +
-              '<button type="button" class="btn perigo pequeno" data-acao="excluir" data-id="' + esc(p.id) + '">Excluir</button>' +
-            "</div></td></tr>";
-        }).join("");
-      }
-
-      var esgotados = produtos.filter(function (p) { return p.esgotado; }).length;
-      var ocultos = produtos.filter(function (p) { return !p.ativo; }).length;
-      $("resumo").textContent =
-        produtos.length + " produto(s) cadastrado(s) · " + esgotados + " esgotado(s) · " + ocultos + " oculto(s) do cardápio.";
-    }
-
-    $("buscaAdmin").addEventListener("input", desenharTabela);
-    $("filtroCategoria").addEventListener("change", desenharTabela);
-
-    $("corpoTabela").addEventListener("click", async function (e) {
-      var btn = e.target.closest("button[data-acao]");
-      if (!btn) return;
-      var id = btn.getAttribute("data-id");
-      var acao = btn.getAttribute("data-acao");
-      var p = produtos.find(function (x) { return x.id === id; });
-      if (!p) return;
-
-      try {
-        if (acao === "esgotar") {
-          await DB.definirEsgotado(id, !p.esgotado);
-          await recarregar();
-        } else if (acao === "editar") {
-          abrirFormulario(p);
-        } else if (acao === "excluir") {
-          if (confirm('Excluir "' + p.nome + '" definitivamente?\n\nDica: se for algo temporário, prefira desmarcar "Visível no cardápio".')) {
-            await DB.excluirProduto(id);
-            await recarregar();
-          }
-        }
-      } catch (err) {
-        mostrarErro($("erroPainel"), err.message || String(err));
-      }
-    });
-
-    /* ---------- Formulário de produto ---------- */
-    function abrirFormulario(p) {
-      limparErro($("erroModal"));
-      $("tituloModal").textContent = p ? "Editar produto" : "Novo produto";
-      $("pId").value = p ? p.id : "";
-      $("pNome").value = p ? p.nome : "";
-      $("pDescricao").value = p ? p.descricao : "";
-      $("pCategoria").value = p ? p.categoria : "";
-      $("pPreco").value = p ? p.preco : "";
-      $("pOrdem").value = p ? p.ordem : produtos.length + 1;
-      $("pImagem").value = p ? p.imagem_url : "";
-      $("pAtivo").checked = p ? p.ativo : true;
-      $("pEsgotado").checked = p ? p.esgotado : false;
-      $("pAlcoolico").checked = p ? p.alcoolico : false;
-      abrir("modalProduto");
-      $("pNome").focus();
-    }
-
-    $("btnNovo").addEventListener("click", function () { abrirFormulario(null); });
-
-    $("formProduto").addEventListener("submit", async function (e) {
-      e.preventDefault();
-      limparErro($("erroModal"));
-      var img = $("pImagem").value.trim();
-      if (img && !urlSegura(img)) {
-        mostrarErro($("erroModal"), "A URL da foto deve começar com http:// ou https://");
-        return;
-      }
-      try {
-        await DB.salvarProduto({
-          id: $("pId").value || undefined,
-          nome: $("pNome").value,
-          descricao: $("pDescricao").value,
-          categoria: $("pCategoria").value,
-          preco: $("pPreco").value,
-          ordem: $("pOrdem").value,
-          imagem_url: img,
-          ativo: $("pAtivo").checked,
-          esgotado: $("pEsgotado").checked,
-          alcoolico: $("pAlcoolico").checked,
-        });
-        fechar("modalProduto");
-        await recarregar();
-      } catch (err) {
-        mostrarErro($("erroModal"), err.message || String(err));
-      }
-    });
-
-    /* ---------- Limpar cardápio (começar do zero) ---------- */
-    $("btnLimpar").addEventListener("click", async function () {
-      if (!confirm(
-        "Apagar TODOS os " + produtos.length + " produtos do cardápio?\n\n" +
-        "Use isso apenas uma vez, para remover os itens de exemplo antes de cadastrar os seus.\n" +
-        "Esta ação não pode ser desfeita."
-      )) return;
-      if (!confirm("Confirmando: o cardápio ficará vazio até você cadastrar os produtos reais. Prosseguir?")) return;
-      try {
-        await DB.limparCardapio();
-        await recarregar();
-      } catch (err) {
-        mostrarErro($("erroPainel"), err.message || String(err));
-      }
-    });
-
-    /* ---------- Reajuste em lote ---------- */
-    $("btnReajuste").addEventListener("click", function () { abrir("modalReajuste"); });
-
-    $("formReajuste").addEventListener("submit", async function (e) {
-      e.preventDefault();
-      var pct = Number($("rPercentual").value);
-      var cat = $("rCategoria").value;
-      var alvo = cat || "TODOS os produtos";
-      if (!confirm("Aplicar " + pct + "% em " + alvo + "? Esta ação altera os preços imediatamente.")) return;
-      try {
-        var n = await DB.reajustarPrecos(pct, cat || null);
-        fechar("modalReajuste");
-        await recarregar();
-        alert(n + " produto(s) reajustado(s).");
-      } catch (err) {
-        mostrarErro($("erroPainel"), err.message || String(err));
-      }
-    });
-
-    /* ---------- Fechar modais ---------- */
-    document.addEventListener("click", function (e) {
-      if (e.target.hasAttribute && e.target.hasAttribute("data-fechar")) {
-        e.target.closest(".fundo-modal").classList.remove("aberto");
-      }
-      if (e.target.classList && e.target.classList.contains("fundo-modal")) {
-        e.target.classList.remove("aberto");
-      }
-    });
-    document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape") {
-        document.querySelectorAll(".fundo-modal.aberto").forEach(function (m) { m.classList.remove("aberto"); });
-      }
-    });
-
-    /* ---------- Início ---------- */
-    (async function iniciar() {
-      var nome = (window.APP_CONFIG && window.APP_CONFIG.nome) || "";
-      if (nome) {
-        document.title = "Painel Interno | " + nome;
-        document.querySelectorAll("h1").forEach(function (h) {
-          h.innerHTML = "&#128293; " + esc(nome) + " — Painel Interno";
-        });
-      }
-      await DB.init();
-      if (DB.modo === "demo") $("dicaDemo").classList.remove("oculto");
-      var usuario = await DB.usuarioAtual();
-      if (usuario) await entrarNoPainel();
-    })();
-  })();
-  </script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/ui.js"></script>
+<script src="assets/js/nav.js"></script>
+<script src="assets/js/db.js"></script>
+<script src="assets/js/admin.js"></script>
 </body>
 </html>

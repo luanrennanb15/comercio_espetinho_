@@ -1,0 +1,245 @@
+/* =====================================================================
+   FRONT BEER — Caixa (lançamento de vendas)
+   Layout de duas colunas: catálogo à esquerda, venda à direita.
+   ===================================================================== */
+
+.caixa {
+  display: grid;
+  grid-template-columns: 1fr 372px;
+  gap: 18px;
+  align-items: start;
+  max-width: 1360px;
+  margin-inline: auto;
+  padding: 22px;
+}
+
+/* ---------- Catálogo ---------- */
+.catalogo__filtros {
+  position: sticky;
+  top: 78px;
+  z-index: 10;
+  padding-bottom: 12px;
+  background: var(--preto);
+}
+
+.catalogo__grupo { margin-top: 22px; }
+.catalogo__grupo:first-of-type { margin-top: 14px; }
+
+.catalogo__titulo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--ouro);
+}
+.catalogo__titulo::after { content: ""; flex: 1; height: 1px; background: var(--linha); }
+
+.grade-produtos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 10px;
+}
+
+.cartao-produto {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 92px;
+  padding: 13px 14px;
+  text-align: left;
+  font-family: inherit;
+  color: var(--texto);
+  background: var(--superficie);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio-md);
+  cursor: pointer;
+  transition: border-color var(--transicao), background var(--transicao), transform 90ms ease;
+}
+.cartao-produto:hover { border-color: var(--ouro-escuro); background: var(--superficie-2); }
+.cartao-produto:active { transform: scale(.975); }
+
+.cartao-produto__nome { font-size: .89rem; font-weight: 600; line-height: 1.35; }
+.cartao-produto__pe { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.cartao-produto__preco {
+  font-family: var(--fonte-titulo);
+  font-size: 1.06rem;
+  font-weight: 700;
+  color: var(--ouro);
+}
+.cartao-produto__qtd {
+  min-width: 24px;
+  padding: 1px 7px;
+  font-size: .74rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--preto);
+  background: var(--ouro);
+  border-radius: 999px;
+}
+
+.cartao-produto--esgotado { opacity: .38; cursor: not-allowed; }
+.cartao-produto--esgotado:hover { border-color: var(--linha); background: var(--superficie); }
+
+/* ---------- Comanda ---------- */
+.comanda {
+  position: sticky;
+  top: 78px;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 96px);
+  background: var(--superficie);
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--raio-md);
+  overflow: hidden;
+}
+
+.comanda__cabeca {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--linha);
+}
+.comanda__cabeca h2 { font-size: 1.05rem; }
+.comanda__cabeca .contagem { font-size: .76rem; color: var(--texto-fraco); }
+
+.comanda__itens {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 0;
+  min-height: 140px;
+}
+
+.comanda__vazia {
+  padding: 44px 22px;
+  text-align: center;
+  font-size: .86rem;
+  color: var(--texto-fraco);
+  line-height: 1.6;
+}
+
+.comanda-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 10px;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--linha);
+}
+.comanda-item:last-child { border-bottom: 0; }
+.comanda-item__nome { font-size: .88rem; font-weight: 600; line-height: 1.3; }
+.comanda-item__unit { font-size: .74rem; color: var(--texto-fraco); }
+.comanda-item__total {
+  grid-row: 1 / 3;
+  grid-column: 2;
+  align-self: center;
+  font-family: var(--fonte-titulo);
+  font-weight: 700;
+  color: var(--ouro);
+  white-space: nowrap;
+}
+
+.contador { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+.contador button {
+  width: 26px; height: 26px;
+  display: grid; place-items: center;
+  font-size: 1rem; line-height: 1;
+  font-family: inherit;
+  color: var(--texto);
+  background: var(--superficie-3);
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--raio);
+  cursor: pointer;
+}
+.contador button:hover { border-color: var(--ouro); color: var(--ouro); }
+.contador span { min-width: 22px; text-align: center; font-size: .86rem; font-weight: 700; }
+.contador .remover { margin-left: auto; color: var(--texto-fraco); background: none; border: 0; font-size: .76rem; cursor: pointer; }
+.contador .remover:hover { color: var(--erro); }
+
+.comanda__pe { padding: 14px 16px; border-top: 1px solid var(--linha); background: var(--superficie-2); }
+
+.comanda__total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.comanda__total span { font-size: .74rem; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--texto-fraco); }
+.comanda__total strong { font-family: var(--fonte-titulo); font-size: 2rem; color: var(--ouro); }
+
+.pagamentos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; margin-bottom: 12px; }
+.pagamento {
+  padding: 9px 10px;
+  font-family: inherit;
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+  background: var(--preto);
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--raio);
+  cursor: pointer;
+  transition: all var(--transicao);
+}
+.pagamento:hover { color: var(--texto); border-color: var(--ouro-escuro); }
+.pagamento.ativo { color: var(--preto); background: var(--ouro); border-color: var(--ouro); }
+
+/* ---------- Últimas vendas ---------- */
+.ultimas { margin-top: 18px; }
+.ultimas h3 {
+  margin-bottom: 10px;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--texto-fraco);
+}
+.ultima-venda {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  margin-bottom: 6px;
+  font-size: .82rem;
+  background: var(--superficie);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+}
+.ultima-venda__hora { color: var(--texto-fraco); font-variant-numeric: tabular-nums; }
+.ultima-venda__itens { flex: 1; color: var(--texto-suave); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ultima-venda__valor { font-weight: 700; color: var(--ouro); }
+.ultima-venda button {
+  padding: 2px 7px;
+  font-size: .72rem;
+  color: var(--texto-fraco);
+  background: none;
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--raio);
+  cursor: pointer;
+}
+.ultima-venda button:hover { color: var(--erro); border-color: var(--erro); }
+
+/* ---------- Resumo do dia ---------- */
+.tira-dia {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  padding: 12px 22px;
+  background: var(--superficie);
+  border-bottom: 1px solid var(--linha);
+}
+.tira-dia div { line-height: 1.25; }
+.tira-dia span { font-size: .66rem; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--texto-fraco); }
+.tira-dia strong { display: block; font-family: var(--fonte-titulo); font-size: 1.25rem; }
+.tira-dia strong.ouro { color: var(--ouro); }
+
+/* ---------- Telas menores ---------- */
+@media (max-width: 1040px) {
+  .caixa { grid-template-columns: 1fr; }
+  .comanda { position: static; max-height: none; }
+  .catalogo__filtros { position: static; }
+}

@@ -1,0 +1,343 @@
+/* =====================================================================
+   FRONT BEER — Cardápio público
+   ===================================================================== */
+
+/* ---------- Barra superior ---------- */
+.topo-fixo {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: rgba(10, 9, 8, .92);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--linha);
+  transition: box-shadow var(--transicao);
+}
+.topo-fixo.rolado { box-shadow: 0 8px 26px rgba(0,0,0,.5); }
+
+.topo-fixo__interno {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 62px;
+}
+
+.marca-mini {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+.marca-mini img { width: 34px; height: 34px; }
+.marca-mini strong {
+  font-family: var(--fonte-titulo);
+  font-size: 1.02rem;
+  letter-spacing: .04em;
+  white-space: nowrap;
+}
+.marca-mini strong em { color: var(--ouro); font-style: normal; }
+
+.topo-fixo__acoes { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+
+/* ---------- Capa ---------- */
+.capa {
+  position: relative;
+  padding: 74px 0 64px;
+  text-align: center;
+  overflow: hidden;
+  border-bottom: 1px solid var(--linha);
+}
+.capa__fundo {
+  position: absolute;
+  inset: 0;
+  background: url("../img/fachada.jpg") center 42% / cover no-repeat;
+  opacity: .28;
+  filter: saturate(.85);
+}
+.capa__veu {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 18%, rgba(216,164,58,.16), transparent 62%),
+    linear-gradient(180deg, rgba(10,9,8,.72) 0%, rgba(10,9,8,.90) 62%, var(--preto) 100%);
+}
+.capa__interno { position: relative; }
+
+.capa__emblema {
+  width: 108px;
+  height: 108px;
+  margin: 0 auto 22px;
+  filter: drop-shadow(0 8px 22px rgba(216,164,58,.24));
+}
+
+.capa__nome {
+  font-size: clamp(2.5rem, 8vw, 4.1rem);
+  letter-spacing: .04em;
+  margin-bottom: 6px;
+}
+.capa__nome em { color: var(--ouro); font-style: italic; }
+
+.capa__sub {
+  margin: 0 auto 20px;
+  font-size: .8rem;
+  font-weight: 600;
+  letter-spacing: .34em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+.capa__lema {
+  max-width: 460px;
+  margin: 0 auto 26px;
+  font-family: var(--fonte-titulo);
+  font-size: 1.06rem;
+  font-style: italic;
+  color: var(--ouro-claro);
+}
+
+.capa__dados {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+.capa__dados a, .capa__dados span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 15px;
+  font-size: .82rem;
+  color: var(--texto-suave);
+  background: rgba(26, 24, 23, .72);
+  border: 1px solid var(--linha);
+  border-radius: 999px;
+}
+.capa__dados a:hover { color: var(--ouro); border-color: var(--ouro-escuro); }
+
+/* ---------- Navegação do cardápio ---------- */
+.nav-cardapio {
+  position: sticky;
+  top: 62px;
+  z-index: 30;
+  background: rgba(10, 9, 8, .96);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--linha);
+  padding: 12px 0;
+}
+
+.busca-caixa { position: relative; }
+.busca-caixa svg {
+  position: absolute;
+  left: 13px; top: 50%;
+  width: 16px; height: 16px;
+  transform: translateY(-50%);
+  color: var(--texto-fraco);
+  pointer-events: none;
+}
+.busca-caixa .entrada { padding-left: 38px; background: var(--superficie); }
+
+.abas {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.abas::-webkit-scrollbar { display: none; }
+
+.aba {
+  flex: none;
+  padding: 8px 15px;
+  font-family: inherit;
+  font-size: .8rem;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+  background: transparent;
+  border: 1px solid var(--linha);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all var(--transicao);
+  white-space: nowrap;
+}
+.aba:hover { color: var(--texto); border-color: var(--linha-forte); }
+.aba.ativa {
+  color: var(--preto);
+  background: var(--ouro);
+  border-color: var(--ouro);
+}
+
+/* ---------- Seções ---------- */
+.secao { padding-top: 46px; }
+.secao:first-child { padding-top: 34px; }
+
+.secao__cabeca { text-align: center; margin-bottom: 26px; }
+.secao__cabeca h2 {
+  font-size: 1.72rem;
+  letter-spacing: .03em;
+  margin-bottom: 8px;
+}
+.secao__cabeca .filete { font-size: .68rem; letter-spacing: .24em; text-transform: uppercase; color: var(--ouro-escuro); }
+.secao__cabeca .filete span { color: var(--texto-fraco); }
+
+/* ---------- Itens ---------- */
+.itens {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 6px 40px;
+}
+
+.item {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 14px 4px;
+  border-bottom: 1px dashed var(--linha);
+}
+
+.item__foto {
+  align-self: center;
+  width: 54px; height: 54px;
+  flex: none;
+  object-fit: cover;
+  border-radius: var(--raio);
+  border: 1px solid var(--linha);
+}
+
+.item__corpo { flex: 1; min-width: 0; }
+
+.item__nome {
+  font-family: var(--fonte-titulo);
+  font-size: 1.06rem;
+  font-weight: 600;
+  letter-spacing: .01em;
+}
+
+.item__desc {
+  margin: 3px 0 0;
+  font-size: .84rem;
+  line-height: 1.45;
+  color: var(--texto-suave);
+}
+
+.item__selos { display: flex; gap: 6px; margin-top: 7px; flex-wrap: wrap; }
+
+.item__pontos {
+  flex: 1;
+  min-width: 14px;
+  height: 1px;
+  margin-bottom: 5px;
+  border-bottom: 1px dotted var(--linha-forte);
+}
+
+.item__preco {
+  flex: none;
+  font-family: var(--fonte-titulo);
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: var(--ouro);
+  white-space: nowrap;
+}
+
+.item--esgotado .item__nome,
+.item--esgotado .item__preco { color: var(--texto-fraco); }
+.item--esgotado .item__preco { text-decoration: line-through; }
+.item--esgotado .item__foto { filter: grayscale(1); opacity: .5; }
+
+.vazio {
+  padding: 64px 20px;
+  text-align: center;
+  color: var(--texto-fraco);
+}
+.vazio strong { display: block; margin-bottom: 6px; color: var(--texto-suave); font-size: 1.05rem; }
+
+/* ---------- Rodapé ---------- */
+.rodape {
+  margin-top: 64px;
+  padding: 44px 0 40px;
+  border-top: 1px solid var(--linha);
+  background: var(--superficie);
+  text-align: center;
+}
+
+.rodape__legal {
+  max-width: 520px;
+  margin: 0 auto 24px;
+  padding: 16px 20px;
+  font-size: .82rem;
+  line-height: 1.55;
+  color: var(--ouro-claro);
+  background: var(--alerta-bg);
+  border: 1px solid rgba(216,164,58,.28);
+  border-radius: var(--raio);
+}
+.rodape__legal strong { display: block; margin-bottom: 4px; letter-spacing: .02em; }
+
+.rodape__info {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 20px;
+  margin-bottom: 18px;
+  font-size: .84rem;
+  color: var(--texto-suave);
+}
+
+.rodape__fim {
+  font-size: .74rem;
+  color: var(--texto-fraco);
+  line-height: 1.7;
+}
+
+/* ---------- Voltar ao topo ---------- */
+.ao-topo {
+  position: fixed;
+  right: 18px; bottom: 18px;
+  z-index: 50;
+  width: 44px; height: 44px;
+  display: grid;
+  place-items: center;
+  color: var(--ouro);
+  background: var(--superficie-2);
+  border: 1px solid var(--linha-forte);
+  border-radius: 50%;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transicao), transform var(--transicao);
+}
+.ao-topo.visivel { opacity: 1; pointer-events: auto; }
+.ao-topo:hover { transform: translateY(-2px); border-color: var(--ouro); }
+
+/* ---------- Telas pequenas ---------- */
+@media (max-width: 720px) {
+  .capa { padding: 48px 0 42px; }
+  .capa__emblema { width: 86px; height: 86px; margin-bottom: 16px; }
+  .capa__sub { letter-spacing: .22em; font-size: .72rem; }
+  .itens { grid-template-columns: 1fr; gap: 0; }
+  .marca-mini strong { font-size: .94rem; }
+  .topo-fixo__acoes .btn { padding: 7px 12px; font-size: .76rem; }
+}
+
+/* ---------- Impressão (cardápio de balcão) ---------- */
+@media print {
+  @page { size: A4; margin: 14mm; }
+  .topo-fixo, .nav-cardapio, .ao-topo, #avisos, .capa__fundo, .capa__veu { display: none !important; }
+  body { background: #fff; color: #111; font-size: 11pt; }
+  .capa { padding: 0 0 14px; border-bottom: 2px solid #111; }
+  .capa__nome { color: #111; font-size: 30pt; }
+  .capa__nome em { color: #8A6A15; }
+  .capa__sub, .capa__lema, .rodape__info { color: #444; }
+  .capa__dados { display: none; }
+  .secao { padding-top: 18px; break-inside: avoid; }
+  .secao__cabeca h2 { color: #111; font-size: 15pt; }
+  .itens { grid-template-columns: 1fr 1fr; gap: 0 26px; }
+  .item { padding: 6px 0; border-bottom: 1px dotted #bbb; }
+  .item__foto { display: none; }
+  .item__nome { color: #111; font-size: 11pt; }
+  .item__desc { color: #555; font-size: 8.5pt; }
+  .item__preco { color: #111; }
+  .rodape { margin-top: 20px; padding: 12px 0 0; background: none; border-top: 1px solid #999; }
+  .rodape__legal { color: #111; background: none; border: 1px solid #999; }
+  .rodape__fim { display: none; }
+}

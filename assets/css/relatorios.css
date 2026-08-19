@@ -1,0 +1,182 @@
+/* =====================================================================
+   FRONT BEER — Relatórios
+   ===================================================================== */
+
+.rel { max-width: 1280px; margin-inline: auto; padding: 24px 22px 70px; }
+
+/* ---------- Seletor de período ---------- */
+.periodo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  background: var(--superficie);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio-md);
+}
+
+.periodo__atalhos { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.atalho {
+  padding: 8px 14px;
+  font-family: inherit;
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+  background: transparent;
+  border: 1px solid var(--linha-forte);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all var(--transicao);
+  white-space: nowrap;
+}
+.atalho:hover { color: var(--texto); border-color: var(--ouro-escuro); }
+.atalho.ativo { color: var(--preto); background: var(--ouro); border-color: var(--ouro); }
+
+.periodo__datas { display: flex; align-items: center; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+.periodo__datas label { font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--texto-fraco); }
+.periodo__datas input {
+  padding: 8px 11px;
+  font-family: inherit;
+  font-size: .85rem;
+  color: var(--texto);
+  background: var(--preto);
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--raio);
+  color-scheme: dark;
+}
+
+/* ---------- Blocos ---------- */
+.blocos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.bloco {
+  padding: 18px 20px;
+  background: var(--superficie);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio-md);
+}
+.bloco__rotulo {
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--texto-fraco);
+}
+.bloco__valor {
+  margin-top: 8px;
+  font-family: var(--fonte-titulo);
+  font-size: 2.1rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ouro);
+}
+.bloco__apoio { margin-top: 8px; font-size: .8rem; color: var(--texto-suave); }
+.bloco--neutro .bloco__valor { color: var(--texto); }
+
+/* ---------- Painéis ---------- */
+.paineis {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.paineis--largo { grid-template-columns: 1fr; }
+
+.painel-rel {
+  padding: 20px;
+  background: var(--superficie);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio-md);
+}
+.painel-rel__cabeca {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.painel-rel__cabeca h2 { font-size: 1.08rem; }
+.painel-rel__cabeca span { font-size: .78rem; color: var(--texto-fraco); }
+
+.grafico { position: relative; height: 260px; }
+.grafico--baixo { height: 200px; }
+
+/* ---------- Ranking ---------- */
+.ranking { display: flex; flex-direction: column; gap: 9px; }
+
+.rank-linha { display: grid; grid-template-columns: 26px 1fr auto; gap: 11px; align-items: center; }
+.rank-pos {
+  font-family: var(--fonte-titulo);
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--texto-fraco);
+  text-align: center;
+}
+.rank-linha:nth-child(-n+3) .rank-pos { color: var(--ouro); }
+
+.rank-corpo { min-width: 0; }
+.rank-nome { font-size: .88rem; font-weight: 600; }
+.rank-barra { height: 5px; margin-top: 5px; background: var(--superficie-3); border-radius: 999px; overflow: hidden; }
+.rank-barra i { display: block; height: 100%; background: linear-gradient(90deg, var(--ouro-escuro), var(--ouro)); }
+.rank-valor { text-align: right; white-space: nowrap; }
+.rank-valor strong { display: block; font-size: .9rem; color: var(--ouro); }
+.rank-valor small { font-size: .74rem; color: var(--texto-fraco); }
+
+/* ---------- Pagamentos ---------- */
+.pg-linha {
+  display: grid;
+  grid-template-columns: 90px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 11px;
+}
+.pg-nome { font-size: .85rem; font-weight: 600; }
+.pg-barra { height: 8px; background: var(--superficie-3); border-radius: 999px; overflow: hidden; }
+.pg-barra i { display: block; height: 100%; background: var(--ouro); }
+.pg-valor { font-size: .85rem; font-weight: 600; white-space: nowrap; }
+.pg-valor small { display: block; font-weight: 400; font-size: .72rem; color: var(--texto-fraco); text-align: right; }
+
+/* ---------- Tabela de vendas ---------- */
+.tabela-vendas { width: 100%; border-collapse: collapse; font-size: .86rem; }
+.tabela-vendas th {
+  padding: 10px 12px;
+  text-align: left;
+  font-size: .66rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--texto-fraco);
+  border-bottom: 1px solid var(--linha);
+}
+.tabela-vendas td { padding: 11px 12px; border-bottom: 1px solid var(--linha); vertical-align: top; }
+.tabela-vendas tr:last-child td { border-bottom: 0; }
+.tabela-vendas .col-valor { text-align: right; font-weight: 700; color: var(--ouro); white-space: nowrap; }
+.tabela-vendas .col-itens { color: var(--texto-suave); font-size: .82rem; }
+
+.rolagem { max-height: 420px; overflow-y: auto; }
+
+.sem-dados {
+  padding: 50px 20px;
+  text-align: center;
+  color: var(--texto-fraco);
+}
+.sem-dados strong { display: block; margin-bottom: 6px; font-size: 1.05rem; color: var(--texto-suave); }
+
+@media (max-width: 900px) {
+  .paineis { grid-template-columns: 1fr; }
+  .periodo__datas { margin-left: 0; }
+}
+
+@media print {
+  .painel__topo, .periodo, .btn { display: none !important; }
+  body { background: #fff; color: #111; }
+  .bloco, .painel-rel { background: #fff; border-color: #bbb; break-inside: avoid; }
+  .bloco__valor, .rank-valor strong, .tabela-vendas .col-valor { color: #111; }
+}

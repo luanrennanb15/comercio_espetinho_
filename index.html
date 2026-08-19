@@ -1,173 +1,106 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Cardápio online — confira os produtos e preços.">
-  <meta name="referrer" content="no-referrer">
-  <title>Cardápio</title>
-  <link rel="stylesheet" href="assets/style.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0A0908">
+<meta name="description" content="Cardápio da Front Beer — adega e petiscaria. Espetos na brasa, petiscos, cervejas geladas e destilados. Consumo e retirada no local.">
+<meta name="referrer" content="no-referrer">
+
+<title>Front Beer — Adega e Petiscaria | Cardápio</title>
+
+<link rel="icon" href="assets/img/favicon.png" sizes="any">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Front Beer">
+<meta property="og:title" content="Front Beer — Adega e Petiscaria">
+<meta property="og:description" content="Espetos na brasa, petiscos, cervejas geladas e destilados. Veja o cardápio completo.">
+<meta property="og:image" content="assets/img/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap">
+
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/cardapio.css">
 </head>
 <body>
 
-  <header class="topo">
-    <div class="container">
-      <h1><span class="chama">&#128293;</span> <span id="nomeLoja">Cardápio</span></h1>
-      <p class="slogan" id="sloganLoja"></p>
-      <div class="info-loja" id="infoLoja"></div>
-    </div>
-  </header>
-
-  <div class="barra">
-    <div class="container">
-      <input type="search" id="busca" class="busca" placeholder="Buscar item..." autocomplete="off" aria-label="Buscar item no cardápio">
-      <div class="chips" id="chips"></div>
+<!-- ============ Barra fixa ============ -->
+<header class="topo-fixo" id="topoFixo">
+  <div class="container topo-fixo__interno">
+    <a class="marca-mini" href="#">
+      <img src="assets/img/emblema.png" alt="" width="34" height="34">
+      <strong data-marca>Front Beer</strong>
+    </a>
+    <div class="topo-fixo__acoes">
+      <button type="button" class="btn btn--fantasma btn--pequeno" id="btnImprimir">Imprimir</button>
     </div>
   </div>
+</header>
 
-  <main class="container" id="cardapio">
-    <div class="vazio">Carregando cardápio...</div>
-  </main>
+<!-- ============ Capa ============ -->
+<section class="capa">
+  <div class="capa__fundo" aria-hidden="true"></div>
+  <div class="capa__veu" aria-hidden="true"></div>
+  <div class="container capa__interno">
+    <img class="capa__emblema" src="assets/img/emblema.png" alt="Emblema Front Beer" width="108" height="108">
+    <h1 class="capa__nome" data-marca>Front Beer</h1>
+    <p class="capa__sub" data-segmento>Adega e Petiscaria</p>
+    <p class="capa__lema" id="lema"></p>
+    <div class="capa__dados" id="dadosLoja"></div>
+  </div>
+</section>
 
-  <footer class="rodape">
-    <div class="container">
-      <p class="legal">
-        <strong>Proibida a venda de bebidas alcoólicas a menores de 18 anos.</strong><br>
-        Lei Federal nº 13.106/2015. Se beber, não dirija.
-      </p>
-      <p id="avisoLoja"></p>
-      <p id="atualizado"></p>
-      <p>Preços sujeitos a alteração sem aviso prévio.</p>
+<!-- ============ Navegação ============ -->
+<nav class="nav-cardapio" aria-label="Filtros do cardápio">
+  <div class="container">
+    <div class="busca-caixa">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+        <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
+      </svg>
+      <input type="search" id="busca" class="entrada" placeholder="Buscar no cardápio..." autocomplete="off" aria-label="Buscar no cardápio">
     </div>
-  </footer>
+    <div class="abas" id="abas" role="tablist"></div>
+  </div>
+</nav>
 
-  <script src="assets/config.js"></script>
-  <script src="assets/db.js"></script>
-  <script>
-  (function () {
-    "use strict";
+<!-- ============ Cardápio ============ -->
+<main class="container" id="cardapio">
+  <div class="secao">
+    <div class="esqueleto"></div><div class="esqueleto"></div><div class="esqueleto"></div>
+  </div>
+</main>
 
-    var CFG = window.APP_CONFIG || {};
-    var produtos = [];
-    var categoriaAtiva = "Todos";
-    var termo = "";
+<!-- ============ Rodapé ============ -->
+<footer class="rodape">
+  <div class="container">
+    <p class="rodape__legal">
+      <strong>Proibida a venda de bebidas alcoólicas a menores de <span id="idadeMinima">18</span> anos.</strong>
+      Lei Federal nº 13.106/2015. Aprecie com moderação. Se beber, não dirija.
+    </p>
+    <p class="rodape__info" id="rodapeInfo"></p>
+    <p class="rodape__fim">
+      <span id="avisoOperacao"></span><br>
+      <span id="atualizacao"></span>
+      Preços sujeitos a alteração sem aviso prévio.
+      <span id="credito"></span>
+    </p>
+  </div>
+</footer>
 
-    var elCardapio = document.getElementById("cardapio");
-    var elChips = document.getElementById("chips");
-    var elBusca = document.getElementById("busca");
+<button type="button" class="ao-topo" id="aoTopo" aria-label="Voltar ao topo">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+    <path d="m6 14 6-6 6 6"/>
+  </svg>
+</button>
 
-    function preencherCabecalho() {
-      document.title = "Cardápio | " + (CFG.nome || "");
-      document.getElementById("nomeLoja").textContent = CFG.nome || "Cardápio";
-      document.getElementById("sloganLoja").textContent = CFG.slogan || "";
-
-      var partes = [];
-      if (CFG.endereco) partes.push("&#128205; " + esc(CFG.endereco));
-      if (CFG.horario) partes.push("&#128337; " + esc(CFG.horario));
-      if (CFG.whatsapp) {
-        partes.push(
-          '<a href="https://wa.me/' + encodeURIComponent(CFG.whatsapp) +
-          '" target="_blank" rel="noopener noreferrer">&#128172; Falar conosco</a>'
-        );
-      }
-      document.getElementById("infoLoja").innerHTML = partes.join("");
-      document.getElementById("avisoLoja").textContent = CFG.aviso || "";
-    }
-
-    function categorias() {
-      var vistas = [];
-      produtos.forEach(function (p) {
-        if (vistas.indexOf(p.categoria) === -1) vistas.push(p.categoria);
-      });
-      return vistas;
-    }
-
-    function desenharChips() {
-      var lista = ["Todos"].concat(categorias());
-      elChips.innerHTML = lista.map(function (c) {
-        return '<button type="button" class="chip' + (c === categoriaAtiva ? " ativo" : "") +
-               '" data-cat="' + esc(c) + '">' + esc(c) + "</button>";
-      }).join("");
-    }
-
-    function filtrar() {
-      var t = termo.trim().toLowerCase();
-      return produtos.filter(function (p) {
-        var casaCategoria = categoriaAtiva === "Todos" || p.categoria === categoriaAtiva;
-        var casaTermo = !t ||
-          p.nome.toLowerCase().indexOf(t) !== -1 ||
-          p.descricao.toLowerCase().indexOf(t) !== -1 ||
-          p.categoria.toLowerCase().indexOf(t) !== -1;
-        return casaCategoria && casaTermo;
-      });
-    }
-
-    function cardItem(p) {
-      var img = urlSegura(p.imagem_url);
-      var foto = img
-        ? '<img src="' + esc(img) + '" alt="" loading="lazy" referrerpolicy="no-referrer">'
-        : (p.alcoolico ? "&#127866;" : "&#127855;");
-      return '' +
-        '<article class="item' + (p.esgotado ? " esgotado" : "") + '">' +
-          '<div class="foto">' + foto + "</div>" +
-          '<div class="corpo">' +
-            '<h3 class="nome">' + esc(p.nome) + "</h3>" +
-            (p.descricao ? '<p class="desc">' + esc(p.descricao) + "</p>" : "") +
-            (p.esgotado ? '<span class="tag esgotado">Esgotado hoje</span>' : "") +
-            (p.alcoolico ? '<span class="tag maior" title="Venda proibida para menores de 18 anos">18+</span>' : "") +
-          "</div>" +
-          '<div class="preco">' + moeda(p.preco) + "</div>" +
-        "</article>";
-    }
-
-    function desenhar() {
-      var lista = filtrar();
-      if (!lista.length) {
-        elCardapio.innerHTML = '<div class="vazio">Nenhum item encontrado.</div>';
-        return;
-      }
-      var grupos = {};
-      var ordem = [];
-      lista.forEach(function (p) {
-        if (!grupos[p.categoria]) { grupos[p.categoria] = []; ordem.push(p.categoria); }
-        grupos[p.categoria].push(p);
-      });
-      elCardapio.innerHTML = ordem.map(function (cat) {
-        return '<section><h2 class="categoria-titulo">' + esc(cat) + "</h2>" +
-               '<div class="grade">' + grupos[cat].map(cardItem).join("") + "</div></section>";
-      }).join("");
-    }
-
-    elBusca.addEventListener("input", function (e) {
-      termo = e.target.value;
-      desenhar();
-    });
-
-    elChips.addEventListener("click", function (e) {
-      var btn = e.target.closest(".chip");
-      if (!btn) return;
-      categoriaAtiva = btn.getAttribute("data-cat");
-      desenharChips();
-      desenhar();
-    });
-
-    (async function iniciar() {
-      preencherCabecalho();
-      try {
-        await DB.init();
-        produtos = await DB.listarProdutos(true);
-        desenharChips();
-        desenhar();
-        document.getElementById("atualizado").textContent =
-          "Atualizado em " + new Date().toLocaleDateString("pt-BR") +
-          (DB.modo === "demo" ? " — modo demonstração" : "");
-      } catch (e) {
-        console.error(e);
-        elCardapio.innerHTML =
-          '<div class="vazio">Não foi possível carregar o cardápio agora. Tente novamente em instantes.</div>';
-      }
-    })();
-  })();
-  </script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/ui.js"></script>
+<script src="assets/js/db.js"></script>
+<script src="assets/js/cardapio.js"></script>
 </body>
 </html>

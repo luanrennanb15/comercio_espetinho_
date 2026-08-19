@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Manual do Proprietário | Front Beer</title>
+<link rel="icon" href="assets/img/favicon.png" sizes="any">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<style>
+  .doc { max-width: 780px; margin-inline: auto; padding: 46px 22px 80px; }
+  .doc__capa { text-align: center; padding-bottom: 30px; margin-bottom: 34px; border-bottom: 1px solid var(--linha); }
+  .doc__capa img { width: 74px; height: 74px; margin: 0 auto 16px; }
+  .doc__capa h1 { font-size: 2rem; letter-spacing: .03em; }
+  .doc__capa h1 em { color: var(--ouro); font-style: italic; }
+  .doc__capa p { margin: 8px 0 0; font-size: .74rem; font-weight: 600; letter-spacing: .28em; text-transform: uppercase; color: var(--texto-fraco); }
+
+  .doc h2 {
+    margin: 40px 0 14px;
+    padding-bottom: 10px;
+    font-size: 1.28rem;
+    border-bottom: 1px solid var(--linha);
+  }
+  .doc h2 span { color: var(--ouro); margin-right: 10px; }
+  .doc h3 { margin: 24px 0 8px; font-size: 1.03rem; color: var(--ouro-claro); }
+  .doc p  { color: var(--texto-suave); font-size: .93rem; line-height: 1.72; }
+  .doc strong { color: var(--texto); }
+  .doc code {
+    padding: 2px 6px;
+    font-size: .85em;
+    color: var(--ouro-claro);
+    background: var(--superficie-2);
+    border: 1px solid var(--linha);
+    border-radius: 3px;
+  }
+  .passos { counter-reset: passo; list-style: none; padding: 0; margin: 14px 0; }
+  .passos li {
+    counter-increment: passo;
+    position: relative;
+    padding: 0 0 14px 44px;
+    color: var(--texto-suave);
+    font-size: .93rem;
+    line-height: 1.65;
+  }
+  .passos li::before {
+    content: counter(passo);
+    position: absolute; left: 0; top: 0;
+    width: 28px; height: 28px;
+    display: grid; place-items: center;
+    font-family: var(--fonte-titulo);
+    font-size: .88rem; font-weight: 700;
+    color: var(--preto); background: var(--ouro);
+    border-radius: 50%;
+  }
+  .doc__pe { margin-top: 50px; padding-top: 20px; border-top: 1px solid var(--linha); font-size: .8rem; color: var(--texto-fraco); text-align: center; }
+  .imprimir { text-align: center; margin-bottom: 26px; }
+
+  @media print {
+    @page { size: A4; margin: 16mm; }
+    body { background: #fff; color: #111; }
+    .imprimir { display: none !important; }
+    .doc { padding: 0; max-width: none; }
+    .doc h1, .doc h2, .doc h3, .doc strong { color: #111; }
+    .doc h2 span { color: #8A6A15; }
+    .doc p, .passos li { color: #333; }
+    .doc h2 { break-after: avoid; }
+    .doc code { color: #111; background: #f0f0f0; border-color: #ccc; }
+    .passos li::before { color: #fff; background: #111; }
+  }
+</style>
+</head>
+<body>
+<div class="doc">
+
+  <div class="imprimir">
+    <button type="button" class="btn btn--fantasma btn--pequeno" onclick="window.print()">Imprimir manual</button>
+  </div>
+
+  <header class="doc__capa">
+    <img src="assets/img/emblema.png" alt="">
+    <h1>Front <em>Beer</em></h1>
+    <p>Manual do Proprietário — Cardápio Digital</p>
+  </header>
+
+  <h2><span>1</span>O que é cada endereço</h2>
+  <p>
+    O sistema tem duas telas. A <strong>pública</strong> (<code>index.html</code>) é o cardápio que o cliente
+    vê ao escanear o QR Code da mesa — ela só mostra informação, ninguém consegue alterar nada por ali.
+    A <strong>interna</strong> (<code>admin.html</code>) é o painel protegido por login, onde você cadastra
+    produtos, muda preços e marca o que acabou. Guarde o endereço do painel e nunca o divulgue ao cliente.
+  </p>
+
+  <h2><span>2</span>Primeiro acesso</h2>
+  <ol class="passos">
+    <li>Abra o painel e entre com o e-mail e a senha que foram criados para você.</li>
+    <li>Clique em <strong>Mais</strong> e depois em <strong>Limpar cardápio</strong>. Isso apaga os itens de
+      exemplo que vieram no sistema — os preços deles são fictícios e não servem para a casa.</li>
+    <li>Cadastre seus produtos reais em <strong>+ Novo produto</strong>, um por vez.</li>
+  </ol>
+
+  <h2><span>3</span>Cadastrar um produto</h2>
+  <p>
+    Preencha o nome, escolha ou digite a categoria (Espetos, Cervejas, Petiscos, o que fizer sentido) e
+    informe o preço. A descrição é opcional, mas ajuda o cliente a decidir: "porção 400g", "gelada",
+    "com farofa". Se o item for bebida alcoólica, marque a caixa correspondente — ele passa a exibir o
+    selo <strong>18+</strong> no cardápio, conforme a lei.
+  </p>
+  <h3>Ordem de exibição</h3>
+  <p>
+    O campo <strong>ordem</strong> decide quem aparece primeiro. Número menor sobe. Ele também define a
+    sequência das categorias: se quiser Cervejas antes de Espetos, basta dar números menores aos itens
+    de cerveja.
+  </p>
+
+  <h2><span>4</span>O dia a dia</h2>
+  <h3>Acabou um item</h3>
+  <p>
+    Clique em <strong>Esgotou</strong> na linha do produto. Ele continua no cardápio, mas riscado e com
+    o aviso "esgotado hoje" — o cliente não pede o que não tem, e você não precisa apagar nada.
+    No dia seguinte, use <strong>Repor esgotados</strong> para liberar tudo de uma vez.
+  </p>
+  <h3>Mudou o preço</h3>
+  <p>
+    Para um item só, clique em <strong>Editar</strong>. Quando o fornecedor reajusta tudo, use
+    <strong>Reajustar preços</strong>: informe o percentual (use número negativo para baixar), escolha
+    se vale para uma categoria ou para o cardápio inteiro, e o sistema mostra uma prévia antes de aplicar.
+  </p>
+  <h3>Item fora de linha</h3>
+  <p>
+    Se você parou de vender algo mas pode voltar a vender, desmarque <strong>Visível no cardápio</strong>
+    ao editar. Ele some da tela do cliente e continua guardado no painel. Excluir só quando tiver certeza
+    de que não volta mais.
+  </p>
+
+  <h2><span>5</span>QR Code das mesas</h2>
+  <p>
+    No painel, clique em <strong>QR Code</strong>. Confira o endereço do site, clique em
+    <strong>Imprimir placa</strong> e leve para plastificar. Cole nas mesas e no balcão. Se o endereço do
+    site mudar, gere o QR Code de novo — os antigos param de funcionar.
+  </p>
+
+  <h2><span>6</span>Registrar as vendas (Caixa)</h2>
+  <p>
+    O cliente não faz pedido pelo site, então o relatório só enxerga o que for
+    lançado no <strong>Caixa</strong>. Abra a tela pelo item <strong>Caixa</strong> no menu lateral,
+    toque nos produtos para montar a venda, escolha a forma de pagamento e clique em
+    <strong>Fechar venda</strong>. Leva poucos segundos.
+  </p>
+  <h3>Atalhos que economizam tempo</h3>
+  <p>
+    Digite parte do nome na busca e pressione <strong>Enter</strong> para adicionar o primeiro
+    resultado — dá para lançar uma venda inteira sem tirar a mão do teclado. A tecla
+    <strong>F2</strong> fecha a venda. Se errar o lançamento, use <strong>estornar</strong> na
+    lista de últimas vendas, do lado direito.
+  </p>
+  <p>
+    O topo da tela mostra o quanto já entrou no dia, quantas vendas foram feitas e o ticket
+    médio — serve para conferir o caixa no fim da noite.
+  </p>
+
+  <h2><span>7</span>Ler os relatórios</h2>
+  <p>
+    Na tela <strong>Relatórios</strong> você escolhe o período (hoje, 7, 30 ou 90 dias, ou
+    datas específicas) e vê o faturamento, o ticket médio e o gráfico de evolução por dia.
+  </p>
+  <h3>O que olhar de verdade</h3>
+  <p>
+    O <strong>ranking de mais vendidos</strong> mostra o que gira e o que está parado — item que
+    não aparece na lista há semanas provavelmente deveria sair do cardápio ou mudar de preço.
+    Os <strong>horários de pico</strong> dizem em que faixa concentrar a produção e a equipe.
+    As <strong>formas de pagamento</strong> ajudam a conferir a maquininha e o PIX no fechamento.
+  </p>
+  <p>
+    O botão <strong>Exportar CSV</strong> gera um arquivo que abre no Excel, com uma linha por
+    item vendido — útil para o contador ou para análises próprias.
+  </p>
+  <p>
+    Importante: o preço de cada item fica congelado no momento da venda. Reajustar o cardápio
+    hoje não altera o faturamento já registrado.
+  </p>
+
+  <h2><span>8</span>Cuidados importantes</h2>
+  <p>
+    Não compartilhe a senha do painel com toda a equipe; qualquer pessoa com ela pode alterar preços.
+    Antes de qualquer mudança grande, use <strong>Baixar cópia de segurança</strong> no menu Mais —
+    fica um arquivo com todo o cardápio salvo no computador. E lembre que o site não substitui a placa
+    física obrigatória sobre venda de bebida alcoólica a menores de 18 anos.
+  </p>
+
+  <h2><span>9</span>O que o sistema não faz</h2>
+  <p>
+    O cliente não faz pedido nem paga pelo site — o cardápio é só de consulta, e a venda continua no
+    balcão. Também não há entrega: o rodapé avisa que o consumo e a retirada são no local. O sistema
+    também não controla estoque: ele registra o que foi vendido, mas não sabe quanto ainda existe na
+    geladeira. E o relatório mostra faturamento, não lucro — para saber margem seria preciso cadastrar
+    o custo de cada item.
+  </p>
+
+  <p class="doc__pe">Front Beer — Adega e Petiscaria · Manual do proprietário</p>
+</div>
+</body>
+</html>

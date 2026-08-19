@@ -204,6 +204,24 @@ a { color: var(--brasa-2); }
 
 .tag.esgotado { color: #fff; background: var(--vermelho); }
 
+.tag.maior {
+  margin-left: 5px;
+  color: var(--brasa-2);
+  background: transparent;
+  border: 1px solid #6a4a1e;
+}
+
+.rodape .legal {
+  max-width: 460px;
+  margin: 0 auto 14px;
+  padding: 12px;
+  line-height: 1.5;
+  color: #f0c98a;
+  background: #24180d;
+  border: 1px solid #4a3418;
+  border-radius: 10px;
+}
+
 .vazio {
   padding: 50px 20px;
   text-align: center;

@@ -31,6 +31,11 @@
 
   <footer class="rodape">
     <div class="container">
+      <p class="legal">
+        <strong>Proibida a venda de bebidas alcoólicas a menores de 18 anos.</strong><br>
+        Lei Federal nº 13.106/2015. Se beber, não dirija.
+      </p>
+      <p id="avisoLoja"></p>
       <p id="atualizado"></p>
       <p>Preços sujeitos a alteração sem aviso prévio.</p>
     </div>
@@ -66,6 +71,7 @@
         );
       }
       document.getElementById("infoLoja").innerHTML = partes.join("");
+      document.getElementById("avisoLoja").textContent = CFG.aviso || "";
     }
 
     function categorias() {
@@ -100,7 +106,7 @@
       var img = urlSegura(p.imagem_url);
       var foto = img
         ? '<img src="' + esc(img) + '" alt="" loading="lazy" referrerpolicy="no-referrer">'
-        : "&#127855;";
+        : (p.alcoolico ? "&#127866;" : "&#127855;");
       return '' +
         '<article class="item' + (p.esgotado ? " esgotado" : "") + '">' +
           '<div class="foto">' + foto + "</div>" +
@@ -108,6 +114,7 @@
             '<h3 class="nome">' + esc(p.nome) + "</h3>" +
             (p.descricao ? '<p class="desc">' + esc(p.descricao) + "</p>" : "") +
             (p.esgotado ? '<span class="tag esgotado">Esgotado hoje</span>' : "") +
+            (p.alcoolico ? '<span class="tag maior" title="Venda proibida para menores de 18 anos">18+</span>' : "") +
           "</div>" +
           '<div class="preco">' + moeda(p.preco) + "</div>" +
         "</article>";

@@ -5,12 +5,16 @@
 
 window.APP_CONFIG = {
   // --- Identidade ---
-  nome: "Espetinho do Luan",
-  slogan: "Na brasa, do jeito que você gosta",
-  // Telefone só para contato/dúvidas (não há pedido online). Deixe "" para ocultar.
-  whatsapp: "5511999999999",
-  endereco: "Rua das Brasas, 123 - Centro",
-  horario: "Ter a Dom, 18h às 23h",
+  nome: "Front Beer",
+  slogan: "Adega e Petiscaria",
+  // Telefone só para contato/dúvidas (não há pedido nem entrega online).
+  // Deixe "" para ocultar o link.
+  whatsapp: "",
+  endereco: "",
+  horario: "",
+
+  // Mensagem fixa no rodapé do cardápio
+  aviso: "Consumo e retirada no local. Não realizamos entregas.",
 
   // --- Supabase (deixe vazio para rodar em MODO DEMONSTRAÇÃO no navegador) ---
   // Pegue em: Supabase > Project Settings > API

@@ -17,11 +17,16 @@ create table if not exists public.produtos (
   imagem_url  text        not null default '',
   ativo       boolean     not null default true,   -- aparece no cardápio?
   esgotado    boolean     not null default false,  -- acabou hoje?
+  alcoolico   boolean     not null default false,  -- exibe selo 18+ no cardápio
   ordem       integer     not null default 0,
   criado_em   timestamptz not null default now(),
   alterado_em timestamptz not null default now()
 );
 
+-- Se a tabela já existia sem a coluna alcoolico, esta linha a adiciona:
+alter table public.produtos add column if not exists alcoolico boolean not null default false;
+
+create index if not exists produtos_ordem_idx     on public.produtos (ordem, nome);
 create index if not exists produtos_categoria_idx on public.produtos (categoria, ordem);
 create index if not exists produtos_ativo_idx     on public.produtos (ativo);
 
@@ -78,24 +83,50 @@ create policy "equipe exclui"
   using (true);
 
 -- ---------------------------------------------------------------------
--- Dados iniciais (rode uma vez; apague se não quiser exemplos)
+-- Dados de EXEMPLO — Front Beer (adega e petiscaria)
+-- Itens e preços ilustrativos, só para o cardápio não nascer vazio.
+-- O proprietário troca tudo pelo painel (há o botão "Limpar cardápio").
+-- Se preferir começar do zero, não rode este bloco.
 -- ---------------------------------------------------------------------
-insert into public.produtos (nome, descricao, categoria, preco, ordem) values
-  ('Espetinho de Carne',            'Alcatra temperada na brasa',    'Espetinhos',       9.00, 1),
-  ('Espetinho de Frango',           'Peito de frango marinado',      'Espetinhos',       8.00, 2),
-  ('Espetinho de Linguiça',         'Linguiça toscana artesanal',    'Espetinhos',       8.00, 3),
-  ('Espetinho de Coração',          'Coração de frango no sal grosso','Espetinhos',     10.00, 4),
-  ('Espetinho de Queijo Coalho',    'Com melaço de cana',            'Espetinhos',       9.00, 5),
-  ('Medalhão de Frango com Bacon',  'Enrolado no bacon',             'Espetinhos',      12.00, 6),
-  ('Pão de Alho',                   'Na brasa, com manteiga de alho','Acompanhamentos',  7.00, 7),
-  ('Farofa da Casa',                'Porção individual',             'Acompanhamentos',  6.00, 8),
-  ('Vinagrete',                     'Porção individual',             'Acompanhamentos',  4.00, 9),
-  ('Mandioca Frita',                'Porção 400g',                   'Porções',         25.00, 10),
-  ('Batata Frita',                  'Porção 400g',                   'Porções',         25.00, 11),
-  ('Refrigerante Lata',             '350ml — diversos sabores',      'Bebidas',          6.00, 12),
-  ('Cerveja Long Neck',             '355ml gelada',                  'Bebidas',         10.00, 13),
-  ('Água Mineral',                  '500ml com ou sem gás',          'Bebidas',          4.00, 14),
-  ('Suco Natural',                  'Laranja, maracujá ou abacaxi',  'Bebidas',          9.00, 15)
+insert into public.produtos (nome, descricao, categoria, preco, alcoolico, ordem) values
+  -- Espetos
+  ('Espeto de Carne',              'Alcatra temperada na brasa',      'Espetos',             10.00, false,  1),
+  ('Espeto de Frango',             'Peito de frango marinado',        'Espetos',              9.00, false,  2),
+  ('Espeto de Linguiça',           'Linguiça toscana',                'Espetos',              9.00, false,  3),
+  ('Espeto de Coração',            'Coração de frango no sal grosso', 'Espetos',             11.00, false,  4),
+  ('Espeto de Queijo Coalho',      'Com melaço de cana',              'Espetos',             10.00, false,  5),
+  ('Espeto de Cupim',              'Fatiado, na brasa',               'Espetos',             13.00, false,  6),
+  ('Medalhão de Frango com Bacon', 'Enrolado no bacon',               'Espetos',             13.00, false,  7),
+  ('Pão de Alho',                  'Na brasa, com manteiga de alho',  'Espetos',              8.00, false,  8),
+  -- Petiscos
+  ('Batata Frita',                 'Porção 400g',                     'Petiscos',            28.00, false,  9),
+  ('Mandioca Frita',               'Porção 400g',                     'Petiscos',            26.00, false, 10),
+  ('Calabresa Acebolada',          'Porção com pão de alho',          'Petiscos',            32.00, false, 11),
+  ('Torresmo Crocante',            'Porção 300g',                     'Petiscos',            30.00, false, 12),
+  ('Frango a Passarinho',          'Porção 500g com alho e limão',    'Petiscos',            38.00, false, 13),
+  ('Amendoim Torrado',             'Porção individual',               'Petiscos',             8.00, false, 14),
+  -- Cervejas
+  ('Cerveja Lata 269ml',           'Latinha gelada',                  'Cervejas',             5.00, true,  15),
+  ('Cerveja Lata 350ml',           'Gelada',                          'Cervejas',             6.50, true,  16),
+  ('Cerveja Lata 473ml',           'Latão gelado',                    'Cervejas',             9.00, true,  17),
+  ('Cerveja Long Neck 330ml',      'Gelada',                          'Cervejas',            11.00, true,  18),
+  ('Cerveja Garrafa 600ml',        'Gelada',                          'Cervejas',            14.00, true,  19),
+  ('Cerveja Puro Malte 350ml',     'Lata gelada',                     'Cervejas',             7.50, true,  20),
+  -- Doses e destilados
+  ('Dose de Cachaça',              '50ml',                            'Doses e Destilados',   7.00, true,  21),
+  ('Dose de Vodka',                '50ml',                            'Doses e Destilados',  12.00, true,  22),
+  ('Dose de Whisky',               '50ml',                            'Doses e Destilados',  18.00, true,  23),
+  ('Caipirinha',                   'Limão, morango ou maracujá',      'Doses e Destilados',  18.00, true,  24),
+  ('Gin Tônica',                   'Com limão siciliano',             'Doses e Destilados',  24.00, true,  25),
+  ('Garrafa de Vodka',             '1L — para levar',                 'Doses e Destilados',  45.00, true,  26),
+  ('Garrafa de Whisky',            '1L — para levar',                 'Doses e Destilados', 120.00, true,  27),
+  -- Sem álcool
+  ('Refrigerante Lata 350ml',      'Diversos sabores',                'Sem Álcool',           6.00, false, 28),
+  ('Refrigerante 2L',              'Diversos sabores',                'Sem Álcool',          14.00, false, 29),
+  ('Energético 250ml',             'Lata gelada',                     'Sem Álcool',          12.00, false, 30),
+  ('Água Mineral 500ml',           'Com ou sem gás',                  'Sem Álcool',           4.00, false, 31),
+  ('Água de Coco 200ml',           'Caixinha gelada',                 'Sem Álcool',           6.00, false, 32),
+  ('Suco de Caixinha',             'Diversos sabores',                'Sem Álcool',           7.00, false, 33)
 on conflict do nothing;
 
 -- =====================================================================

@@ -79,17 +79,55 @@ permissão ao público sobre as tabelas de venda.
 
 ## Publicar de verdade
 
-1. Crie uma conta gratuita em <https://supabase.com> e um projeto novo.
-2. No **SQL Editor**, cole todo o `supabase/schema.sql` e clique em **Run**.
-3. Em **Authentication → Users → Add user**, crie o e-mail e a senha do
-   proprietário. Em **Authentication → Providers**, desative
-   *Enable email signups* para que ninguém abra conta sozinho.
-4. Em **Project Settings → API**, copie `URL` e `anon public key` para
-   `assets/js/config.js`. Aproveite e preencha endereço, horário, WhatsApp e
-   `siteUrl`.
-5. Publique a pasta em qualquer hospedagem estática gratuita — Netlify, Vercel,
-   Cloudflare Pages ou GitHub Pages. Basta arrastar a pasta.
-6. Abra `qrcode.html`, gere a placa e imprima para as mesas.
+### 1. Criar o projeto no Supabase
+
+Em <https://supabase.com>, crie a conta e um projeto novo. No formulário:
+
+| Campo | O que usar |
+|---|---|
+| Organization | a sua |
+| Project name | `front_beer` |
+| Database Password | gere uma senha forte e **guarde no gerenciador de senhas** — ela não é mostrada de novo e não é a senha do painel do site |
+| Region | **South America (São Paulo)** — o servidor mais perto dos clientes |
+| Plan | Free |
+
+Se aparecer a opção **Data API**, deixe **habilitada**. É ela que permite o site
+conversar com o banco. Se tiver sido desligada, ligue depois em
+*Integrations → Data API*.
+
+### 2. Criar as tabelas
+
+No menu lateral, **SQL Editor → New query**, cole todo o conteúdo de
+`supabase/schema.sql` e clique em **Run**. O script cria as tabelas, os índices,
+os privilégios e as políticas de segurança. Pode ser executado mais de uma vez
+sem duplicar nada.
+
+### 3. Criar o acesso do proprietário
+
+Em **Authentication → Users → Add user**, informe e-mail e senha. Esse é o login
+que abre o painel, o caixa e os relatórios.
+
+Em seguida, em **Authentication → Sign In / Providers → Email**, desative
+**Allow new users to sign up**. Sem isso qualquer pessoa poderia criar conta e
+entrar na área interna.
+
+### 4. Ligar o site ao banco
+
+Em **Settings → API Keys**, copie:
+
+- **Project URL** → campo `supabaseUrl` de `assets/js/config.js`
+- **Publishable key** (`sb_publishable_...`) → campo `supabaseChave`
+
+Nunca use aqui a *Secret key* nem a *service_role*: elas ignoram as regras de
+segurança e dariam acesso total ao seu banco a qualquer visitante.
+
+Ao salvar, o aviso de "modo demonstração" some do painel.
+
+### 5. Publicar e divulgar
+
+Suba a pasta em qualquer hospedagem estática gratuita — Netlify, Vercel,
+Cloudflare Pages ou GitHub Pages. Depois preencha `siteUrl` no `config.js`,
+abra `qrcode.html`, gere a placa e imprima para as mesas.
 
 ---
 

@@ -173,8 +173,6 @@
   }, { passive: true });
   btnTopo.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
 
-  $("#btnImprimir").addEventListener("click", () => window.print());
-
   /* Atalho: "/" foca a busca */
   document.addEventListener("keydown", (e) => {
     if (e.key === "/" && document.activeElement !== elBusca) { e.preventDefault(); elBusca.focus(); }

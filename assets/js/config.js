@@ -32,10 +32,19 @@ window.APP_CONFIG = {
   /* --- Supabase ---------------------------------------------------
      Vazio = MODO DEMONSTRAÇÃO (dados só neste navegador).
      Preenchido = dados na nuvem, com login e regras de segurança.
-     Pegue em: Supabase > Project Settings > API.
-     A "anon key" é pública por design; quem protege os dados são as
-     políticas RLS de supabase/schema.sql. Nunca use a service_role.
+
+     Onde achar: painel do Supabase > Settings > API Keys.
+       supabaseUrl   -> Project URL (https://xxxx.supabase.co)
+       supabaseChave -> Publishable key (sb_publishable_...)
+                        A chave "anon" antiga também funciona.
+
+     Essa chave é pública por design — ela vai no código do site e
+     qualquer visitante consegue lê-la. Quem realmente protege os dados
+     são as políticas RLS de supabase/schema.sql.
+
+     NUNCA use aqui a Secret key (sb_secret_...) nem a service_role:
+     elas ignoram todas as regras de segurança.
   ------------------------------------------------------------------ */
-  supabaseUrl:     "",
-  supabaseAnonKey: "",
+  supabaseUrl:   "",
+  supabaseChave: "",
 };

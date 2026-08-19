@@ -75,6 +75,11 @@ create trigger trg_produtos_alterado
 -- ---------------------------------------------------------------------
 alter table public.produtos enable row level security;
 
+-- Privilégios de tabela (camada anterior à RLS).
+-- O visitante só precisa de leitura; a equipe autenticada precisa de tudo.
+grant select on public.produtos to anon;
+grant select, insert, update, delete on public.produtos to authenticated;
+
 drop policy if exists "publico le itens ativos" on public.produtos;
 create policy "publico le itens ativos"
   on public.produtos for select
@@ -197,6 +202,12 @@ create index if not exists venda_itens_nome_idx  on public.venda_itens (nome);
 alter table public.vendas      enable row level security;
 alter table public.venda_itens enable row level security;
 
+-- O público não recebe nenhum privilégio sobre faturamento.
+revoke all on public.vendas      from anon;
+revoke all on public.venda_itens from anon;
+grant select, insert, update, delete on public.vendas      to authenticated;
+grant select, insert, update, delete on public.venda_itens to authenticated;
+
 drop policy if exists "equipe gerencia vendas" on public.vendas;
 create policy "equipe gerencia vendas"
   on public.vendas for all
@@ -222,3 +233,6 @@ select
 from public.vendas v
 group by 1
 order by 1 desc;
+
+revoke all on public.resumo_diario from anon;
+grant select on public.resumo_diario to authenticated;

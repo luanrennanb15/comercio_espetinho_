@@ -42,6 +42,7 @@
       <div class="acoes">
         <a class="btn secundario pequeno" href="index.html" target="_blank" rel="noopener">Ver cardápio</a>
         <button type="button" class="btn secundario pequeno" id="btnReajuste">Reajustar preços</button>
+        <button type="button" class="btn secundario pequeno" id="btnLimpar">Limpar cardápio</button>
         <button type="button" class="btn secundario pequeno" id="btnSair">Sair</button>
       </div>
     </div>
@@ -115,6 +116,10 @@
         <div class="campo inline">
           <input type="checkbox" id="pEsgotado">
           <label for="pEsgotado">Marcar como esgotado hoje</label>
+        </div>
+        <div class="campo inline">
+          <input type="checkbox" id="pAlcoolico">
+          <label for="pAlcoolico">Bebida alcoólica (exibe selo 18+ no cardápio)</label>
         </div>
         <div class="modal-acoes">
           <button type="button" class="btn secundario" data-fechar>Cancelar</button>
@@ -254,6 +259,7 @@
             '<td data-rotulo="Situação">' +
               (p.esgotado ? '<span class="pastilha off">Esgotado</span>' : '<span class="pastilha ok">Disponível</span>') +
               (p.ativo ? "" : ' <span class="pastilha off">Oculto</span>') +
+              (p.alcoolico ? ' <span class="tag maior">18+</span>' : "") +
             "</td>" +
             '<td data-rotulo="Ações"><div class="acoes">' +
               '<button type="button" class="btn secundario pequeno" data-acao="esgotar" data-id="' + esc(p.id) + '">' +
@@ -311,6 +317,7 @@
       $("pImagem").value = p ? p.imagem_url : "";
       $("pAtivo").checked = p ? p.ativo : true;
       $("pEsgotado").checked = p ? p.esgotado : false;
+      $("pAlcoolico").checked = p ? p.alcoolico : false;
       abrir("modalProduto");
       $("pNome").focus();
     }
@@ -336,11 +343,28 @@
           imagem_url: img,
           ativo: $("pAtivo").checked,
           esgotado: $("pEsgotado").checked,
+          alcoolico: $("pAlcoolico").checked,
         });
         fechar("modalProduto");
         await recarregar();
       } catch (err) {
         mostrarErro($("erroModal"), err.message || String(err));
+      }
+    });
+
+    /* ---------- Limpar cardápio (começar do zero) ---------- */
+    $("btnLimpar").addEventListener("click", async function () {
+      if (!confirm(
+        "Apagar TODOS os " + produtos.length + " produtos do cardápio?\n\n" +
+        "Use isso apenas uma vez, para remover os itens de exemplo antes de cadastrar os seus.\n" +
+        "Esta ação não pode ser desfeita."
+      )) return;
+      if (!confirm("Confirmando: o cardápio ficará vazio até você cadastrar os produtos reais. Prosseguir?")) return;
+      try {
+        await DB.limparCardapio();
+        await recarregar();
+      } catch (err) {
+        mostrarErro($("erroPainel"), err.message || String(err));
       }
     });
 
@@ -380,6 +404,13 @@
 
     /* ---------- Início ---------- */
     (async function iniciar() {
+      var nome = (window.APP_CONFIG && window.APP_CONFIG.nome) || "";
+      if (nome) {
+        document.title = "Painel Interno | " + nome;
+        document.querySelectorAll("h1").forEach(function (h) {
+          h.innerHTML = "&#128293; " + esc(nome) + " — Painel Interno";
+        });
+      }
       await DB.init();
       if (DB.modo === "demo") $("dicaDemo").classList.remove("oculto");
       var usuario = await DB.usuarioAtual();

@@ -16,28 +16,60 @@ const DB = (() => {
   let modo = "demo";
   let sb = null;
 
-  /* ---------------- Dados de exemplo (modo demo) ---------------- */
+  /* ---------------- Dados de exemplo (modo demo) ----------------
+     Itens e preços meramente ilustrativos. O proprietário substitui
+     tudo pelo painel — há um botão "Limpar cardápio" lá dentro.
+  ---------------------------------------------------------------- */
   const SEED = [
-    { nome: "Espetinho de Carne", descricao: "Alcatra temperada na brasa", categoria: "Espetinhos", preco: 9.0, ordem: 1 },
-    { nome: "Espetinho de Frango", descricao: "Peito de frango marinado", categoria: "Espetinhos", preco: 8.0, ordem: 2 },
-    { nome: "Espetinho de Linguiça", descricao: "Linguiça toscana artesanal", categoria: "Espetinhos", preco: 8.0, ordem: 3 },
-    { nome: "Espetinho de Coração", descricao: "Coração de frango no sal grosso", categoria: "Espetinhos", preco: 10.0, ordem: 4 },
-    { nome: "Espetinho de Queijo Coalho", descricao: "Com melaço de cana", categoria: "Espetinhos", preco: 9.0, ordem: 5 },
-    { nome: "Medalhão de Frango com Bacon", descricao: "Enrolado no bacon", categoria: "Espetinhos", preco: 12.0, ordem: 6 },
-    { nome: "Pão de Alho", descricao: "Na brasa, com manteiga de alho", categoria: "Acompanhamentos", preco: 7.0, ordem: 7 },
-    { nome: "Farofa da Casa", descricao: "Porção individual", categoria: "Acompanhamentos", preco: 6.0, ordem: 8 },
-    { nome: "Vinagrete", descricao: "Porção individual", categoria: "Acompanhamentos", preco: 4.0, ordem: 9 },
-    { nome: "Mandioca Frita", descricao: "Porção 400g", categoria: "Porções", preco: 25.0, ordem: 10 },
-    { nome: "Batata Frita", descricao: "Porção 400g", categoria: "Porções", preco: 25.0, ordem: 11 },
-    { nome: "Refrigerante Lata", descricao: "350ml — diversos sabores", categoria: "Bebidas", preco: 6.0, ordem: 12 },
-    { nome: "Cerveja Long Neck", descricao: "355ml gelada", categoria: "Bebidas", preco: 10.0, ordem: 13 },
-    { nome: "Água Mineral", descricao: "500ml com ou sem gás", categoria: "Bebidas", preco: 4.0, ordem: 14 },
-    { nome: "Suco Natural", descricao: "Laranja, maracujá ou abacaxi", categoria: "Bebidas", preco: 9.0, ordem: 15 },
+    // --- Espetos ---
+    { nome: "Espeto de Carne", descricao: "Alcatra temperada na brasa", categoria: "Espetos", preco: 10.0 },
+    { nome: "Espeto de Frango", descricao: "Peito de frango marinado", categoria: "Espetos", preco: 9.0 },
+    { nome: "Espeto de Linguiça", descricao: "Linguiça toscana", categoria: "Espetos", preco: 9.0 },
+    { nome: "Espeto de Coração", descricao: "Coração de frango no sal grosso", categoria: "Espetos", preco: 11.0 },
+    { nome: "Espeto de Queijo Coalho", descricao: "Com melaço de cana", categoria: "Espetos", preco: 10.0 },
+    { nome: "Espeto de Cupim", descricao: "Fatiado, na brasa", categoria: "Espetos", preco: 13.0 },
+    { nome: "Medalhão de Frango com Bacon", descricao: "Enrolado no bacon", categoria: "Espetos", preco: 13.0 },
+    { nome: "Pão de Alho", descricao: "Na brasa, com manteiga de alho", categoria: "Espetos", preco: 8.0 },
+
+    // --- Petiscos ---
+    { nome: "Batata Frita", descricao: "Porção 400g", categoria: "Petiscos", preco: 28.0 },
+    { nome: "Mandioca Frita", descricao: "Porção 400g", categoria: "Petiscos", preco: 26.0 },
+    { nome: "Calabresa Acebolada", descricao: "Porção com pão de alho", categoria: "Petiscos", preco: 32.0 },
+    { nome: "Torresmo Crocante", descricao: "Porção 300g", categoria: "Petiscos", preco: 30.0 },
+    { nome: "Frango a Passarinho", descricao: "Porção 500g com alho e limão", categoria: "Petiscos", preco: 38.0 },
+    { nome: "Amendoim Torrado", descricao: "Porção individual", categoria: "Petiscos", preco: 8.0 },
+
+    // --- Cervejas (alcoólicas) ---
+    { nome: "Cerveja Lata 269ml", descricao: "Latinha gelada", categoria: "Cervejas", preco: 5.0, alcoolico: true },
+    { nome: "Cerveja Lata 350ml", descricao: "Gelada", categoria: "Cervejas", preco: 6.5, alcoolico: true },
+    { nome: "Cerveja Lata 473ml", descricao: "Latão gelado", categoria: "Cervejas", preco: 9.0, alcoolico: true },
+    { nome: "Cerveja Long Neck 330ml", descricao: "Gelada", categoria: "Cervejas", preco: 11.0, alcoolico: true },
+    { nome: "Cerveja Garrafa 600ml", descricao: "Gelada", categoria: "Cervejas", preco: 14.0, alcoolico: true },
+    { nome: "Cerveja Puro Malte 350ml", descricao: "Lata gelada", categoria: "Cervejas", preco: 7.5, alcoolico: true },
+
+    // --- Destilados e doses (alcoólicas) ---
+    { nome: "Dose de Cachaça", descricao: "50ml", categoria: "Doses e Destilados", preco: 7.0, alcoolico: true },
+    { nome: "Dose de Vodka", descricao: "50ml", categoria: "Doses e Destilados", preco: 12.0, alcoolico: true },
+    { nome: "Dose de Whisky", descricao: "50ml", categoria: "Doses e Destilados", preco: 18.0, alcoolico: true },
+    { nome: "Caipirinha", descricao: "Limão, morango ou maracujá", categoria: "Doses e Destilados", preco: 18.0, alcoolico: true },
+    { nome: "Gin Tônica", descricao: "Com limão siciliano", categoria: "Doses e Destilados", preco: 24.0, alcoolico: true },
+    { nome: "Garrafa de Vodka", descricao: "1L — para levar", categoria: "Doses e Destilados", preco: 45.0, alcoolico: true },
+    { nome: "Garrafa de Whisky", descricao: "1L — para levar", categoria: "Doses e Destilados", preco: 120.0, alcoolico: true },
+
+    // --- Sem álcool ---
+    { nome: "Refrigerante Lata 350ml", descricao: "Diversos sabores", categoria: "Sem Álcool", preco: 6.0 },
+    { nome: "Refrigerante 2L", descricao: "Diversos sabores", categoria: "Sem Álcool", preco: 14.0 },
+    { nome: "Energético 250ml", descricao: "Lata gelada", categoria: "Sem Álcool", preco: 12.0 },
+    { nome: "Água Mineral 500ml", descricao: "Com ou sem gás", categoria: "Sem Álcool", preco: 4.0 },
+    { nome: "Água de Coco 200ml", descricao: "Caixinha gelada", categoria: "Sem Álcool", preco: 6.0 },
+    { nome: "Suco de Caixinha", descricao: "Diversos sabores", categoria: "Sem Álcool", preco: 7.0 },
   ].map((p, i) => ({
     id: "demo-" + (i + 1),
     imagem_url: "",
     ativo: true,
     esgotado: false,
+    alcoolico: false,
+    ordem: i + 1,
     ...p,
   }));
 
@@ -82,16 +114,16 @@ const DB = (() => {
       imagem_url: String(p.imagem_url || "").trim(),
       ativo: p.ativo !== false,
       esgotado: p.esgotado === true,
+      alcoolico: p.alcoolico === true,
       ordem: Number(p.ordem) || 0,
     };
   }
 
+  // Ordena pelo campo "ordem" (controlado no painel) e depois pelo nome.
+  // As categorias aparecem no cardápio na ordem do primeiro item de cada uma.
   function ordenar(lista) {
     return lista.sort(
-      (a, b) =>
-        a.categoria.localeCompare(b.categoria, "pt-BR") ||
-        (a.ordem || 0) - (b.ordem || 0) ||
-        a.nome.localeCompare(b.nome, "pt-BR")
+      (a, b) => (a.ordem || 0) - (b.ordem || 0) || a.nome.localeCompare(b.nome, "pt-BR")
     );
   }
 
@@ -128,7 +160,7 @@ const DB = (() => {
       if (modo === "supabase") {
         let q = sb.from("produtos").select("*");
         if (apenasVisiveis) q = q.eq("ativo", true);
-        const { data, error } = await q.order("categoria").order("ordem").order("nome");
+        const { data, error } = await q.order("ordem").order("nome");
         if (error) throw error;
         return (data || []).map(normalizar);
       }
@@ -150,6 +182,7 @@ const DB = (() => {
           imagem_url: p.imagem_url,
           ativo: p.ativo,
           esgotado: p.esgotado,
+          alcoolico: p.alcoolico,
           ordem: p.ordem,
         };
         const acao = p.id
@@ -238,6 +271,18 @@ const DB = (() => {
         return data?.user || null;
       }
       return sessionStorage.getItem(CHAVE_SESSAO) ? { email: "admin@demo" } : null;
+    },
+
+    // Apaga TODOS os produtos — usado para o proprietário começar do zero,
+    // sem os itens de exemplo.
+    async limparCardapio() {
+      if (modo === "supabase") {
+        const { error } = await sb.from("produtos").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+        if (error) throw error;
+        return true;
+      }
+      gravarLocal([]);
+      return true;
     },
 
     async restaurarExemplos() {

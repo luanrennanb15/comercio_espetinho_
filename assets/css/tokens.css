@@ -1,0 +1,50 @@
+/* =====================================================================
+   FRONT BEER — Design Tokens
+   Paleta extraída da fachada do estabelecimento.
+   Alterar aqui reflete em todo o sistema.
+   ===================================================================== */
+
+:root {
+  /* --- Marca --- */
+  --ouro:         #D8A43A;
+  --ouro-claro:   #F2CE79;
+  --ouro-escuro:  #96691A;
+  --ouro-fosco:   rgba(216, 164, 58, .16);
+
+  /* --- Superfícies --- */
+  --preto:        #0A0908;
+  --superficie:   #121110;
+  --superficie-2: #1A1817;
+  --superficie-3: #232019;
+  --linha:        #2C2722;
+  --linha-forte:  #3D362D;
+
+  /* --- Texto --- */
+  --texto:        #EFE7DC;
+  --texto-suave:  #A89E92;
+  --texto-fraco:  #6E655C;
+
+  /* --- Estados --- */
+  --sucesso:      #4E9A5F;
+  --sucesso-bg:   rgba(78, 154, 95, .14);
+  --verde-acao:   #237F41;   /* contraste 5,0:1 com texto branco */
+  --verde-acao-2: #2A9850;
+  --alerta:       #D8A43A;
+  --alerta-bg:    rgba(216, 164, 58, .14);
+  --erro:         #C0503F;
+  --erro-bg:      rgba(192, 80, 63, .14);
+  --vermelho-acao:#C1362A;
+
+  /* --- Tipografia --- */
+  --fonte-titulo: "Playfair Display", "Georgia", "Times New Roman", serif;
+  --fonte-texto:  "Inter", "Segoe UI", Roboto, -apple-system, Helvetica, Arial, sans-serif;
+
+  /* --- Métricas --- */
+  --raio:      4px;
+  --raio-md:   10px;
+  --raio-lg:   16px;
+  --largura:   1120px;
+  --sombra:    0 18px 48px rgba(0, 0, 0, .55);
+  --sombra-sm: 0 4px 16px rgba(0, 0, 0, .35);
+  --transicao: 160ms ease;
+}

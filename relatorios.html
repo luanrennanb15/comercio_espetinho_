@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0A0908">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Relatórios | Front Beer</title>
+
+<link rel="icon" href="assets/img/favicon.png" sizes="any">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap">
+
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/app.css">
+<link rel="stylesheet" href="assets/css/admin.css">
+<link rel="stylesheet" href="assets/css/relatorios.css">
+</head>
+<body data-pagina="relatorios">
+
+<!-- ==================== ACESSO ==================== -->
+<section class="acesso" id="telaAcesso">
+  <div class="acesso__caixa">
+    <img class="acesso__emblema" src="assets/img/emblema.png" alt="" width="74" height="74">
+    <h1 data-marca>Front Beer</h1>
+    <p class="acesso__sub">Relatórios</p>
+    <div id="erroAcesso" class="nota nota--erro oculto" style="margin-bottom:16px"></div>
+    <form id="formAcesso" novalidate>
+      <div class="campo">
+        <label for="email">E-mail</label>
+        <input type="email" id="email" required autocomplete="username">
+      </div>
+      <div class="campo">
+        <label for="senha">Senha</label>
+        <input type="password" id="senha" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn btn--bloco" id="btnEntrar">Entrar</button>
+    </form>
+  </div>
+</section>
+
+<!-- ==================== RELATÓRIOS ==================== -->
+<div class="app oculto" id="telaRel">
+
+  <aside class="lateral" data-nav></aside>
+
+  <div class="conteudo">
+    <header class="barra" data-barra></header>
+
+  <div class="rel">
+
+    <!-- Período -->
+    <div class="periodo">
+      <div class="periodo__atalhos" id="atalhos">
+        <button type="button" class="atalho" data-dias="0">Hoje</button>
+        <button type="button" class="atalho" data-dias="6">7 dias</button>
+        <button type="button" class="atalho ativo" data-dias="29">30 dias</button>
+        <button type="button" class="atalho" data-dias="89">90 dias</button>
+      </div>
+      <div class="periodo__datas">
+        <label for="dataDe">de</label>
+        <input type="date" id="dataDe">
+        <label for="dataAte">até</label>
+        <input type="date" id="dataAte">
+      </div>
+    </div>
+
+    <div id="conteudo">
+      <div class="sem-dados">Carregando...</div>
+    </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modelo do relatório, preenchido pelo JavaScript -->
+<template id="modeloRelatorio">
+  <section class="blocos">
+    <div class="bloco">
+      <div class="bloco__rotulo">Faturamento</div>
+      <div class="bloco__valor" id="kFaturamento">—</div>
+      <div class="bloco__apoio" id="kFaturamentoApoio"></div>
+    </div>
+    <div class="bloco bloco--neutro">
+      <div class="bloco__rotulo">Vendas</div>
+      <div class="bloco__valor" id="kVendas">—</div>
+      <div class="bloco__apoio" id="kVendasApoio"></div>
+    </div>
+    <div class="bloco bloco--neutro">
+      <div class="bloco__rotulo">Ticket médio</div>
+      <div class="bloco__valor" id="kTicket">—</div>
+      <div class="bloco__apoio" id="kTicketApoio"></div>
+    </div>
+    <div class="bloco bloco--neutro">
+      <div class="bloco__rotulo">Itens vendidos</div>
+      <div class="bloco__valor" id="kItens">—</div>
+      <div class="bloco__apoio" id="kItensApoio"></div>
+    </div>
+  </section>
+
+  <section class="paineis paineis--largo">
+    <div class="painel-rel">
+      <div class="painel-rel__cabeca">
+        <h2>Faturamento por dia</h2>
+        <span id="legendaFaturamento"></span>
+      </div>
+      <div class="grafico"><canvas id="graficoDias"></canvas></div>
+    </div>
+  </section>
+
+  <section class="paineis">
+    <div class="painel-rel">
+      <div class="painel-rel__cabeca">
+        <h2>Mais vendidos</h2>
+        <span>por quantidade</span>
+      </div>
+      <div class="ranking" id="ranking"></div>
+    </div>
+
+    <div class="painel-rel">
+      <div class="painel-rel__cabeca">
+        <h2>Formas de pagamento</h2>
+        <span id="legendaPagamento"></span>
+      </div>
+      <div id="pagamentos"></div>
+    </div>
+  </section>
+
+  <section class="paineis">
+    <div class="painel-rel">
+      <div class="painel-rel__cabeca">
+        <h2>Horários de pico</h2>
+        <span>faturamento por faixa</span>
+      </div>
+      <div class="grafico grafico--baixo"><canvas id="graficoHoras"></canvas></div>
+    </div>
+
+    <div class="painel-rel">
+      <div class="painel-rel__cabeca">
+        <h2>Dias da semana</h2>
+        <span>faturamento acumulado</span>
+      </div>
+      <div class="grafico grafico--baixo"><canvas id="graficoSemana"></canvas></div>
+    </div>
+  </section>
+
+  <section class="paineis paineis--largo">
+    <div class="painel-rel">
+      <div class="painel-rel__cabeca">
+        <h2>Vendas do período</h2>
+        <span id="legendaVendas"></span>
+      </div>
+      <div class="rolagem">
+        <table class="tabela-vendas">
+          <thead>
+            <tr>
+              <th>Data e hora</th>
+              <th>Itens</th>
+              <th>Pagamento</th>
+              <th style="text-align:right">Valor</th>
+            </tr>
+          </thead>
+          <tbody id="listaVendas"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</template>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/ui.js"></script>
+<script src="assets/js/nav.js"></script>
+<script src="assets/js/db.js"></script>
+<script src="assets/js/relatorios.js"></script>
+</body>
+</html>

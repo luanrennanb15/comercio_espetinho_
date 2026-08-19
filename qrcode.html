@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>QR Code das mesas | Front Beer</title>
+<link rel="icon" href="assets/img/favicon.png" sizes="any">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<style>
+  .pagina { max-width: 640px; margin-inline: auto; padding: 40px 22px 70px; }
+  .cabeca { text-align: center; margin-bottom: 30px; }
+  .cabeca img { width: 66px; height: 66px; margin: 0 auto 14px; }
+  .cabeca h1 { font-size: 1.6rem; letter-spacing: .03em; }
+  .cabeca p { margin: 6px 0 0; color: var(--texto-suave); font-size: .9rem; }
+
+  /* Placa que será impressa e colada nas mesas */
+  .placa {
+    max-width: 380px;
+    margin: 0 auto 26px;
+    padding: 30px 26px 26px;
+    text-align: center;
+    background: var(--superficie);
+    border: 1px solid var(--linha-forte);
+    border-radius: var(--raio-lg);
+  }
+  .placa__emblema { width: 62px; height: 62px; margin: 0 auto 12px; }
+  .placa__nome { font-family: var(--fonte-titulo); font-size: 1.7rem; letter-spacing: .04em; }
+  .placa__nome em { color: var(--ouro); font-style: italic; }
+  .placa__seg {
+    margin: 4px 0 20px;
+    font-size: .64rem; font-weight: 600; letter-spacing: .3em;
+    text-transform: uppercase; color: var(--texto-fraco);
+  }
+  .placa__qr {
+    width: 224px; height: 224px;
+    margin: 0 auto 18px;
+    display: grid; place-items: center;
+    padding: 12px;
+    background: #fff;
+    border-radius: var(--raio-md);
+  }
+  .placa__qr img, .placa__qr canvas { width: 100% !important; height: auto !important; display: block; }
+  .placa__chamada { font-family: var(--fonte-titulo); font-size: 1.16rem; color: var(--ouro-claro); }
+  .placa__ajuda { margin: 6px 0 0; font-size: .8rem; color: var(--texto-suave); }
+  .placa__url { margin-top: 14px; font-size: .7rem; color: var(--texto-fraco); word-break: break-all; }
+
+  .acoes { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+  @media print {
+    @page { size: A4; margin: 16mm; }
+    body { background: #fff; }
+    .cabeca, .acoes, .campo, .nota { display: none !important; }
+    .pagina { padding: 0; }
+    .placa {
+      max-width: none; width: 92mm; margin: 0 auto;
+      background: #fff; border: 2px solid #111; color: #111;
+      break-inside: avoid;
+    }
+    .placa__nome { color: #111; }
+    .placa__nome em { color: #8A6A15; }
+    .placa__seg, .placa__ajuda, .placa__url { color: #555; }
+    .placa__chamada { color: #111; }
+    .placa__qr { background: #fff; padding: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="pagina">
+
+  <header class="cabeca">
+    <img src="assets/img/emblema.png" alt="">
+    <h1>QR Code para as mesas</h1>
+    <p>Gere, imprima e cole nas mesas e no balcão. O cliente aponta a câmera e o cardápio abre.</p>
+  </header>
+
+  <div class="campo">
+    <label for="url">Endereço do cardápio</label>
+    <input type="text" id="url" class="entrada" placeholder="https://frontbeer.com.br">
+    <small class="ajuda">Cole aqui o endereço do site publicado. Ele é gravado no QR Code.</small>
+  </div>
+
+  <div id="erro" class="nota nota--erro oculto" style="margin-bottom:18px"></div>
+
+  <section class="placa" id="placa">
+    <img class="placa__emblema" src="assets/img/emblema.png" alt="">
+    <div class="placa__nome" data-marca>Front Beer</div>
+    <div class="placa__seg" data-segmento>Adega e Petiscaria</div>
+    <div class="placa__qr" id="qr"></div>
+    <div class="placa__chamada">Cardápio digital</div>
+    <p class="placa__ajuda">Aponte a câmera do celular para ver todos os itens e preços.</p>
+    <p class="placa__url" id="urlVisivel"></p>
+  </section>
+
+  <div class="acoes">
+    <button type="button" class="btn" id="btnImprimir">Imprimir placa</button>
+    <button type="button" class="btn btn--fantasma" id="btnBaixar">Baixar QR Code</button>
+    <a class="btn btn--fantasma" href="admin.html">Voltar ao painel</a>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/ui.js"></script>
+<script>
+(function () {
+  "use strict";
+  var CFG = window.APP_CONFIG || {};
+  var esc = UI.esc, $ = UI.$;
+
+  var nome = CFG.nome || "";
+  var d = CFG.nomeDestaque || "";
+  UI.$$("[data-marca]").forEach(function (el) {
+    el.innerHTML = d && nome.indexOf(d) !== -1
+      ? esc(nome).replace(esc(d), "<em>" + esc(d) + "</em>")
+      : esc(nome);
+  });
+  UI.$$("[data-segmento]").forEach(function (el) { el.textContent = CFG.segmento || ""; });
+
+  function enderecoPadrao() {
+    if (CFG.siteUrl) return CFG.siteUrl;
+    if (location.protocol === "http:" || location.protocol === "https:") {
+      return location.href.replace(/qrcode\.html.*$/, "index.html");
+    }
+    return "";
+  }
+
+  var campo = $("#url");
+  campo.value = enderecoPadrao();
+
+  function gerar() {
+    var valor = campo.value.trim();
+    var alvo = $("#qr");
+    alvo.innerHTML = "";
+    $("#urlVisivel").textContent = valor;
+
+    if (!valor) {
+      $("#erro").textContent = "Informe o endereço do cardápio publicado para gerar o QR Code.";
+      $("#erro").classList.remove("oculto");
+      return;
+    }
+    $("#erro").classList.add("oculto");
+
+    if (typeof QRCode === "undefined") {
+      $("#erro").textContent = "Não foi possível carregar o gerador de QR Code. Verifique a conexão com a internet.";
+      $("#erro").classList.remove("oculto");
+      return;
+    }
+    new QRCode(alvo, {
+      text: valor,
+      width: 460,
+      height: 460,
+      colorDark: "#000000",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.M,
+    });
+  }
+
+  campo.addEventListener("input", gerar);
+  $("#btnImprimir").addEventListener("click", function () { window.print(); });
+
+  $("#btnBaixar").addEventListener("click", function () {
+    var canvas = document.querySelector("#qr canvas");
+    var img = document.querySelector("#qr img");
+    var dados = canvas ? canvas.toDataURL("image/png") : (img ? img.src : "");
+    if (!dados) { UI.avisar("Gere o QR Code antes de baixar.", "erro"); return; }
+    var a = document.createElement("a");
+    a.href = dados;
+    a.download = "qrcode-cardapio-front-beer.png";
+    a.click();
+  });
+
+  gerar();
+})();
+</script>
+</body>
+</html>

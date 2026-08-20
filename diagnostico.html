@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Diagnóstico da conexão | Front Beer</title>
+<link rel="icon" href="assets/img/favicon.png" sizes="any">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<style>
+  .diag { max-width: 760px; margin-inline: auto; padding: 40px 22px 70px; }
+  .diag h1 { font-size: 1.5rem; margin-bottom: 6px; }
+  .diag > p.sub { margin: 0 0 26px; color: var(--texto-suave); font-size: .9rem; }
+  .teste {
+    display: grid; grid-template-columns: 30px 1fr; gap: 12px;
+    padding: 16px 18px; margin-bottom: 10px;
+    background: var(--superficie); border: 1px solid var(--linha);
+    border-left: 3px solid var(--linha-forte); border-radius: var(--raio);
+  }
+  .teste.ok   { border-left-color: var(--sucesso); }
+  .teste.erro { border-left-color: var(--erro); }
+  .teste.aguardando { opacity: .55; }
+  .marca { font-size: 1.1rem; text-align: center; line-height: 1.4; }
+  .teste h2 { font-size: .98rem; margin-bottom: 4px; }
+  .teste p { margin: 0; font-size: .86rem; color: var(--texto-suave); line-height: 1.55; }
+  .teste code {
+    display: block; margin-top: 8px; padding: 8px 10px;
+    font-size: .78rem; color: var(--ouro-claro); word-break: break-all;
+    background: var(--preto); border: 1px solid var(--linha); border-radius: 3px;
+  }
+  .solucao { margin-top: 10px; padding: 11px 13px; font-size: .85rem;
+    color: var(--ouro-claro); background: var(--alerta-bg);
+    border: 1px solid rgba(216,164,58,.3); border-radius: var(--raio); }
+  .solucao strong { display: block; margin-bottom: 3px; color: var(--ouro); }
+</style>
+</head>
+<body>
+<div class="diag">
+  <h1>Diagnóstico da conexão</h1>
+  <p class="sub">Esta página testa, passo a passo, a ligação entre o site e o banco de dados.</p>
+  <div id="resultado"></div>
+</div>
+
+<script src="assets/js/config.js"></script>
+<script>
+(function () {
+  "use strict";
+  var CFG = window.APP_CONFIG || {};
+  var url = (CFG.supabaseUrl || "").replace(/\/+$/, "");
+  var chave = CFG.supabaseChave || CFG.supabaseAnonKey || "";
+  var alvo = document.getElementById("resultado");
+
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+
+  function bloco(estado, titulo, texto, detalhe, solucao) {
+    var el = document.createElement("div");
+    el.className = "teste " + estado;
+    el.innerHTML =
+      '<div class="marca">' + (estado === "ok" ? "&#10003;" : estado === "erro" ? "&#10007;" : "&#8230;") + "</div>" +
+      "<div><h2>" + esc(titulo) + "</h2><p>" + texto + "</p>" +
+      (detalhe ? "<code>" + esc(detalhe) + "</code>" : "") +
+      (solucao ? '<div class="solucao">' + solucao + "</div>" : "") +
+      "</div>";
+    alvo.appendChild(el);
+    return el;
+  }
+
+  /* 1. Configuração preenchida? */
+  if (!url || !chave) {
+    bloco("erro", "Configuração incompleta",
+      "Os campos <strong>supabaseUrl</strong> e/ou <strong>supabaseChave</strong> estão vazios em <code style=\"display:inline\">assets/js/config.js</code>.",
+      "url: " + (url || "(vazio)") + "\nchave: " + (chave ? chave.slice(0, 22) + "..." : "(vazio)"),
+      "<strong>O que fazer</strong>Preencha os dois campos com os dados de Settings → API Keys do Supabase.");
+    return;
+  }
+  bloco("ok", "Configuração encontrada",
+    "URL e chave estão preenchidas no arquivo de configuração.",
+    url + "\n" + chave.slice(0, 26) + "...");
+
+  /* 2. Servidor responde? */
+  var passo2 = bloco("aguardando", "Contato com o servidor", "Testando...");
+
+  fetch(url + "/rest/v1/produtos?select=id,nome,ativo&limit=5", {
+    headers: { apikey: chave, Authorization: "Bearer " + chave },
+  })
+  .then(function (r) {
+    return r.text().then(function (corpo) { return { status: r.status, corpo: corpo }; });
+  })
+  .then(function (res) {
+    passo2.remove();
+
+    if (res.status === 200) {
+      var dados = [];
+      try { dados = JSON.parse(res.corpo); } catch (e) {}
+      bloco("ok", "Servidor respondeu", "A conexão com o Supabase está funcionando.");
+
+      if (dados.length) {
+        bloco("ok", "Tabela de produtos encontrada",
+          "O banco devolveu produtos normalmente. O cardápio deve estar funcionando.",
+          dados.map(function (p) { return "• " + p.nome + (p.ativo ? "" : " (oculto)"); }).join("\n"));
+      } else {
+        bloco("erro", "A tabela existe, mas está vazia",
+          "A consulta funcionou e não voltou nenhum produto. Ou o cardápio foi limpo, ou o bloco de dados de exemplo do <code style=\"display:inline\">schema.sql</code> não chegou a rodar.",
+          "0 produtos retornados",
+          "<strong>O que fazer</strong>Entre no painel (admin.html) com seu usuário do Supabase e cadastre os produtos, ou rode de novo apenas o bloco de INSERT do schema.sql.");
+      }
+      return;
+    }
+
+    var msg = res.corpo;
+    try { var j = JSON.parse(res.corpo); msg = j.message || j.hint || j.error || res.corpo; } catch (e) {}
+
+    if (res.status === 404 || /does not exist|não existe|schema cache/i.test(msg)) {
+      bloco("erro", "Tabela de produtos não existe",
+        "O servidor respondeu, mas não encontrou a tabela <strong>produtos</strong>. Ou seja: o script do banco não foi executado.",
+        "HTTP " + res.status + " — " + msg,
+        "<strong>O que fazer</strong>No Supabase, abra SQL Editor → New query, cole TODO o conteúdo de supabase/schema.sql e clique em Run. Confira se aparece Success.");
+    } else if (res.status === 401 || res.status === 403 || /invalid|api key|jwt/i.test(msg)) {
+      bloco("erro", "Chave recusada",
+        "O servidor respondeu, mas rejeitou a chave de acesso.",
+        "HTTP " + res.status + " — " + msg,
+        "<strong>O que fazer</strong>Copie novamente a Publishable key em Settings → API Keys e cole no campo supabaseChave. Confira se não faltou nenhum caractere no fim.");
+    } else if (/permission denied/i.test(msg)) {
+      bloco("erro", "Sem permissão de leitura",
+        "A tabela existe, mas o visitante não tem permissão para lê-la.",
+        "HTTP " + res.status + " — " + msg,
+        "<strong>O que fazer</strong>Rode novamente o schema.sql inteiro: ele contém os comandos GRANT e as políticas de segurança que liberam a leitura pública dos itens ativos.");
+    } else {
+      bloco("erro", "O servidor recusou a consulta", "Resposta inesperada do Supabase.",
+        "HTTP " + res.status + " — " + msg,
+        "<strong>O que fazer</strong>Copie esta mensagem inteira e me envie.");
+    }
+  })
+  .catch(function (e) {
+    passo2.remove();
+    bloco("erro", "Não foi possível alcançar o servidor",
+      "O navegador não conseguiu completar a requisição. Isso costuma ser endereço errado, projeto pausado no Supabase ou falta de internet.",
+      String(e),
+      "<strong>O que fazer</strong>Confira se o endereço em supabaseUrl abre no navegador e se o projeto não está pausado no painel do Supabase (projetos gratuitos pausam após alguns dias sem uso).");
+  });
+})();
+</script>
+</body>
+</html>

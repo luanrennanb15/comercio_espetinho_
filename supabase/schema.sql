@@ -236,3 +236,9 @@ order by 1 desc;
 
 revoke all on public.resumo_diario from anon;
 grant select on public.resumo_diario to authenticated;
+
+-- ---------------------------------------------------------------------
+-- Avisa a API sobre o novo formato das tabelas (sem isto ela pode
+-- continuar dizendo que uma coluna não existe).
+-- ---------------------------------------------------------------------
+notify pgrst, 'reload schema';

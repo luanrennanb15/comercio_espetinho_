@@ -34,6 +34,7 @@ assets/
   img/                  Emblema, fachada, favicon e imagem de prévia do link
 
 supabase/schema.sql     Banco de dados e regras de segurança
+supabase/storage.sql    Armazenamento das fotos enviadas pelo painel
 ```
 
 O menu lateral é definido em um único lugar (`assets/js/nav.js`): incluir uma
@@ -115,6 +116,16 @@ Em seguida, em **Authentication → Sign In / Providers**, desative apenas
 > login por e-mail e senha. Se você desligar esse por engano, ninguém mais entra
 > no painel, nem você. O que deve ficar desligado é somente
 > *Allow new users to sign up*.
+
+### 3b. Habilitar as fotos
+
+No **SQL Editor**, rode também `supabase/storage.sql`. Ele cria o balde onde as
+fotos enviadas pelo painel ficam guardadas: leitura pública (o cardápio é
+aberto), envio e exclusão apenas para quem está logado, limite de 3 MB por
+arquivo e somente JPG, PNG ou WEBP.
+
+As fotos são reduzidas para 900px no próprio navegador antes de subir, então uma
+foto de celular de 5 MB chega ao servidor com cerca de 120 KB.
 
 ### 4. Ligar o site ao banco
 

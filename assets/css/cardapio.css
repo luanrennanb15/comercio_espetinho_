@@ -183,66 +183,107 @@
 /* ---------- Itens ---------- */
 .itens {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 6px 40px;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 4px 44px;
+}
+
+.itens--ilustrados {
+  grid-template-columns: repeat(auto-fill, minmax(440px, 1fr));
+  gap: 10px 40px;
 }
 
 .item {
   display: flex;
-  align-items: baseline;
-  gap: 12px;
-  padding: 14px 4px;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 15px 4px;
   border-bottom: 1px dashed var(--linha);
 }
 
+/* Item com foto: quadro à esquerda, texto centralizado ao lado */
+.item--ilustrado {
+  align-items: center;
+  gap: 18px;
+  padding: 12px;
+  border: 1px solid var(--linha);
+  border-radius: var(--raio-md);
+  background: linear-gradient(180deg, var(--superficie) 0%, rgba(18,17,16,.55) 100%);
+  transition: border-color var(--transicao);
+}
+.item--ilustrado:hover { border-color: var(--linha-forte); }
+
 .item__foto {
-  align-self: center;
-  width: 54px; height: 54px;
+  width: var(--foto-item);
+  height: var(--foto-item);
   flex: none;
   object-fit: cover;
-  border-radius: var(--raio);
-  border: 1px solid var(--linha);
+  border-radius: 8px;
+  background: var(--superficie-3);
 }
+
+/* Marcador para itens sem foto, para as linhas não desalinharem */
+.item__foto--vazia {
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--linha-forte);
+}
+.item__foto--vazia img { width: 46%; height: auto; opacity: .18; }
 
 .item__corpo { flex: 1; min-width: 0; }
 
+/* Nome, pontilhada e preço sempre na mesma linha */
+.item__linha {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
 .item__nome {
   font-family: var(--fonte-titulo);
-  font-size: 1.06rem;
+  font-size: 1.08rem;
   font-weight: 600;
+  line-height: 1.3;
   letter-spacing: .01em;
 }
-
-.item__desc {
-  margin: 3px 0 0;
-  font-size: .84rem;
-  line-height: 1.45;
-  color: var(--texto-suave);
-}
-
-.item__selos { display: flex; gap: 6px; margin-top: 7px; flex-wrap: wrap; }
+.item--ilustrado .item__nome { font-size: 1.16rem; }
 
 .item__pontos {
   flex: 1;
-  min-width: 14px;
+  min-width: 18px;
   height: 1px;
-  margin-bottom: 5px;
+  transform: translateY(-3px);
   border-bottom: 1px dotted var(--linha-forte);
 }
+
+/* Sem pontilhada, o preço vai para a ponta direita */
+.item__linha .item__nome { margin-right: auto; }
+.item__pontos + .item__preco { margin-left: 0; }
 
 .item__preco {
   flex: none;
   font-family: var(--fonte-titulo);
-  font-size: 1.08rem;
+  font-size: 1.14rem;
   font-weight: 700;
   color: var(--ouro);
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.item--ilustrado .item__preco { font-size: 1.2rem; }
+
+.item__desc {
+  margin: 6px 0 0;
+  font-size: .85rem;
+  line-height: 1.5;
+  color: var(--texto-suave);
 }
 
+.item__selos { display: flex; gap: 6px; margin-top: 9px; flex-wrap: wrap; }
+
+.item--esgotado { opacity: .62; }
 .item--esgotado .item__nome,
 .item--esgotado .item__preco { color: var(--texto-fraco); }
 .item--esgotado .item__preco { text-decoration: line-through; }
-.item--esgotado .item__foto { filter: grayscale(1); opacity: .5; }
+.item--esgotado .item__foto { filter: grayscale(1); opacity: .55; }
 
 .vazio {
   padding: 64px 20px;
@@ -315,6 +356,11 @@
   .capa__emblema { width: 86px; height: 86px; margin-bottom: 16px; }
   .capa__sub { letter-spacing: .22em; font-size: .72rem; }
   .itens { grid-template-columns: 1fr; gap: 0; }
+  .itens--ilustrados { grid-template-columns: 1fr; gap: 10px; }
+  .item__foto { width: var(--foto-item-mobile); height: var(--foto-item-mobile); }
+  .item--ilustrado { gap: 14px; padding: 10px; }
+  .item--ilustrado .item__nome { font-size: 1.04rem; }
+  .item--ilustrado .item__preco { font-size: 1.08rem; }
   .marca-mini strong { font-size: .94rem; }
   .topo-fixo__acoes .btn { padding: 7px 12px; font-size: .76rem; }
 }
@@ -333,7 +379,9 @@
   .secao__cabeca h2 { color: #111; font-size: 15pt; }
   .itens { grid-template-columns: 1fr 1fr; gap: 0 26px; }
   .item { padding: 6px 0; border-bottom: 1px dotted #bbb; }
+  .item--ilustrado { border: 0; background: none; padding: 6px 0; align-items: baseline; }
   .item__foto { display: none; }
+  .itens--ilustrados { grid-template-columns: 1fr 1fr; gap: 0 26px; }
   .item__nome { color: #111; font-size: 11pt; }
   .item__desc { color: #555; font-size: 8.5pt; }
   .item__preco { color: #111; }

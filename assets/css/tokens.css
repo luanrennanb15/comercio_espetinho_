@@ -44,6 +44,10 @@
   --raio-md:   10px;
   --raio-lg:   16px;
   --largura:   1120px;
+
+  /* Tamanho da foto do produto no cardápio — mude aqui e vale em todo o site */
+  --foto-item:        124px;
+  --foto-item-mobile: 104px;
   --sombra:    0 18px 48px rgba(0, 0, 0, .55);
   --sombra-sm: 0 4px 16px rgba(0, 0, 0, .35);
   --transicao: 160ms ease;

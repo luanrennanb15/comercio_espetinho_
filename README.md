@@ -107,9 +107,14 @@ sem duplicar nada.
 Em **Authentication → Users → Add user**, informe e-mail e senha. Esse é o login
 que abre o painel, o caixa e os relatórios.
 
-Em seguida, em **Authentication → Sign In / Providers → Email**, desative
-**Allow new users to sign up**. Sem isso qualquer pessoa poderia criar conta e
-entrar na área interna.
+Em seguida, em **Authentication → Sign In / Providers**, desative apenas
+**Allow new users to sign up**. Isso impede que estranhos criem conta sozinhos.
+
+> **Atenção — dois botões parecidos.** Dentro do provedor Email existe
+> **Enable email provider**, que precisa continuar **LIGADO**: é ele que permite
+> login por e-mail e senha. Se você desligar esse por engano, ninguém mais entra
+> no painel, nem você. O que deve ficar desligado é somente
+> *Allow new users to sign up*.
 
 ### 4. Ligar o site ao banco
 

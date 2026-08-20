@@ -22,7 +22,9 @@
   /* ---------------- Acesso ---------------- */
   $("#formAcesso").addEventListener("submit", async function (e) {
     e.preventDefault();
-    $("#erroAcesso").classList.add("oculto");
+    ["#erroAcesso", "#erroAcessoBaixo"].forEach(function (sel) {
+      const el = $(sel); if (el) el.classList.add("oculto");
+    });
     const btn = $("#btnEntrar");
     btn.disabled = true;
     try {
@@ -30,8 +32,11 @@
       $("#senha").value = "";
       await abrirCaixa(usuario);
     } catch (err) {
-      $("#erroAcesso").textContent = err.message || "Não foi possível entrar.";
-      $("#erroAcesso").classList.remove("oculto");
+      ["#erroAcesso", "#erroAcessoBaixo"].forEach(function (sel) {
+        const el = $(sel);
+        if (el) { el.textContent = err.message || "Não foi possível entrar."; el.classList.remove("oculto"); }
+      });
+      console.error("Falha no login:", err);
     } finally {
       btn.disabled = false;
     }

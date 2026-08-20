@@ -16,6 +16,16 @@
   function mostrarErro(el, msg) { el.textContent = msg; el.classList.remove("oculto"); }
   function limparErro(el) { el.textContent = ""; el.classList.add("oculto"); }
 
+  /* O aviso aparece acima e abaixo do formulário: em tela pequena ou com
+     alguma janela sobreposta, pelo menos um dos dois fica visível. */
+  function avisoAcesso(msg) {
+    ["#erroAcesso", "#erroAcessoBaixo"].forEach(function (sel) {
+      const el = $(sel);
+      if (!el) return;
+      if (msg) mostrarErro(el, msg); else limparErro(el);
+    });
+  }
+
   function marcaFormatada() {
     const nome = CFG.nome || "Painel";
     const d = CFG.nomeDestaque || "";
@@ -27,7 +37,7 @@
   /* ---------------- Acesso ---------------- */
   $("#formAcesso").addEventListener("submit", async function (e) {
     e.preventDefault();
-    limparErro($("#erroAcesso"));
+    avisoAcesso("");
     const btn = $("#btnEntrar");
     btn.disabled = true;
     btn.textContent = "Entrando...";
@@ -36,7 +46,8 @@
       $("#senha").value = "";
       await entrarNoPainel(usuario);
     } catch (err) {
-      mostrarErro($("#erroAcesso"), err.message || "Não foi possível entrar.");
+      avisoAcesso(err.message || "Não foi possível entrar.");
+      console.error("Falha no login:", err);
     } finally {
       btn.disabled = false;
       btn.textContent = "Entrar";

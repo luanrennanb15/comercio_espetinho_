@@ -155,8 +155,14 @@ const DB = (() => {
 
   function traduzirErro(e) {
     const m = (e && e.message) || String(e);
-    if (/Invalid login credentials/i.test(m)) return new Error("E-mail ou senha incorretos.");
-    if (/Email not confirmed/i.test(m))       return new Error("E-mail ainda não confirmado.");
+    if (/Invalid login credentials/i.test(m))
+      return new Error("E-mail ou senha incorretos. Confira em Authentication > Users se o usuário existe com esse e-mail.");
+    if (/Email not confirmed/i.test(m))
+      return new Error("Usuário criado, mas o e-mail não foi confirmado. No Supabase, abra Authentication > Users, clique no usuário e use 'Confirm email' — ou recrie marcando 'Auto Confirm User'.");
+    if (/signups? not allowed|disabled/i.test(m))
+      return new Error("O login por e-mail está desativado no Supabase. Ative em Authentication > Sign In / Providers > Email.");
+    if (/rate limit|too many/i.test(m))
+      return new Error("Muitas tentativas seguidas. Aguarde um minuto e tente de novo.");
     if (/JWT|not authenticated|401/i.test(m)) return new Error("Sua sessão expirou. Entre novamente.");
     if (/Failed to fetch|NetworkError/i.test(m)) return new Error("Sem conexão com o servidor. Verifique a internet.");
     return new Error(m);
@@ -406,14 +412,19 @@ const DB = (() => {
 
     /* --- Sessão --- */
     async login(email, senha) {
+      const usuario = String(email || "").trim();
+      if (!usuario) throw new Error("Informe o e-mail cadastrado.");
+      if (usuario.indexOf("@") === -1) throw new Error("E-mail inválido — confira se digitou o endereço completo.");
+      if (!senha) throw new Error("Informe a senha.");
+
       if (modo === "supabase") {
         const { data, error } = await sb.auth.signInWithPassword({
-          email: String(email).trim(), password: senha,
+          email: usuario, password: senha,
         });
         if (error) throw traduzirErro(error);
         return data.user;
       }
-      if (String(email).trim().toLowerCase() === "admin@demo" && senha === "frontbeer") {
+      if (usuario.toLowerCase() === "admin@demo" && senha === "frontbeer") {
         sessionStorage.setItem(CHAVE_SESSAO, "1");
         return { email: "admin@demo" };
       }

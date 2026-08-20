@@ -229,6 +229,17 @@
     if (e.target.closest("[data-novo]")) abrirFormulario(null);
   });
 
+  /* Reaproveita a categoria já existente quando o dono digita com outra
+     grafia — "cervejas", "CERVEJAS" e "Cervejas " viram a mesma seção.
+     Categoria nova continua sendo criada livremente. */
+  function categoriaCanonica(texto) {
+    const digitada = String(texto || "").trim().replace(/\s+/g, " ");
+    if (!digitada) return "";
+    const alvo = chave(digitada);
+    const existente = produtos.find(function (p) { return chave(p.categoria) === alvo; });
+    return existente ? existente.categoria : digitada;
+  }
+
   /* ---------------- Formulário ---------------- */
   function abrirFormulario(p) {
     limparErro($("#erroProduto"));
@@ -258,7 +269,7 @@
         id: $("#pId").value || undefined,
         nome: $("#pNome").value,
         descricao: $("#pDescricao").value,
-        categoria: $("#pCategoria").value,
+        categoria: categoriaCanonica($("#pCategoria").value),
         preco: $("#pPreco").value,
         ordem: $("#pOrdem").value,
         imagem_url: $("#pImagem").value,

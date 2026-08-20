@@ -100,24 +100,44 @@
   }
 
   /* ---------------- Desenho ---------------- */
-  function linhaItem(p) {
+  function linhaItem(p, secaoComFotos) {
     const foto = urlSegura(p.imagem_url);
     const selos = [];
     if (p.esgotado)  selos.push('<span class="selo selo--erro">Esgotado hoje</span>');
     if (p.alcoolico) selos.push('<span class="selo selo--ouro" title="Venda proibida para menores de ' +
                                 esc(CFG.idadeMinima || 18) + ' anos">' + esc(CFG.idadeMinima || 18) + "+</span>");
 
+    /* Quando a seção tem fotos, TODOS os itens ganham um quadro do mesmo
+       tamanho — com foto ou com o marcador — para as linhas ficarem
+       alinhadas. Sem nenhuma foto, mantém-se o cardápio clássico com a
+       linha pontilhada ligando o nome ao preço. */
+    let quadro = "";
+    if (secaoComFotos) {
+      quadro = foto
+        ? '<img class="item__foto" src="' + esc(foto) + '" alt="' + esc(p.nome) +
+          '" loading="lazy" decoding="async" referrerpolicy="no-referrer">'
+        : '<span class="item__foto item__foto--vazia" aria-hidden="true">' +
+          '<img src="assets/img/emblema.png" alt="" loading="lazy"></span>';
+    }
+
+    /* Formato clássico de cardápio: nome, pontilhada e preço na MESMA
+       linha; a descrição vai embaixo, ocupando a largura toda.
+       A pontilhada aparece quando existe descrição — é ela que amarra o
+       nome ao preço quando o olho precisa descer para ler o texto. */
+    const temDescricao = !!p.descricao;
+
     return '<article class="item' + (p.esgotado ? " item--esgotado" : "") +
-      (foto ? " item--com-foto" : "") + '">' +
-      (foto ? '<img class="item__foto" src="' + esc(foto) + '" alt="' + esc(p.nome) +
-              '" loading="lazy" decoding="async" referrerpolicy="no-referrer">' : "") +
+      (secaoComFotos ? " item--ilustrado" : "") + '">' +
+      quadro +
       '<div class="item__corpo">' +
-        '<h3 class="item__nome">' + esc(p.nome) + "</h3>" +
-        (p.descricao ? '<p class="item__desc">' + esc(p.descricao) + "</p>" : "") +
+        '<div class="item__linha">' +
+          '<h3 class="item__nome">' + esc(p.nome) + "</h3>" +
+          (temDescricao ? '<span class="item__pontos" aria-hidden="true"></span>' : "") +
+          '<span class="item__preco">' + moeda(p.preco) + "</span>" +
+        "</div>" +
+        (temDescricao ? '<p class="item__desc">' + esc(p.descricao) + "</p>" : "") +
         (selos.length ? '<div class="item__selos">' + selos.join("") + "</div>" : "") +
       "</div>" +
-      '<span class="item__pontos" aria-hidden="true"></span>' +
-      '<span class="item__preco">' + moeda(p.preco) + "</span>" +
     "</article>";
   }
 
@@ -144,12 +164,15 @@
 
     elLista.innerHTML = ordem.map((cat) => {
       const itens = grupos[cat];
+      const comFotos = itens.some((p) => !!urlSegura(p.imagem_url));
       return '<section class="secao">' +
         '<header class="secao__cabeca">' +
           "<h2>" + esc(cat) + "</h2>" +
           '<div class="filete"><span>' + itens.length + (itens.length === 1 ? " item" : " itens") + "</span></div>" +
         "</header>" +
-        '<div class="itens">' + itens.map(linhaItem).join("") + "</div>" +
+        '<div class="itens' + (comFotos ? " itens--ilustrados" : "") + '">' +
+          itens.map((p) => linhaItem(p, comFotos)).join("") +
+        "</div>" +
       "</section>";
     }).join("");
   }

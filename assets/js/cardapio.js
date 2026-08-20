@@ -107,8 +107,10 @@
     if (p.alcoolico) selos.push('<span class="selo selo--ouro" title="Venda proibida para menores de ' +
                                 esc(CFG.idadeMinima || 18) + ' anos">' + esc(CFG.idadeMinima || 18) + "+</span>");
 
-    return '<article class="item' + (p.esgotado ? " item--esgotado" : "") + '">' +
-      (foto ? '<img class="item__foto" src="' + esc(foto) + '" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">' : "") +
+    return '<article class="item' + (p.esgotado ? " item--esgotado" : "") +
+      (foto ? " item--com-foto" : "") + '">' +
+      (foto ? '<img class="item__foto" src="' + esc(foto) + '" alt="' + esc(p.nome) +
+              '" loading="lazy" decoding="async" referrerpolicy="no-referrer">' : "") +
       '<div class="item__corpo">' +
         '<h3 class="item__nome">' + esc(p.nome) + "</h3>" +
         (p.descricao ? '<p class="item__desc">' + esc(p.descricao) + "</p>" : "") +

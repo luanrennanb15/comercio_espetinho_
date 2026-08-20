@@ -190,18 +190,21 @@
 .item {
   display: flex;
   align-items: baseline;
-  gap: 12px;
+  gap: 14px;
   padding: 14px 4px;
   border-bottom: 1px dashed var(--linha);
 }
 
+/* Item com foto ganha respiro e a foto alinha pelo topo do nome */
+.item--com-foto { align-items: flex-start; padding-block: 16px; }
+
 .item__foto {
-  align-self: center;
-  width: 54px; height: 54px;
+  width: 96px; height: 96px;
   flex: none;
   object-fit: cover;
-  border-radius: var(--raio);
+  border-radius: 6px;
   border: 1px solid var(--linha);
+  background: var(--superficie);
 }
 
 .item__corpo { flex: 1; min-width: 0; }
@@ -315,6 +318,7 @@
   .capa__emblema { width: 86px; height: 86px; margin-bottom: 16px; }
   .capa__sub { letter-spacing: .22em; font-size: .72rem; }
   .itens { grid-template-columns: 1fr; gap: 0; }
+  .item__foto { width: 84px; height: 84px; }
   .marca-mini strong { font-size: .94rem; }
   .topo-fixo__acoes .btn { padding: 7px 12px; font-size: .76rem; }
 }

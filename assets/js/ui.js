@@ -13,10 +13,18 @@ const UI = (() => {
     return String(valor == null ? "" : valor).replace(/[&<>"']/g, (c) => MAPA_ESCAPE[c]);
   }
 
-  /* Só permite imagens http/https (bloqueia javascript:, data:, etc.) */
+  /* Endereços de imagem aceitos:
+       1. links da internet  -> https://site.com/foto.jpg
+       2. arquivos do próprio site -> assets/img/fotos/espeto.jpg
+     Qualquer outra coisa é recusada, o que bloqueia javascript:, data: e
+     tentativas de sair da pasta do site com "..". */
   function urlSegura(valor) {
     const s = String(valor || "").trim();
-    return /^https?:\/\/[^\s"'<>]+$/i.test(s) ? s : "";
+    if (!s) return "";
+    if (/^https?:\/\/[^\s"'<>]+$/i.test(s)) return s;
+    if (s.slice(0, 2) === "//") return "";                       // //site.com/x.jpg vai para fora
+    if (s.indexOf("..") === -1 && /^[\w.\-\/]+\.(jpe?g|png|webp|gif|avif)$/i.test(s)) return s;
+    return "";
   }
 
   function moeda(valor) {

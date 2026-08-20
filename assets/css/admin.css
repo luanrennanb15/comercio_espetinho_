@@ -126,7 +126,7 @@
 
 .produto-nome { display: flex; align-items: center; gap: 11px; }
 .produto-nome img, .produto-nome .semfoto {
-  width: 38px; height: 38px;
+  width: 46px; height: 46px;
   flex: none;
   object-fit: cover;
   border-radius: var(--raio);
@@ -176,3 +176,36 @@
 @media print {
   .ferramentas, .acoes-celula, #avisos { display: none !important; }
 }
+
+/* ---------- Campo de foto do produto ---------- */
+.foto-campo { display: flex; gap: 14px; align-items: flex-start; }
+
+.foto-previa {
+  width: 96px; height: 96px;
+  flex: none;
+  display: grid; place-items: center;
+  overflow: hidden;
+  background: var(--superficie-3);
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--raio);
+}
+.foto-previa img { width: 100%; height: 100%; object-fit: cover; }
+.foto-previa__vazia {
+  font-size: .68rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--texto-fraco);
+}
+
+.foto-acoes { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; }
+.foto-acoes .btn { flex: none; }
+
+.foto-estado {
+  width: 100%;
+  margin: 2px 0 0;
+  font-size: .76rem;
+  line-height: 1.5;
+  color: var(--texto-fraco);
+}
+.foto-estado.enviando { color: var(--ouro); }
+.foto-estado.erro { color: #E68B7E; }

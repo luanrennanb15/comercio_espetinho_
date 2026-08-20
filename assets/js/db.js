@@ -13,6 +13,9 @@ const DB = (() => {
   const CHAVE_VENDAS   = "frontbeer:vendas";
   const CHAVE_SESSAO   = "frontbeer:sessao";
   const CDN_SUPABASE   = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js";
+  const BALDE_FOTOS    = "produtos";           // bucket criado por supabase/storage.sql
+  const LADO_MAXIMO    = 900;                  // maior lado da foto, em pixels
+  const QUALIDADE      = 0.82;
 
   let modo = "demo";
   let sb = null;
@@ -142,9 +145,45 @@ const DB = (() => {
     if (!p.categoria) throw new Error("Informe a categoria.");
     if (!isFinite(p.preco) || p.preco < 0) throw new Error("Informe um preço válido.");
     if (p.preco > 100000) throw new Error("Preço acima do limite permitido.");
-    if (p.imagem_url && !/^https?:\/\//i.test(p.imagem_url)) {
-      throw new Error("A URL da foto deve começar com http:// ou https://");
+    if (p.imagem_url && !UI.urlSegura(p.imagem_url)) {
+      throw new Error(
+        "Foto inválida. Use um link da internet começando com https:// " +
+        "ou um arquivo do próprio site, como assets/img/fotos/espeto.jpg"
+      );
     }
+  }
+
+  /* Redimensiona e recomprime a foto usando o próprio navegador */
+  function reduzirImagem(arquivo) {
+    return new Promise(function (ok, falha) {
+      const leitor = new FileReader();
+      leitor.onerror = function () { falha(new Error("Não foi possível ler o arquivo.")); };
+      leitor.onload = function () {
+        const img = new Image();
+        img.onerror = function () { falha(new Error("Arquivo de imagem inválido ou corrompido.")); };
+        img.onload = function () {
+          let { width: l, height: a } = img;
+          const maior = Math.max(l, a);
+          if (maior > LADO_MAXIMO) {
+            const fator = LADO_MAXIMO / maior;
+            l = Math.round(l * fator);
+            a = Math.round(a * fator);
+          }
+          const tela = document.createElement("canvas");
+          tela.width = l;
+          tela.height = a;
+          const ctx = tela.getContext("2d");
+          ctx.fillStyle = "#111";                    // fundo para PNG transparente
+          ctx.fillRect(0, 0, l, a);
+          ctx.drawImage(img, 0, 0, l, a);
+          tela.toBlob(function (blob) {
+            if (blob) ok(blob); else falha(new Error("Falha ao processar a imagem."));
+          }, "image/jpeg", QUALIDADE);
+        };
+        img.src = leitor.result;
+      };
+      leitor.readAsDataURL(arquivo);
+    });
   }
 
   function ordenar(lista) {
@@ -312,6 +351,55 @@ const DB = (() => {
       }
       gravarLocal(this.exemplos);
       return true;
+    },
+
+    /* ------------------------------------------------------------
+       FOTOS DOS PRODUTOS
+       A foto é reduzida no próprio navegador antes de subir: uma foto
+       de celular de 5 MB vira algo em torno de 120 KB, o que economiza
+       espaço e faz o cardápio abrir rápido no 4G do cliente.
+    ------------------------------------------------------------ */
+
+    async enviarFoto(arquivo, aoProgredir) {
+      if (modo !== "supabase") {
+        throw new Error("O envio de fotos exige o Supabase configurado. No modo demonstração, use um link de imagem.");
+      }
+      if (!arquivo) throw new Error("Nenhum arquivo selecionado.");
+      if (!/^image\/(jpeg|png|webp)$/i.test(arquivo.type)) {
+        throw new Error("Formato não aceito. Envie uma foto JPG, PNG ou WEBP.");
+      }
+      if (arquivo.size > 15 * 1024 * 1024) {
+        throw new Error("Foto muito grande (acima de 15 MB).");
+      }
+
+      if (aoProgredir) aoProgredir("Preparando a foto...");
+      const reduzida = await reduzirImagem(arquivo);
+
+      if (aoProgredir) aoProgredir("Enviando...");
+      const nome = "p-" + Date.now().toString(36) + "-" +
+                   Math.random().toString(36).slice(2, 8) + ".jpg";
+
+      const { error } = await sb.storage.from(BALDE_FOTOS).upload(nome, reduzida, {
+        contentType: "image/jpeg",
+        cacheControl: "31536000",
+        upsert: false,
+      });
+      if (error) throw traduzirErro(error);
+
+      const { data } = sb.storage.from(BALDE_FOTOS).getPublicUrl(nome);
+      return data.publicUrl;
+    },
+
+    /* Remove do armazenamento uma foto que o painel enviou */
+    async apagarFoto(url) {
+      if (modo !== "supabase" || !url) return false;
+      const marca = "/object/public/" + BALDE_FOTOS + "/";
+      const corte = String(url).indexOf(marca);
+      if (corte === -1) return false;                  // foto de fora, não é nossa
+      const caminho = decodeURIComponent(String(url).slice(corte + marca.length).split("?")[0]);
+      const { error } = await sb.storage.from(BALDE_FOTOS).remove([caminho]);
+      if (error) console.warn("Não foi possível apagar a foto antiga:", error.message);
+      return !error;
     },
 
     /* ------------------------------------------------------------

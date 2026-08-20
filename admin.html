@@ -150,17 +150,33 @@
           </div>
         </div>
 
-        <div class="linha">
-          <div class="campo">
-            <label for="pOrdem">Ordem de exibição</label>
-            <input type="number" id="pOrdem" step="1" min="0" value="0">
-            <small class="ajuda">Menor número aparece primeiro.</small>
+        <div class="campo">
+          <label for="pOrdem">Ordem de exibição</label>
+          <input type="number" id="pOrdem" step="1" min="0" value="0">
+          <small class="ajuda">Menor número aparece primeiro.</small>
+        </div>
+
+        <div class="campo">
+          <label>Foto do produto</label>
+          <div class="foto-campo">
+            <div class="foto-previa" id="fotoPrevia" aria-live="polite">
+              <span class="foto-previa__vazia">sem foto</span>
+            </div>
+            <div class="foto-acoes">
+              <input type="file" id="pArquivo" accept="image/jpeg,image/png,image/webp" class="sr-only">
+              <button type="button" class="btn btn--fantasma btn--pequeno" id="btnEscolherFoto">
+                Escolher foto
+              </button>
+              <button type="button" class="btn btn--cancelar btn--pequeno oculto" id="btnRemoverFoto">
+                Remover
+              </button>
+              <p class="foto-estado" id="fotoEstado">
+                Tire a foto pelo celular ou escolha do computador. Ela é reduzida
+                automaticamente antes do envio.
+              </p>
+            </div>
           </div>
-          <div class="campo">
-            <label for="pImagem">Foto (link)</label>
-            <input type="text" id="pImagem" placeholder="https://...">
-            <small class="ajuda">Opcional. Deve começar com https://</small>
-          </div>
+          <input type="text" id="pImagem" class="oculto">
         </div>
 
         <label class="chave">

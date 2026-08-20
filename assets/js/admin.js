@@ -217,6 +217,7 @@
         });
         if (!ok) return;
         await DB.excluirProduto(id);
+        if (p.imagem_url) DB.apagarFoto(p.imagem_url);
         avisar("Produto excluído.", "ok");
         await recarregar();
       }
@@ -240,6 +241,58 @@
     return existente ? existente.categoria : digitada;
   }
 
+  /* ---------------- Foto do produto ---------------- */
+  let fotoAnterior = "";        // foto que estava salva ao abrir o formulário
+
+  function pintarFoto(url) {
+    const previa = $("#fotoPrevia");
+    const segura = urlSegura(url);
+    if (segura) {
+      previa.innerHTML = '<img src="' + esc(segura) + '" alt="Prévia da foto">';
+      $("#btnRemoverFoto").classList.remove("oculto");
+    } else {
+      previa.innerHTML = '<span class="foto-previa__vazia">sem foto</span>';
+      $("#btnRemoverFoto").classList.add("oculto");
+    }
+  }
+
+  function estadoFoto(texto, tipo) {
+    const el = $("#fotoEstado");
+    el.textContent = texto;
+    el.className = "foto-estado" + (tipo ? " " + tipo : "");
+  }
+
+  const TEXTO_FOTO_PADRAO =
+    "Tire a foto pelo celular ou escolha do computador. Ela é reduzida automaticamente antes do envio.";
+
+  $("#btnEscolherFoto").addEventListener("click", function () { $("#pArquivo").click(); });
+
+  $("#pArquivo").addEventListener("change", async function (e) {
+    const arquivo = e.target.files && e.target.files[0];
+    e.target.value = "";                       // permite reenviar o mesmo arquivo
+    if (!arquivo) return;
+
+    const botao = $("#btnEscolherFoto");
+    botao.disabled = true;
+    try {
+      const url = await DB.enviarFoto(arquivo, function (passo) { estadoFoto(passo, "enviando"); });
+      $("#pImagem").value = url;
+      pintarFoto(url);
+      const kb = Math.round(arquivo.size / 1024);
+      estadoFoto("Foto enviada. Original tinha " + (kb > 1024 ? (kb / 1024).toFixed(1) + " MB" : kb + " KB") + ".", "");
+    } catch (err) {
+      estadoFoto(err.message || "Falha ao enviar a foto.", "erro");
+    } finally {
+      botao.disabled = false;
+    }
+  });
+
+  $("#btnRemoverFoto").addEventListener("click", function () {
+    $("#pImagem").value = "";
+    pintarFoto("");
+    estadoFoto(TEXTO_FOTO_PADRAO, "");
+  });
+
   /* ---------------- Formulário ---------------- */
   function abrirFormulario(p) {
     limparErro($("#erroProduto"));
@@ -251,6 +304,9 @@
     $("#pPreco").value = p ? p.preco : "";
     $("#pOrdem").value = p ? p.ordem : produtos.length + 1;
     $("#pImagem").value = p ? p.imagem_url : "";
+    fotoAnterior = p ? p.imagem_url : "";
+    pintarFoto(p ? p.imagem_url : "");
+    estadoFoto(TEXTO_FOTO_PADRAO, "");
     $("#pAtivo").checked = p ? p.ativo : true;
     $("#pEsgotado").checked = p ? p.esgotado : false;
     $("#pAlcoolico").checked = p ? p.alcoolico : false;
@@ -277,6 +333,10 @@
         esgotado: $("#pEsgotado").checked,
         alcoolico: $("#pAlcoolico").checked,
       });
+      if (fotoAnterior && fotoAnterior !== salvo.imagem_url) {
+        DB.apagarFoto(fotoAnterior);           // libera espaço da foto trocada
+      }
+      fotoAnterior = salvo.imagem_url;
       fecharModal("modalProduto");
       avisar(salvo.nome + " salvo com sucesso.", "ok");
       await recarregar();

@@ -147,6 +147,62 @@ abra `qrcode.html`, gere a placa e imprima para as mesas.
 
 ---
 
+## Divulgação: colocar a casa no mapa
+
+O site sozinho não traz cliente. Para um bar de bairro, a ordem de retorno é
+esta — e ela costuma ser invertida por quem começa.
+
+### 1. Perfil da Empresa no Google (prioridade máxima)
+
+É o antigo Google Meu Negócio. É ele que coloca a casa no **Google Maps** e no
+quadro que aparece quando alguém pesquisa "adega perto de mim" às 22h. Não é SEO
+de site, é ficha de local, e é grátis.
+
+Antes de criar, **pesquise o nome no Google**: muitas fichas já existem, criadas
+automaticamente a partir de visitas, e nesse caso o certo é reivindicar em vez de
+criar uma duplicada — ficha duplicada divide avaliações e atrapalha.
+
+Depois vem a **verificação**, hoje quase sempre por vídeo: filmar a fachada, o
+interior e algo que comprove que quem grava toca o negócio. Também pode ser por
+carta com código, que leva de uma a duas semanas. Sem verificar, a ficha não fica
+ativa nem sob controle do dono. Por envolver documento e presença física, quem
+faz é o proprietário.
+
+Dentro da ficha existe um campo de **link do cardápio**: é ali que vai o endereço
+deste site. O circuito que interessa é cliente pesquisa no Google → cai na ficha
+→ toca em cardápio → abre este sistema.
+
+Vale ainda subir de 15 a 20 fotos boas: fachada à noite, interior, brasa, chope,
+petiscos.
+
+### 2. Avaliações
+
+Rende mais que qualquer ajuste técnico. Ficha com 40 avaliações e nota 4,7 ganha
+de site perfeito com zero avaliação, sempre. Um segundo QR Code na mesa, ao lado
+do QR do cardápio, pedindo avaliação no Google, é o melhor investimento de
+divulgação que existe para esse tipo de negócio.
+
+### 3. Instagram
+
+O perfil já existe (@frontbeer_adega). O link do cardápio deve ficar na bio.
+
+### 4. Google Search Console
+
+Vale cadastrar depois de publicar, leva cinco minutos e é grátis. Mas serve para
+outra coisa: mostrar se o Google consegue ler e indexar o site, e quais buscas
+levam até ele. Não espere que traga clientes sozinho — bar não vive de busca
+orgânica na web, vive de Maps, Instagram e de quem passa na porta.
+
+### Do lado do código
+
+Falta implementar **dados estruturados de estabelecimento** (schema.org
+LocalBusiness/BarOrPub) com endereço, telefone, horário e faixa de preço. É o que
+permite ao Google ligar o site à ficha do Maps. Junto vão `robots.txt`, `sitemap`
+e o ajuste fino das meta tags. Depende de ter o endereço completo com cidade,
+bairro e CEP.
+
+---
+
 ## Segurança
 
 A `anon key` é pública por natureza: qualquer visitante consegue lê-la no
@@ -170,8 +226,40 @@ atende outro estabelecimento.
 
 ---
 
-## Próxima etapa sugerida
+## Próxima atualização
 
-Custo por produto para calcular margem real e lucro (hoje o relatório mostra
-faturamento, não lucro); comparativo entre períodos ("esta semana contra a
+### Unidades de venda e cálculo de preço
+
+Hoje cada produto tem **um preço único**. Numa adega isso é limitado: a mesma
+cerveja é vendida na lata, no fardo e na caixa; o destilado é vendido na dose e
+na garrafa. Cada forma tem preço diferente e o dono acaba cadastrando o mesmo
+produto três vezes, com nomes parecidos, o que polui o cardápio e estraga o
+ranking de mais vendidos no relatório.
+
+A ideia é o produto passar a ter **unidades de venda**, cada uma com seu preço:
+
+| Produto | Unidade | Preço |
+|---|---|---|
+| Cerveja Lata 350ml | unidade | R$ 6,50 |
+| Cerveja Lata 350ml | fardo com 12 | R$ 66,00 |
+| Whisky | dose 50ml | R$ 18,00 |
+| Whisky | garrafa 1L | R$ 120,00 |
+
+O que isso destrava:
+
+- **Cardápio** mostra o item uma vez só, com as opções de preço embaixo.
+- **Caixa** deixa o atendente escolher a unidade na hora da venda.
+- **Cálculo automático de preço**: informando o valor do fardo e quantas
+  unidades ele tem, o sistema sugere o preço da unidade com a margem desejada —
+  fim da conta de cabeça e do preço errado no calor do movimento.
+- **Relatório** passa a somar em unidades reais: "vendeu 30 latas" mesmo que
+  tenham saído como 2 fardos e 6 avulsas.
+
+Envolve mexer no banco (uma tabela de unidades ligada ao produto), no cadastro,
+no caixa e nos relatórios. É a maior mudança prevista até agora.
+
+### Depois disso
+
+Custo por produto para o relatório mostrar **lucro**, e não só faturamento;
+renomear categoria em lote; comparativo entre períodos ("esta semana contra a
 semana passada"); e fechamento de caixa impresso no fim da noite.

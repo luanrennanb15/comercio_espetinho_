@@ -140,7 +140,7 @@
       const emUso = c.status === "em_uso";
       return '<button type="button" class="cartao-comanda cartao-comanda--' +
         (emUso ? "uso" : "livre") + '" data-id="' + esc(c.id) + '">' +
-        '<span class="cartao-comanda__numero">' + c.numero + "</span>" +
+        '<span class="cartao-comanda__numero">' + esc(c.numero) + "</span>" +
         '<span class="cartao-comanda__estado">' + (emUso ? "Em uso" : "Livre") + "</span>" +
         (emUso
           ? '<span class="cartao-comanda__valor">' + moeda(totalComanda(c)) + "</span>" +
@@ -540,7 +540,12 @@
         : esc(nome);
     });
     document.title = "Caixa | " + nome;
-    await DB.init();
+    try {
+      await DB.init();
+    } catch (e) {
+      avisar(e.message, "erro");
+      return;
+    }
     const usuario = await DB.usuarioAtual();
     if (usuario) await abrirCaixa(usuario);
   })();

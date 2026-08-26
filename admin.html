@@ -25,10 +25,10 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="assets/css/tokens.css?v=20260826k">
-<link rel="stylesheet" href="assets/css/base.css?v=20260826k">
-<link rel="stylesheet" href="assets/css/app.css?v=20260826k">
-<link rel="stylesheet" href="assets/css/admin.css?v=20260826k">
+<link rel="stylesheet" href="assets/css/tokens.css?v=20260827a">
+<link rel="stylesheet" href="assets/css/base.css?v=20260827a">
+<link rel="stylesheet" href="assets/css/app.css?v=20260827a">
+<link rel="stylesheet" href="assets/css/admin.css?v=20260827a">
 </head>
 <body data-pagina="produtos">
 
@@ -87,7 +87,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
           <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
         </svg>
-        <input type="search" id="buscaAdmin" class="entrada" placeholder="Buscar produto..." autocomplete="off">
+        <input type="search" id="buscaAdmin" class="entrada" placeholder="Buscar produto..." autocomplete="off" aria-label="Buscar produto no cadastro">
       </div>
       <select id="filtroCategoria" class="entrada" aria-label="Filtrar por categoria"></select>
       <select id="filtroSituacao" class="entrada" aria-label="Filtrar por situação">
@@ -261,7 +261,7 @@
               <span class="foto-previa__vazia">sem foto</span>
             </div>
             <div class="foto-acoes">
-              <input type="file" id="pArquivo" accept="image/jpeg,image/png,image/webp" class="sr-only">
+              <input type="file" id="pArquivo" accept="image/jpeg,image/png,image/webp" class="sr-only" aria-label="Escolher a foto do produto">
               <button type="button" class="btn btn--fantasma btn--pequeno" id="btnEscolherFoto">
                 Escolher foto
               </button>
@@ -274,7 +274,7 @@
               </p>
             </div>
           </div>
-          <input type="text" id="pImagem" class="oculto">
+          <input type="text" id="pImagem" class="oculto" aria-label="Endereço da foto do produto" tabindex="-1">
         </div>
 
         <label class="chave">
@@ -351,11 +351,11 @@
   </div>
 </div>
 
-<script src="assets/js/config.js?v=20260826k"></script>
-<script src="assets/js/ui.js?v=20260826k"></script>
-<script src="assets/js/tema.js?v=20260826k"></script>
-<script src="assets/js/nav.js?v=20260826k"></script>
-<script src="assets/js/db.js?v=20260826k"></script>
-<script src="assets/js/admin.js?v=20260826k"></script>
+<script src="assets/js/config.js?v=20260827a"></script>
+<script src="assets/js/ui.js?v=20260827a"></script>
+<script src="assets/js/tema.js?v=20260827a"></script>
+<script src="assets/js/nav.js?v=20260827a"></script>
+<script src="assets/js/db.js?v=20260827a"></script>
+<script src="assets/js/admin.js?v=20260827a"></script>
 </body>
 </html>

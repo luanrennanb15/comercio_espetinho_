@@ -1,8 +1,10 @@
 /* Teste da capa do cardápio: identidade, redes e botão flutuante. */
-import { JSDOM } from "/tmp/node_modules/jsdom/lib/api.js";
+import { JSDOM } from "jsdom";
 import fs from "fs";
 
-const raiz = "/tmp/fb2";
+import path from "path";
+import { fileURLToPath } from "url";
+const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 let falhas = 0;
 const conf = (nome, ok, extra = "") => {
   if (!ok) falhas++;

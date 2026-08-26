@@ -677,7 +677,12 @@
   /* ---------------- Início ---------------- */
   (async function iniciar() {
     $$("[data-marca]").forEach((el) => { el.innerHTML = marcaFormatada(); });
-    await DB.init();
+    try {
+      await DB.init();
+    } catch (e) {
+      avisar(e.message, "erro");
+      return;
+    }
     if (DB.modo === "demo") $("#notaDemo").classList.remove("oculto");
     const usuario = await DB.usuarioAtual();
     if (usuario) await entrarNoPainel(usuario);

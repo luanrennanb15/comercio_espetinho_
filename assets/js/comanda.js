@@ -110,7 +110,16 @@
         ? esc(nome).replace(esc(d), "<em>" + esc(d) + "</em>")
         : esc(nome);
     });
-    await DB.init();
+    try {
+      await DB.init();
+    } catch (e) {
+      /* O cliente está de pé, com o celular na mão, olhando a tela.
+         Ficar em "Carregando..." é o pior desfecho: ele não sabe se
+         esperar ou chamar o garçom. */
+      mensagem("Sem conexão", e.message + " A tela tenta de novo sozinha.");
+      timer = setInterval(function () { location.reload(); }, INTERVALO * 3);
+      return;
+    }
     await atualizar();
     timer = setInterval(atualizar, INTERVALO);
   })();

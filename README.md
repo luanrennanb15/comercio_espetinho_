@@ -36,7 +36,13 @@ assets/
 
 supabase/schema.sql     Banco de dados e regras de segurança
 supabase/storage.sql    Armazenamento das fotos enviadas pelo painel
-testes/capa.mjs         Teste automatizado da capa nos dois temas
+testes/rodar.mjs        Executa a bateria inteira de testes
+testes/ajuda.mjs        Apoio: abre uma tela num navegador de mentira
+testes/unitarios.mjs    Cálculos de preço, escape de texto, utilidades
+testes/seguranca.mjs    Segredos, XSS, permissões do banco, terceiros
+testes/quebra.mjs       Banco fora do ar, dados tortos, entradas absurdas
+testes/telas.mjs        Arquivos, cache, acessibilidade, temas, obrigações legais
+testes/capa.mjs         Enquadramento da capa e botões de contato
 ```
 
 O menu lateral é definido em um único lugar (`assets/js/nav.js`): incluir uma
@@ -250,6 +256,47 @@ bairro e CEP.
 
 ---
 
+## Testes
+
+Na pasta do projeto:
+
+```
+npm install jsdom      (só na primeira vez)
+node testes/rodar.mjs
+```
+
+São 238 verificações em cinco suítes. Elas rodam as telas de
+verdade num navegador de mentira (jsdom), sem tocar na internet nem no
+banco: nenhum teste depende de conexão e nenhum grava dado real.
+
+O que cada uma cobra:
+
+**Unitários** — as funções que decidem dinheiro. Custo por unidade,
+markup, preço sugerido. Inclui 1.100 combinações de custo e markup
+conferindo que o preço sugerido nunca fica abaixo do lucro pedido, porque
+arredondar para baixo é prejuízo silencioso todo dia.
+
+**Segurança** — que nenhuma chave secreta escapou para o navegador, que
+texto vindo do banco nunca vira código na tela, e que as permissões do
+Postgres estão como deveriam. O auditor de HTML tem um autoteste: antes
+de confiar nele, a suíte prova que ele reprova um código sabidamente
+furado. Auditor que nunca acusa nada é decoração.
+
+**Quebra** — banco fora do ar, cardápio vazio, produto com nome nulo,
+preço `"abc"`, texto de 5.000 caracteres, armazenamento corrompido.
+A pergunta não é "funciona?", é "quando der errado, dá errado direito?".
+
+**Telas** — nenhum arquivo apontado que não existe, nenhum id repetido,
+versão de cache igual em todas as páginas, toda imagem com texto
+alternativo, todo campo com rótulo, os dois temas, e os avisos legais.
+
+**Capa** — o enquadramento da foto em cada largura de tela.
+
+Recomendações aparecem em amarelo e não reprovam a bateria: são coisas
+que dependem de uma decisão sua, não de um defeito no código.
+
+---
+
 ## Segurança
 
 A `anon key` é pública por natureza: qualquer visitante consegue lê-la no
@@ -261,6 +308,22 @@ Além disso: todo texto vindo do banco passa por escape antes de ir para a tela
 (proteção contra XSS), URLs de imagem só são aceitas em `http`/`https`, o painel
 é marcado como `noindex` e os limites de tamanho e preço são validados tanto no
 navegador quanto no banco.
+
+A exportação para Excel protege contra **injeção de fórmula**: um produto
+batizado de `=HYPERLINK(...)` seria executado pelo Excel ao abrir a planilha,
+e aspas não impedem isso. Valores que começam com `=`, `+`, `-` ou `@` recebem
+uma aspa simples na frente e viram texto.
+
+O extrato da comanda é o único caminho público para dados de consumo, e é
+estreito de propósito: uma função `security definer` com `search_path` fixo,
+que recebe o token e não expõe a tabela. Token aleatório, e comanda fechada
+deixa de responder.
+
+**Em aberto, dependendo de um passo manual:** os três scripts de terceiros
+(QR Code e gráficos, vindos do cdnjs) ainda não têm `integrity`. É o atributo
+que faz o navegador recusar o arquivo se ele tiver sido adulterado no caminho.
+O cdnjs fornece o valor pronto no botão *Copy Script Tag*. Vale principalmente
+para `relatorios.html`, que roda com a sessão do dono aberta.
 
 ---
 
@@ -304,6 +367,12 @@ O que isso destrava:
 
 Envolve mexer no banco (uma tabela de unidades ligada ao produto), no cadastro,
 no caixa e nos relatórios. É a maior mudança prevista até agora.
+
+### Endurecimento pendente
+
+Colar o `integrity` nos três scripts do cdnjs e prender o `supabase-js` a uma
+versão exata, no lugar do `@2` de hoje, que muda sozinho quando a biblioteca é
+atualizada.
 
 ### Depois disso
 

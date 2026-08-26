@@ -5,25 +5,33 @@
    ===================================================================== */
 
 :root {
-  /* --- Marca --- */
-  --ouro:         #D8A43A;   /* dourado usado como TEXTO */
-  --ouro-fundo:   #D8A43A;   /* dourado usado como FUNDO de botão */
-  --ouro-claro:   #F2CE79;
-  --ouro-escuro:  #96691A;
-  --ouro-fosco:   rgba(216, 164, 58, .16);
+  /* --- Marca ---
+     Cores tiradas da foto oficial: o dourado é o tom do lúpulo do logo,
+     o creme é o da espuma da cerveja e o cobre é o da própria bebida no
+     copo. Ter três tons quentes, em vez de um dourado para tudo, é o que
+     cria hierarquia entre título, preço e detalhe. */
+  --ouro:         #E2B357;   /* dourado do lúpulo — usado como TEXTO */
+  --ouro-fundo:   #E2B357;   /* dourado usado como FUNDO de botão */
+  --ouro-claro:   #F0CE8A;
+  --ouro-escuro:  #A07A22;
+  --ouro-fosco:   rgba(226, 179, 87, .15);
+
+  --creme:        #DCC4A8;   /* espuma — títulos e textos de destaque */
+  --cobre:        #E07B1E;   /* cerveja — acento raro, nunca dominante */
+  --cobre-fosco:  rgba(224, 123, 30, .16);
 
   /* --- Superfícies --- */
-  --preto:        #0A0908;
-  --superficie:   #121110;
-  --superficie-2: #1A1817;
-  --superficie-3: #232019;
-  --linha:        #2C2722;
-  --linha-forte:  #3D362D;
+  --preto:        #0C0A08;
+  --superficie:   #16120E;
+  --superficie-2: #1E1813;
+  --superficie-3: #2A2219;
+  --linha:        #332A20;
+  --linha-forte:  #4A3D2E;
 
   /* --- Texto --- */
-  --texto:        #EFE7DC;
-  --texto-suave:  #A89E92;
-  --texto-fraco:  #6E655C;
+  --texto:        #F0E4D2;
+  --texto-suave:  #B3A38E;
+  --texto-fraco:  #7C6F5E;
 
   /* --- Estados --- */
   --sucesso:      #4E9A5F;
@@ -54,10 +62,18 @@
   --transicao: 160ms ease;
 
   /* --- Superfícies translúcidas (barras fixas e véus) --- */
-  --fundo-pagina:      #0A0908;
-  --fundo-translucido: rgba(10, 9, 8, .93);
-  --veu-modal:         rgba(5, 4, 4, .78);
-  --texto-sobre-ouro:  #17120A;
+  --fundo-pagina:      #0C0A08;
+  --fundo-translucido: rgba(12, 10, 8, .93);
+  --veu-modal:         rgba(6, 5, 4, .78);
+  --texto-sobre-ouro:  #412402;
+
+  /* --- Redes sociais --- */
+  --whatsapp:      #25D366;
+  --whatsapp-alvo: #0B3E1E;
+  --instagram:     #B02A72;
+  /* Degradê da rede com tons rebaixados: mantém a identidade da marca e
+     garante 6:1 de contraste com o texto branco em qualquer ponto dele. */
+  --instagram-degrade: linear-gradient(48deg, #A8431C 0%, #B02A72 46%, #7A2E9E 78%, #4A45B5 100%);
 }
 
 /* =====================================================================
@@ -74,19 +90,23 @@
   --ouro:         #8A6410;
   --ouro-fundo:   #C89528;
   --ouro-claro:   #7A5A10;
-  --ouro-escuro:  #C9A24A;
+  --ouro-escuro:  #D2B77E;
   --ouro-fosco:   rgba(200, 149, 40, .16);
 
-  --preto:        #FAF7F1;
-  --superficie:   #FFFFFF;
-  --superficie-2: #F4EFE7;
-  --superficie-3: #EDE6DA;
-  --linha:        #E4DCCE;
-  --linha-forte:  #CFC4B2;
+  --creme:        #6B5A44;
+  --cobre:        #9A4A00;
+  --cobre-fosco:  rgba(154, 74, 0, .12);
 
-  --texto:        #1A1512;
-  --texto-suave:  #5A5147;
-  --texto-fraco:  #8B8177;
+  --preto:        #FBF7F0;
+  --superficie:   #FFFFFF;
+  --superficie-2: #F5F0E6;
+  --superficie-3: #EDE6D8;
+  --linha:        #E5DCCB;
+  --linha-forte:  #CFC3AE;
+
+  --texto:        #1A1410;
+  --texto-suave:  #5A4E40;
+  --texto-fraco:  #8B7F6E;
 
   --sucesso:      #1F7A3C;
   --sucesso-bg:   rgba(31, 122, 60, .12);
@@ -101,8 +121,8 @@
   --sombra:    0 16px 40px rgba(60, 48, 30, .16);
   --sombra-sm: 0 3px 12px rgba(60, 48, 30, .12);
 
-  --fundo-pagina:      #FAF7F1;
-  --fundo-translucido: rgba(250, 247, 241, .94);
+  --fundo-pagina:      #FBF7F0;
+  --fundo-translucido: rgba(251, 247, 240, .94);
   --veu-modal:         rgba(40, 33, 24, .55);
   --texto-sobre-ouro:  #17120A;
 }

@@ -32,10 +32,11 @@ assets/
   js/admin.js           Lógica do painel
   js/caixa.js           Lógica do caixa
   js/relatorios.js      Agregações e gráficos dos relatórios
-  img/                  Emblema, fachada, favicon e imagem de prévia do link
+  img/                  Emblema, foto de capa (dois tamanhos), favicon e prévia do link
 
 supabase/schema.sql     Banco de dados e regras de segurança
 supabase/storage.sql    Armazenamento das fotos enviadas pelo painel
+testes/capa.mjs         Teste automatizado da capa nos dois temas
 ```
 
 O menu lateral é definido em um único lugar (`assets/js/nav.js`): incluir uma
@@ -69,12 +70,38 @@ aparelho.
 O tema é aplicado por um trecho no `<head>` de cada página, antes do CSS
 carregar — sem isso a tela piscaria branca antes de escurecer.
 
-A capa do cardápio é exceção proposital: ela fica sobre a foto da fachada, que é
-escura nos dois temas, então mantém texto claro para continuar legível.
+A capa do cardápio é exceção proposital: a foto oficial da casa é escura, e a
+faixa logo abaixo dela acompanha esse tom nos dois temas para o texto continuar
+legível sobre a imagem. É um bloco escuro no alto de uma página clara — e isso é
+intencional, funciona como a vitrine da casa.
 
 Para revender, os dois temas vivem em `assets/css/tokens.css`. O dourado tem dois
 tons no tema claro: um escuro para funcionar como texto sobre fundo claro e um
 vivo para continuar sendo fundo de botão.
+
+---
+
+## A capa e o contato
+
+A capa é a **foto oficial da marca** — logo, chope e petiscos —, e não há texto
+sobreposto: a foto já traz o nome, e repetir a marca por cima da própria marca
+suja a tela. O `<h1>` com o nome continua no código, invisível, para o Google e
+para leitores de tela. Na impressão ele reaparece como título, já que a foto sai.
+
+A foto aparece **inteira, sem corte**, emoldurada e limitada a 820px de largura.
+É uma composição de estúdio — barril, emblema de lúpulo, copo com o nome
+gravado — e cortá-la em faixa panorâmica jogava fora justamente esses detalhes.
+São dois arquivos: `capa.jpg` (1600px) e `capa-900.jpg`, servido a telas de até
+700px para o celular não baixar a versão grande à toa.
+
+Logo abaixo vêm **WhatsApp e Instagram como botões grandes**, com a cor de cada
+rede, mais um botão de WhatsApp fixo no canto da tela. O texto é *"Tirar dúvida"*
+e a mensagem já vem digitada, sem falar em pedido: a casa não entrega, e um botão
+que sugere pedido geraria a conversa errada.
+
+O rosa oficial do Instagram (#E1306C) reprova em contraste com texto branco —
+3,67:1, abaixo dos 4,5:1 exigidos. O botão usa um degradê da marca com os tons
+rebaixados, que fica em 6:1 no ponto mais claro e continua reconhecível.
 
 ---
 

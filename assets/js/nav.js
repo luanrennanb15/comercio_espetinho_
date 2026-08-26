@@ -17,6 +17,7 @@ const NAV = (() => {
     cardapio:  '<path d="M6 3h9l3 3v15H6z"/><path d="M9 9h6M9 13h6M9 17h4"/>',
     qrcode:    '<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2v2h-2zM18 14h2M14 18h2M18 18h2"/>',
     manual:    '<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M9 8h7M9 12h7"/>',
+    cartoes:   '<rect x="3" y="6" width="13" height="14" rx="2"/><path d="M8 6V4h13v14h-2"/><path d="M7 11h5M7 15h3"/>',
     sair:      '<path d="M15 17l5-5-5-5"/><path d="M20 12H9"/><path d="M12 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6"/>',
     menu:      '<path d="M4 7h16M4 12h16M4 17h16"/>',
     externo:   '<path d="M14 4h6v6"/><path d="M20 4l-8 8"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
@@ -27,6 +28,7 @@ const NAV = (() => {
     produtos:   { titulo: "Produtos",   apoio: "Cadastro e preços do cardápio" },
     caixa:      { titulo: "Caixa",      apoio: "Lançamento das vendas do balcão" },
     relatorios: { titulo: "Relatórios", apoio: "Faturamento e desempenho do período" },
+    cartoes:    { titulo: "Cartões de comanda", apoio: "Imprimir os cartões com QR Code" },
   };
 
   const MENU = [
@@ -34,6 +36,8 @@ const NAV = (() => {
     { id: "caixa",      rotulo: "Caixa",      href: "caixa.html",      icone: "caixa" },
     { id: "produtos",   rotulo: "Produtos",   href: "admin.html",      icone: "produtos" },
     { id: "relatorios", rotulo: "Relatórios", href: "relatorios.html", icone: "relatorios" },
+    { grupo: "Comandas" },
+    { id: "cartoes",    rotulo: "Cartões",    href: "cartoes.html",    icone: "cartoes" },
     { grupo: "Divulgação" },
     { id: "cardapio",   rotulo: "Ver cardápio", href: "index.html",  icone: "cardapio", externo: true },
     { id: "qrcode",     rotulo: "QR Code",      href: "qrcode.html", icone: "qrcode",   externo: true },

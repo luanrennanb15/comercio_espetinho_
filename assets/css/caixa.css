@@ -243,3 +243,160 @@
   .comanda { position: static; max-height: none; }
   .catalogo__filtros { position: static; }
 }
+
+/* =====================================================================
+   Quadro de comandas
+   ===================================================================== */
+
+.abas-caixa {
+  display: flex;
+  gap: 8px;
+  padding: 14px 22px 0;
+  max-width: 1360px;
+  margin-inline: auto;
+}
+
+.aba-caixa {
+  padding: 10px 20px;
+  font-family: inherit;
+  font-size: .88rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+  background: transparent;
+  border: 1px solid var(--linha);
+  border-bottom: 0;
+  border-radius: var(--raio) var(--raio) 0 0;
+  cursor: pointer;
+}
+.aba-caixa:hover { color: var(--texto); }
+.aba-caixa.ativa {
+  color: var(--ouro);
+  background: var(--superficie);
+  border-color: var(--linha-forte);
+}
+
+.quadro-comandas {
+  max-width: 1360px;
+  margin-inline: auto;
+  padding: 22px;
+}
+
+.grade-comandas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.cartao-comanda {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 116px;
+  padding: 14px;
+  font-family: inherit;
+  text-align: left;
+  color: var(--texto);
+  border-radius: var(--raio-md);
+  cursor: pointer;
+  transition: transform 90ms ease, border-color var(--transicao);
+}
+.cartao-comanda:active { transform: scale(.975); }
+
+/* Verde: cartão disponível */
+.cartao-comanda--livre {
+  background: rgba(35, 127, 65, .10);
+  border: 1px solid rgba(35, 127, 65, .45);
+}
+.cartao-comanda--livre:hover { border-color: var(--verde-acao-2); }
+
+/* Vermelho: cliente consumindo */
+.cartao-comanda--uso {
+  background: rgba(193, 54, 42, .12);
+  border: 1px solid rgba(193, 54, 42, .55);
+}
+.cartao-comanda--uso:hover { border-color: #E0604F; }
+
+.cartao-comanda__numero {
+  font-family: var(--fonte-titulo);
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.cartao-comanda--livre .cartao-comanda__numero { color: #6FD08C; }
+.cartao-comanda--uso   .cartao-comanda__numero { color: #F09080; }
+
+.cartao-comanda__estado {
+  font-size: .66rem;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--texto-fraco);
+}
+
+.cartao-comanda__valor {
+  margin-top: auto;
+  font-family: var(--fonte-titulo);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--ouro);
+}
+.cartao-comanda__tempo { font-size: .72rem; color: var(--texto-fraco); }
+
+/* ---------- Cabeçalho do salão ---------- */
+.tira-salao {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  padding: 12px 22px;
+  background: var(--superficie);
+  border-bottom: 1px solid var(--linha);
+}
+.tira-salao div { line-height: 1.25; }
+.tira-salao span {
+  font-size: .66rem; font-weight: 600; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--texto-fraco);
+}
+.tira-salao strong { display: block; font-family: var(--fonte-titulo); font-size: 1.25rem; }
+.tira-salao strong.ouro { color: var(--ouro); }
+.tira-salao strong.aberto { color: #F09080; }
+
+/* ---------- Lançamento na comanda ---------- */
+.comanda-cabeca {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--linha);
+}
+.comanda-cabeca__num {
+  width: 54px; height: 54px;
+  flex: none;
+  display: grid; place-items: center;
+  font-family: var(--fonte-titulo);
+  font-size: 1.6rem; font-weight: 700;
+  color: #F09080;
+  background: rgba(193,54,42,.12);
+  border: 1px solid rgba(193,54,42,.55);
+  border-radius: var(--raio-md);
+}
+.comanda-cabeca h2 { font-size: 1.1rem; }
+.comanda-cabeca p { margin: 2px 0 0; font-size: .8rem; color: var(--texto-fraco); }
+.comanda-cabeca .btn { margin-left: auto; }
+
+.item-comanda__hora {
+  font-size: .72rem;
+  color: var(--texto-fraco);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 720px) {
+  .grade-comandas { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 9px; }
+  .cartao-comanda { min-height: 96px; padding: 11px; }
+  .cartao-comanda__numero { font-size: 1.6rem; }
+  .cartao-comanda__valor { font-size: 1rem; }
+  .quadro-comandas { padding: 14px; }
+  .abas-caixa { padding: 12px 14px 0; }
+  .aba-caixa { flex: 1; padding: 10px 12px; text-align: center; }
+}

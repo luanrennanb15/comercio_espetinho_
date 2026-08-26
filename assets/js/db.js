@@ -11,6 +11,7 @@ const DB = (() => {
   const CFG = window.APP_CONFIG || {};
   const CHAVE_PRODUTOS = "frontbeer:produtos";
   const CHAVE_VENDAS   = "frontbeer:vendas";
+  const CHAVE_COMANDAS = "frontbeer:comandas";
   const CHAVE_SESSAO   = "frontbeer:sessao";
   const CDN_SUPABASE   = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js";
   const BALDE_FOTOS    = "produtos";           // bucket criado por supabase/storage.sql
@@ -106,6 +107,36 @@ const DB = (() => {
     localStorage.setItem(CHAVE_VENDAS, JSON.stringify(lista));
   }
 
+  function lerComandasLocal() {
+    try {
+      const bruto = localStorage.getItem(CHAVE_COMANDAS);
+      if (bruto === null) {
+        const novas = [];
+        for (let n = 1; n <= 20; n++) {
+          novas.push({
+            id: "c-" + n,
+            numero: n,
+            token: "demo" + String(n).padStart(2, "0") + "token",
+            status: "livre",
+            aberta_em: null,
+            itens: [],
+          });
+        }
+        localStorage.setItem(CHAVE_COMANDAS, JSON.stringify(novas));
+        return novas;
+      }
+      const dados = JSON.parse(bruto);
+      return Array.isArray(dados) ? dados : [];
+    } catch (e) {
+      console.warn("Comandas locais ilegíveis.", e);
+      return [];
+    }
+  }
+
+  function gravarComandasLocal(lista) {
+    localStorage.setItem(CHAVE_COMANDAS, JSON.stringify(lista));
+  }
+
   function carregarScript(src) {
     return new Promise((ok, falha) => {
       const s = document.createElement("script");
@@ -192,6 +223,15 @@ const DB = (() => {
     );
   }
 
+  /* Reconhece o erro do Postgres quando uma coluna ainda não existe.
+     Acontece em banco criado antes de uma atualização do sistema. */
+  function colunaAusente(erro) {
+    const m = ((erro && (erro.message || erro.hint)) || "") + " " + ((erro && erro.code) || "");
+    return /does not exist|42703|schema cache/i.test(m);
+  }
+
+  let bancoAntigo = false;
+
   function traduzirErro(e) {
     const m = (e && e.message) || String(e);
     if (/Invalid login credentials/i.test(m))
@@ -210,6 +250,7 @@ const DB = (() => {
   /* ---------------- Interface pública ---------------- */
   return {
     get modo() { return modo; },
+    get bancoDesatualizado() { return bancoAntigo; },
     get exemplos() { return JSON.parse(JSON.stringify(EXEMPLOS)); },
 
     async init() {
@@ -403,6 +444,164 @@ const DB = (() => {
     },
 
     /* ------------------------------------------------------------
+       COMANDAS
+       Cartões numerados que o cliente leva para a mesa. Enquanto a
+       comanda está aberta, os itens ficam em comanda_itens; ao fechar,
+       viram uma venda só, preservando a hora de cada lançamento.
+    ------------------------------------------------------------ */
+
+    async listarComandas() {
+      if (modo === "supabase") {
+        const { data, error } = await sb
+          .from("comandas")
+          .select("id, numero, token, status, aberta_em, comanda_itens(id, nome, categoria, preco_unit, quantidade, criado_em)")
+          .order("numero");
+        if (error) throw traduzirErro(error);
+        return (data || []).map((c) => ({
+          id: c.id,
+          numero: c.numero,
+          token: c.token,
+          status: c.status,
+          aberta_em: c.aberta_em,
+          itens: (c.comanda_itens || [])
+            .map((i) => ({
+              id: i.id, nome: i.nome, categoria: i.categoria,
+              preco_unit: Number(i.preco_unit) || 0,
+              quantidade: Number(i.quantidade) || 0,
+              criado_em: i.criado_em,
+            }))
+            .sort((a, b) => new Date(a.criado_em) - new Date(b.criado_em)),
+        }));
+      }
+      return lerComandasLocal();
+    },
+
+    async abrirComanda(id) {
+      const agora = new Date().toISOString();
+      if (modo === "supabase") {
+        const { error } = await sb.from("comandas")
+          .update({ status: "em_uso", aberta_em: agora })
+          .eq("id", id).eq("status", "livre");
+        if (error) throw traduzirErro(error);
+        return true;
+      }
+      const lista = lerComandasLocal();
+      const c = lista.find((x) => x.id === id);
+      if (!c) throw new Error("Comanda não encontrada.");
+      if (c.status === "em_uso") return true;
+      c.status = "em_uso";
+      c.aberta_em = agora;
+      c.itens = [];
+      gravarComandasLocal(lista);
+      return true;
+    },
+
+    async lancarItem(comandaId, item) {
+      const dados = {
+        produto_id: item.produto_id && String(item.produto_id).indexOf("ex-") !== 0 &&
+                    String(item.produto_id).indexOf("loc-") !== 0 ? item.produto_id : null,
+        nome:       String(item.nome || "").trim(),
+        categoria:  String(item.categoria || "Outros").trim() || "Outros",
+        preco_unit: Math.round((Number(item.preco_unit) || 0) * 100) / 100,
+        quantidade: Math.max(1, Math.min(999, parseInt(item.quantidade, 10) || 1)),
+      };
+      if (!dados.nome) throw new Error("Item inválido.");
+
+      if (modo === "supabase") {
+        const { error } = await sb.from("comanda_itens")
+          .insert(Object.assign({ comanda_id: comandaId }, dados));
+        if (error) throw traduzirErro(error);
+        return true;
+      }
+      const lista = lerComandasLocal();
+      const c = lista.find((x) => x.id === comandaId);
+      if (!c) throw new Error("Comanda não encontrada.");
+      c.itens.push(Object.assign({
+        id: "i-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+        criado_em: new Date().toISOString(),
+      }, dados));
+      gravarComandasLocal(lista);
+      return true;
+    },
+
+    async removerItemComanda(comandaId, itemId) {
+      if (modo === "supabase") {
+        const { error } = await sb.from("comanda_itens").delete().eq("id", itemId);
+        if (error) throw traduzirErro(error);
+        return true;
+      }
+      const lista = lerComandasLocal();
+      const c = lista.find((x) => x.id === comandaId);
+      if (c) {
+        c.itens = c.itens.filter((i) => i.id !== itemId);
+        gravarComandasLocal(lista);
+      }
+      return true;
+    },
+
+    /* Fecha a comanda: gera a venda, limpa os itens e libera o cartão */
+    async fecharComanda(comandaId, pagamento, observacao) {
+      const comandas = await this.listarComandas();
+      const c = comandas.find((x) => x.id === comandaId);
+      if (!c) throw new Error("Comanda não encontrada.");
+      if (!c.itens.length) throw new Error("A comanda está sem itens. Cancele-a em vez de fechar.");
+
+      const venda = await this.registrarVenda({
+        pagamento: pagamento,
+        observacao: observacao,
+        comanda_numero: c.numero,
+        aberta_em: c.aberta_em,
+        itens: c.itens.map((i) => ({
+          nome: i.nome, categoria: i.categoria,
+          preco_unit: i.preco_unit, quantidade: i.quantidade,
+          criado_em: i.criado_em,
+        })),
+      });
+
+      await this.liberarComanda(comandaId);
+      return venda;
+    },
+
+    /* Devolve o cartão para o quadro, descartando o que houver em aberto */
+    async liberarComanda(comandaId) {
+      if (modo === "supabase") {
+        const rem = await sb.from("comanda_itens").delete().eq("comanda_id", comandaId);
+        if (rem.error) throw traduzirErro(rem.error);
+        const { error } = await sb.from("comandas")
+          .update({ status: "livre", aberta_em: null }).eq("id", comandaId);
+        if (error) throw traduzirErro(error);
+        return true;
+      }
+      const lista = lerComandasLocal();
+      const c = lista.find((x) => x.id === comandaId);
+      if (c) { c.status = "livre"; c.aberta_em = null; c.itens = []; gravarComandasLocal(lista); }
+      return true;
+    },
+
+    /* Consulta pública usada pela página do cliente (só leitura) */
+    async extratoComanda(token) {
+      if (modo === "supabase") {
+        const { data, error } = await sb.rpc("extrato_comanda", { p_token: token });
+        if (error) throw traduzirErro(error);
+        return data;
+      }
+      const c = lerComandasLocal().find((x) => x.token === token);
+      if (!c) return { encontrada: false };
+      if (c.status !== "em_uso") return { encontrada: true, aberta: false, numero: c.numero };
+      const hora = (d) => new Date(d).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+      return {
+        encontrada: true, aberta: true, numero: c.numero,
+        aberta_em: c.aberta_em ? hora(c.aberta_em) : "",
+        itens: c.itens.map((i) => ({
+          nome: i.nome, quantidade: i.quantidade, preco_unit: i.preco_unit,
+          subtotal: Math.round(i.preco_unit * i.quantidade * 100) / 100,
+          hora: hora(i.criado_em),
+        })),
+        total: Math.round(c.itens.reduce((s, i) => s + i.preco_unit * i.quantidade, 0) * 100) / 100,
+      };
+    },
+
+    /* ------------------------------------------------------------
        VENDAS
        Nome, categoria e preço são congelados no momento da venda,
        para que reajustes futuros não alterem o histórico.
@@ -420,6 +619,7 @@ const DB = (() => {
         categoria:  String(i.categoria || "Outros").trim() || "Outros",
         preco_unit: Math.round((Number(i.preco_unit) || 0) * 100) / 100,
         quantidade: Math.max(1, Math.min(999, parseInt(i.quantidade, 10) || 1)),
+        criado_em:  i.criado_em || new Date().toISOString(),
       })).filter((i) => i.nome);
 
       if (!itens.length) throw new Error("Adicione ao menos um item à venda.");
@@ -427,13 +627,33 @@ const DB = (() => {
       const total = Math.round(itens.reduce((s, i) => s + i.preco_unit * i.quantidade, 0) * 100) / 100;
 
       if (modo === "supabase") {
-        const { data, error } = await sb.from("vendas")
-          .insert({ total: total, pagamento: pagamento, observacao: observacao })
+        let { data, error } = await sb.from("vendas")
+          .insert({
+            total: total, pagamento: pagamento, observacao: observacao,
+            comanda_numero: venda.comanda_numero || null,
+            aberta_em: venda.aberta_em || null,
+          })
           .select().single();
+
+        if (error && colunaAusente(error)) {
+          bancoAntigo = true;
+          ({ data, error } = await sb.from("vendas")
+            .insert({ total: total, pagamento: pagamento, observacao: observacao })
+            .select().single());
+        }
         if (error) throw traduzirErro(error);
 
         const linhas = itens.map((i) => Object.assign({ venda_id: data.id }, i));
-        const res = await sb.from("venda_itens").insert(linhas);
+        let res = await sb.from("venda_itens").insert(linhas);
+
+        if (res.error && colunaAusente(res.error)) {
+          bancoAntigo = true;
+          const simples = itens.map((i) => ({
+            venda_id: data.id, produto_id: i.produto_id, nome: i.nome,
+            categoria: i.categoria, preco_unit: i.preco_unit, quantidade: i.quantidade,
+          }));
+          res = await sb.from("venda_itens").insert(simples);
+        }
         if (res.error) {
           await sb.from("vendas").delete().eq("id", data.id);   // desfaz a venda incompleta
           throw traduzirErro(res.error);
@@ -448,6 +668,8 @@ const DB = (() => {
         total: total,
         pagamento: pagamento,
         observacao: observacao,
+        comanda_numero: venda.comanda_numero || null,
+        aberta_em: venda.aberta_em || null,
         itens: itens,
       };
       lista.push(registro);
@@ -463,19 +685,39 @@ const DB = (() => {
       fim.setHours(23, 59, 59, 999);
 
       if (modo === "supabase") {
-        const { data, error } = await sb.from("vendas")
-          .select("id, criado_em, total, pagamento, observacao, venda_itens(nome, categoria, preco_unit, quantidade)")
+        /* Bancos criados antes da atualização de comandas não têm as colunas
+           novas. Em vez de quebrar, o sistema tenta a consulta completa e
+           cai para a reduzida se o banco ainda for antigo. */
+        const consulta = (campos) => sb.from("vendas")
+          .select(campos)
           .gte("criado_em", inicio.toISOString())
           .lte("criado_em", fim.toISOString())
           .order("criado_em", { ascending: false });
+
+        let { data, error } = await consulta(
+          "id, criado_em, total, pagamento, observacao, comanda_numero, aberta_em, " +
+          "venda_itens(nome, categoria, preco_unit, quantidade, criado_em)"
+        );
+
+        if (error && colunaAusente(error)) {
+          bancoAntigo = true;
+          console.warn("Banco sem as colunas de comanda — rode supabase/comandas.sql.");
+          ({ data, error } = await consulta(
+            "id, criado_em, total, pagamento, observacao, " +
+            "venda_itens(nome, categoria, preco_unit, quantidade)"
+          ));
+        }
         if (error) throw traduzirErro(error);
         return (data || []).map((v) => ({
           id: v.id, criado_em: v.criado_em, total: Number(v.total) || 0,
           pagamento: v.pagamento, observacao: v.observacao || "",
+          comanda_numero: v.comanda_numero || null,
+          aberta_em: v.aberta_em || null,
           itens: (v.venda_itens || []).map((i) => ({
             nome: i.nome, categoria: i.categoria,
             preco_unit: Number(i.preco_unit) || 0,
             quantidade: Number(i.quantidade) || 0,
+            criado_em: i.criado_em || v.criado_em,
           })),
         }));
       }

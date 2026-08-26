@@ -234,6 +234,10 @@ from public.vendas v
 group by 1
 order by 1 desc;
 
+-- A view respeita as permissões de quem consulta, e não as de quem a criou.
+-- Sem isto, o verificador de segurança do Supabase acusa "Security Definer View".
+alter view public.resumo_diario set (security_invoker = on);
+
 revoke all on public.resumo_diario from anon;
 grant select on public.resumo_diario to authenticated;
 

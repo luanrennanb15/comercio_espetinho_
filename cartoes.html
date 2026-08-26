@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Cartões de comanda | Front Beer</title>
+<link rel="icon" href="assets/img/favicon.png" sizes="any">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="assets/css/tokens.css?v=20260820d">
+<link rel="stylesheet" href="assets/css/base.css?v=20260820d">
+<link rel="stylesheet" href="assets/css/app.css?v=20260820d">
+<link rel="stylesheet" href="assets/css/admin.css?v=20260820d">
+<style>
+  .pagina-cartoes { max-width: 1100px; margin-inline: auto; padding: 26px 22px 70px; }
+
+  .folha {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 12px;
+    margin-top: 22px;
+  }
+
+  .cartao {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 18px 14px 14px;
+    text-align: center;
+    background: var(--superficie);
+    border: 2px solid var(--ouro-escuro);
+    border-radius: 12px;
+    break-inside: avoid;
+  }
+  .cartao__marca {
+    font-family: var(--fonte-titulo);
+    font-size: 1.05rem;
+    letter-spacing: .04em;
+  }
+  .cartao__marca em { color: var(--ouro); font-style: italic; }
+  .cartao__numero {
+    font-family: var(--fonte-titulo);
+    font-size: 3.4rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--ouro);
+  }
+  .cartao__rotulo {
+    font-size: .6rem; font-weight: 700; letter-spacing: .22em;
+    text-transform: uppercase; color: var(--texto-fraco);
+  }
+  .cartao__qr {
+    width: 132px; height: 132px;
+    display: grid; place-items: center;
+    padding: 7px;
+    background: #fff;
+    border-radius: 6px;
+  }
+  .cartao__qr img, .cartao__qr canvas { width: 100% !important; height: auto !important; }
+  .cartao__chamada { font-size: .72rem; color: var(--texto-suave); line-height: 1.4; }
+
+  .acoes-cartoes { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+
+  @media print {
+    @page { size: A4; margin: 10mm; }
+    body { background: #fff; }
+    .lateral, .barra, .nota, .acoes-cartoes, .campo, h1, .sub { display: none !important; }
+    .app { display: block; }
+    .pagina-cartoes { padding: 0; max-width: none; }
+    .folha { grid-template-columns: repeat(3, 1fr); gap: 6mm; margin: 0; }
+    .cartao {
+      background: #fff; border: 1.5pt dashed #333; color: #111;
+      padding: 6mm 4mm;
+    }
+    .cartao__marca { color: #111; }
+    .cartao__marca em { color: #8A6A15; }
+    .cartao__numero { color: #111; }
+    .cartao__rotulo, .cartao__chamada { color: #555; }
+    .cartao__qr { padding: 0; }
+  }
+</style>
+</head>
+<body data-pagina="cartoes">
+
+<section class="acesso" id="telaAcesso">
+  <div class="acesso__caixa">
+    <img class="acesso__emblema" src="assets/img/emblema.png" alt="" width="74" height="74">
+    <h1 data-marca>Front Beer</h1>
+    <p class="acesso__sub">Cartões de comanda</p>
+    <div id="erroAcesso" class="nota nota--erro oculto" style="margin-bottom:16px"></div>
+    <form id="formAcesso" novalidate>
+      <div class="campo">
+        <label for="email">E-mail</label>
+        <input type="email" id="email" required autocomplete="username">
+      </div>
+      <div class="campo">
+        <label for="senha">Senha</label>
+        <input type="password" id="senha" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn btn--bloco" id="btnEntrar">Entrar</button>
+    </form>
+    <div id="erroAcessoBaixo" class="nota nota--erro oculto" style="margin-top:16px"></div>
+  </div>
+</section>
+
+<div class="app oculto" id="telaCartoes">
+  <aside class="lateral" data-nav></aside>
+  <div class="conteudo">
+    <header class="barra" data-barra></header>
+
+    <div class="pagina-cartoes">
+      <div class="nota nota--ouro">
+        <strong>Cada cartão tem um código secreto próprio.</strong>
+        Imprima uma vez, plastifique e entregue ao cliente quando ele sentar.
+        O QR abre a tela onde ele acompanha o próprio consumo, sem poder alterar nada.
+        Guarde esta página em segredo: quem tiver os QR Codes consegue acompanhar as comandas em uso.
+      </div>
+
+      <div class="campo" style="margin-top:18px">
+        <label for="urlBase">Endereço do site publicado</label>
+        <input type="text" id="urlBase" class="entrada" placeholder="https://frontbeer.com.br">
+        <small class="ajuda">Os QR Codes apontam para este endereço. Se ele mudar, gere os cartões de novo.</small>
+      </div>
+
+      <div class="acoes-cartoes">
+        <button type="button" class="btn" id="btnImprimir">Imprimir cartões</button>
+        <span class="nota" style="flex:1;min-width:220px">
+          Para gerar PDF, escolha "Salvar como PDF" na janela de impressão.
+        </span>
+      </div>
+
+      <div class="folha" id="folha"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="assets/js/config.js?v=20260820d"></script>
+<script src="assets/js/ui.js?v=20260820d"></script>
+<script src="assets/js/nav.js?v=20260820d"></script>
+<script src="assets/js/db.js?v=20260820d"></script>
+<script>
+(function () {
+  "use strict";
+  const CFG = window.APP_CONFIG || {};
+  const { esc, $, $$, avisar } = UI;
+
+  NAV.montar();
+  let comandas = [];
+
+  function marca() {
+    const nome = CFG.nome || "";
+    const d = CFG.nomeDestaque || "";
+    return d && nome.indexOf(d) !== -1
+      ? esc(nome).replace(esc(d), "<em>" + esc(d) + "</em>")
+      : esc(nome);
+  }
+
+  function enderecoBase() {
+    const digitado = $("#urlBase").value.trim();
+    if (digitado) return digitado.replace(/\/+$/, "");
+    if (CFG.siteUrl) return String(CFG.siteUrl).replace(/\/+$/, "");
+    if (location.protocol === "http:" || location.protocol === "https:") {
+      return location.href.replace(/cartoes\.html.*$/, "").replace(/\/+$/, "");
+    }
+    return "";
+  }
+
+  function desenhar() {
+    const base = enderecoBase();
+    const folha = $("#folha");
+
+    if (!comandas.length) {
+      folha.innerHTML = '<div class="estado-vazio"><h3>Nenhuma comanda cadastrada</h3>' +
+        "<p>Rode o arquivo supabase/comandas.sql no Supabase para criar os cartões.</p></div>";
+      return;
+    }
+
+    folha.innerHTML = comandas.map(function (c) {
+      return '<div class="cartao">' +
+        '<div class="cartao__marca">' + marca() + "</div>" +
+        '<div class="cartao__rotulo">Comanda</div>' +
+        '<div class="cartao__numero">' + c.numero + "</div>" +
+        '<div class="cartao__qr" data-qr="' + esc(base + "/comanda.html?c=" + encodeURIComponent(c.token)) + '"></div>' +
+        '<div class="cartao__chamada">Aponte a câmera<br>para ver seu consumo</div>' +
+      "</div>";
+    }).join("");
+
+    if (typeof QRCode === "undefined") {
+      avisar("Gerador de QR Code não carregou. Verifique a internet.", "erro");
+      return;
+    }
+    $$(".cartao__qr").forEach(function (el) {
+      el.innerHTML = "";
+      new QRCode(el, {
+        text: el.getAttribute("data-qr"),
+        width: 320, height: 320,
+        colorDark: "#000000", colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.M,
+      });
+    });
+  }
+
+  $("#urlBase").addEventListener("input", desenhar);
+  $("#btnImprimir").addEventListener("click", function () {
+    if (!enderecoBase()) {
+      avisar("Informe o endereço do site antes de imprimir.", "erro");
+      return;
+    }
+    window.print();
+  });
+
+  $("#formAcesso").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    $$("#erroAcesso, #erroAcessoBaixo").forEach((el) => el.classList.add("oculto"));
+    try {
+      const usuario = await DB.login($("#email").value, $("#senha").value);
+      $("#senha").value = "";
+      await abrir(usuario);
+    } catch (err) {
+      $$("#erroAcesso, #erroAcessoBaixo").forEach((el) => {
+        el.textContent = err.message || "Não foi possível entrar.";
+        el.classList.remove("oculto");
+      });
+    }
+  });
+
+  $("#btnSair").addEventListener("click", async function () {
+    await DB.logout();
+    location.reload();
+  });
+
+  async function abrir(usuario) {
+    NAV.definirUsuario(usuario || (await DB.usuarioAtual()));
+    $("#telaAcesso").classList.add("oculto");
+    $("#telaCartoes").classList.remove("oculto");
+    $("#urlBase").value = CFG.siteUrl || enderecoBase();
+    try {
+      comandas = await DB.listarComandas();
+      desenhar();
+    } catch (e) {
+      avisar(e.message || "Falha ao carregar as comandas.", "erro");
+    }
+  }
+
+  (async function iniciar() {
+    $$("[data-marca]").forEach((el) => { el.innerHTML = marca(); });
+    document.title = "Cartões de comanda | " + (CFG.nome || "");
+    await DB.init();
+    const usuario = await DB.usuarioAtual();
+    if (usuario) await abrir(usuario);
+  })();
+})();
+</script>
+</body>
+</html>

@@ -1,5 +1,8 @@
 /* =====================================================================
-   FRONT BEER — Caixa (lançamento de vendas)
+   FRONT BEER — Caixa
+   Duas formas de vender:
+     comanda      -> cartão numerado que fica com o cliente na mesa
+     venda rápida -> balcão, cliente compra e vai embora
    ===================================================================== */
 
 (function () {
@@ -8,23 +11,21 @@
   const CFG = window.APP_CONFIG || {};
   const { esc, moeda, chave, $, $$, avisar, confirmar } = UI;
 
-  const ROTULO_PAGAMENTO = {
-    dinheiro: "Dinheiro", pix: "PIX", debito: "Débito", credito: "Crédito", outro: "Outro",
-  };
+  NAV.montar();
 
   let produtos = [];
+  let comandas = [];
   let vendasHoje = [];
-  const comanda = [];              // { id, nome, categoria, preco, qtd }
-  let pagamento = "dinheiro";
 
-  NAV.montar();   // menu lateral e barra superior
+  let vista = "quadro";          // quadro | rapida | comanda
+  let comandaAtual = null;       // objeto da comanda aberta
+  const carrinho = [];           // usado só na venda rápida
+  let pagamento = "dinheiro";
 
   /* ---------------- Acesso ---------------- */
   $("#formAcesso").addEventListener("submit", async function (e) {
     e.preventDefault();
-    ["#erroAcesso", "#erroAcessoBaixo"].forEach(function (sel) {
-      const el = $(sel); if (el) el.classList.add("oculto");
-    });
+    $$("#erroAcesso, #erroAcessoBaixo").forEach((el) => el.classList.add("oculto"));
     const btn = $("#btnEntrar");
     btn.disabled = true;
     try {
@@ -32,9 +33,9 @@
       $("#senha").value = "";
       await abrirCaixa(usuario);
     } catch (err) {
-      ["#erroAcesso", "#erroAcessoBaixo"].forEach(function (sel) {
-        const el = $(sel);
-        if (el) { el.textContent = err.message || "Não foi possível entrar."; el.classList.remove("oculto"); }
+      $$("#erroAcesso, #erroAcessoBaixo").forEach((el) => {
+        el.textContent = err.message || "Não foi possível entrar.";
+        el.classList.remove("oculto");
       });
       console.error("Falha no login:", err);
     } finally {
@@ -43,9 +44,9 @@
   });
 
   $("#btnSair").addEventListener("click", async function () {
-    if (comanda.length && !(await confirmar({
+    if (vista === "comanda" && !(await confirmar({
       titulo: "Sair do caixa",
-      texto: "Há uma venda em aberto que será perdida. Deseja sair mesmo assim?",
+      texto: "Há uma comanda aberta na tela. Ela continua salva, mas você sairá do sistema. Continuar?",
       confirmar: "Sair", perigo: true,
     }))) return;
     await DB.logout();
@@ -57,9 +58,128 @@
     $("#telaAcesso").classList.add("oculto");
     $("#telaCaixa").classList.remove("oculto");
     await carregarProdutos();
+    await recarregarComandas();
     await carregarVendasDoDia();
-    $("#buscaProduto").focus();
+    mostrarVista("quadro");
   }
+
+  /* ---------------- Navegação entre as vistas ---------------- */
+  function mostrarVista(nova) {
+    vista = nova;
+    const noQuadro = nova === "quadro";
+    $("#vistaQuadro").classList.toggle("oculto", !noQuadro);
+    $("#vistaVenda").classList.toggle("oculto", noQuadro);
+    $("#comandaCabeca").classList.toggle("oculto", nova !== "comanda");
+    $("#areaUltimas").classList.toggle("oculto", nova === "comanda");
+
+    $$(".aba-caixa").forEach((b) => {
+      const alvo = b.getAttribute("data-vista");
+      b.classList.toggle("ativa", alvo === (nova === "comanda" ? "quadro" : nova));
+    });
+
+    $("#tituloPainel").textContent = nova === "comanda" ? "Consumo da comanda" : "Venda atual";
+    $("#btnFechar").textContent = nova === "comanda" ? "Fechar conta" : "Fechar venda";
+    $("#btnCancelar").textContent = nova === "comanda" ? "Cancelar comanda" : "Cancelar venda";
+
+    if (nova !== "quadro") {
+      $("#buscaProduto").value = "";
+      desenharCatalogo();
+      $("#buscaProduto").focus();
+    }
+    desenharPainel();
+  }
+
+  $$(".aba-caixa").forEach((btn) => {
+    btn.addEventListener("click", async function () {
+      const alvo = btn.getAttribute("data-vista");
+      if (alvo === "quadro") { comandaAtual = null; await recarregarComandas(); mostrarVista("quadro"); }
+      else { comandaAtual = null; carrinho.length = 0; mostrarVista("rapida"); }
+    });
+  });
+
+  $("#btnVoltarQuadro").addEventListener("click", async function () {
+    comandaAtual = null;
+    await recarregarComandas();
+    mostrarVista("quadro");
+  });
+
+  /* ---------------- Quadro de comandas ---------------- */
+  async function recarregarComandas() {
+    try {
+      comandas = await DB.listarComandas();
+      if (comandaAtual) {
+        comandaAtual = comandas.find((c) => c.id === comandaAtual.id) || null;
+      }
+      desenharQuadro();
+      atualizarSalao();
+    } catch (e) {
+      avisar(e.message || "Falha ao carregar as comandas.", "erro");
+    }
+  }
+
+  function totalComanda(c) {
+    return Math.round((c.itens || []).reduce((s, i) => s + i.preco_unit * i.quantidade, 0) * 100) / 100;
+  }
+
+  function tempoAberta(c) {
+    if (!c.aberta_em) return "";
+    const min = Math.max(0, Math.round((Date.now() - new Date(c.aberta_em)) / 60000));
+    if (min < 60) return min + " min";
+    return Math.floor(min / 60) + "h" + String(min % 60).padStart(2, "0");
+  }
+
+  function desenharQuadro() {
+    const alvo = $("#gradeComandas");
+    if (!comandas.length) {
+      alvo.innerHTML = '<div class="estado-vazio"><h3>Nenhuma comanda cadastrada</h3>' +
+        "<p>Rode o arquivo supabase/comandas.sql para criar os cartões.</p></div>";
+      return;
+    }
+    alvo.innerHTML = comandas.map(function (c) {
+      const emUso = c.status === "em_uso";
+      return '<button type="button" class="cartao-comanda cartao-comanda--' +
+        (emUso ? "uso" : "livre") + '" data-id="' + esc(c.id) + '">' +
+        '<span class="cartao-comanda__numero">' + c.numero + "</span>" +
+        '<span class="cartao-comanda__estado">' + (emUso ? "Em uso" : "Livre") + "</span>" +
+        (emUso
+          ? '<span class="cartao-comanda__valor">' + moeda(totalComanda(c)) + "</span>" +
+            '<span class="cartao-comanda__tempo">há ' + tempoAberta(c) + "</span>"
+          : "") +
+      "</button>";
+    }).join("");
+  }
+
+  function atualizarSalao() {
+    const abertas = comandas.filter((c) => c.status === "em_uso");
+    const soma = abertas.reduce((s, c) => s + totalComanda(c), 0);
+    $("#salaoAbertas").textContent = abertas.length;
+    $("#salaoValor").textContent = moeda(soma);
+  }
+
+  $("#gradeComandas").addEventListener("click", async function (e) {
+    const btn = e.target.closest(".cartao-comanda");
+    if (!btn) return;
+    const c = comandas.find((x) => x.id === btn.getAttribute("data-id"));
+    if (!c) return;
+
+    if (c.status === "livre") {
+      const ok = await confirmar({
+        titulo: "Abrir comanda " + c.numero,
+        texto: "Entregue o cartão " + c.numero + " ao cliente e comece a lançar o consumo.",
+        confirmar: "Abrir comanda",
+      });
+      if (!ok) return;
+      try {
+        await DB.abrirComanda(c.id);
+        await recarregarComandas();
+        comandaAtual = comandas.find((x) => x.id === c.id);
+        avisar("Comanda " + c.numero + " aberta.", "ok");
+      } catch (err) { avisar(err.message, "erro"); return; }
+    } else {
+      comandaAtual = c;
+    }
+    mostrarVista("comanda");
+  });
 
   /* ---------------- Catálogo ---------------- */
   async function carregarProdutos() {
@@ -77,8 +197,13 @@
     return produtos.filter((p) => chave(p.nome).indexOf(t) !== -1 || chave(p.categoria).indexOf(t) !== -1);
   }
 
-  function quantidadeNaComanda(id) {
-    const item = comanda.find((i) => i.id === id);
+  function quantidadeLancada(id) {
+    if (vista === "comanda" && comandaAtual) {
+      return (comandaAtual.itens || [])
+        .filter((i) => i.nome === (produtos.find((p) => p.id === id) || {}).nome)
+        .reduce((s, i) => s + i.quantidade, 0);
+    }
+    const item = carrinho.find((i) => i.id === id);
     return item ? item.qtd : 0;
   }
 
@@ -88,7 +213,7 @@
 
     if (!produtos.length) {
       alvo.innerHTML = '<div class="estado-vazio"><h3>Nenhum produto cadastrado</h3>' +
-        '<p>Cadastre o cardápio em Produtos para começar a vender.</p></div>';
+        "<p>Cadastre o cardápio em Produtos para começar a vender.</p></div>";
       return;
     }
     if (!lista.length) {
@@ -112,9 +237,9 @@
   }
 
   function cartao(p) {
-    const qtd = quantidadeNaComanda(p.id);
+    const qtd = quantidadeLancada(p.id);
     return '<button type="button" class="cartao-produto' + (p.esgotado ? " cartao-produto--esgotado" : "") +
-      '" data-id="' + esc(p.id) + '"' + (p.esgotado ? " disabled" : "") + '>' +
+      '" data-id="' + esc(p.id) + '"' + (p.esgotado ? " disabled" : "") + ">" +
       '<span class="cartao-produto__nome">' + esc(p.nome) + (p.esgotado ? " (esgotado)" : "") + "</span>" +
       '<span class="cartao-produto__pe">' +
         '<span class="cartao-produto__preco">' + moeda(p.preco) + "</span>" +
@@ -125,7 +250,7 @@
   $("#catalogo").addEventListener("click", function (e) {
     const btn = e.target.closest(".cartao-produto");
     if (!btn || btn.disabled) return;
-    adicionar(btn.getAttribute("data-id"));
+    lancar(btn.getAttribute("data-id"));
   });
 
   const campoBusca = $("#buscaProduto");
@@ -135,58 +260,80 @@
     e.preventDefault();
     const primeiro = produtosFiltrados().filter((p) => !p.esgotado)[0];
     if (!primeiro) { avisar("Nenhum produto disponível para esse termo.", "erro"); return; }
-    adicionar(primeiro.id);
+    lancar(primeiro.id);
     campoBusca.select();
   });
 
-  /* ---------------- Comanda ---------------- */
-  function adicionar(id) {
+  /* ---------------- Lançamento ---------------- */
+  async function lancar(id) {
     const p = produtos.find((x) => x.id === id);
     if (!p || p.esgotado) return;
-    const existente = comanda.find((i) => i.id === id);
+
+    if (vista === "comanda" && comandaAtual) {
+      try {
+        await DB.lancarItem(comandaAtual.id, {
+          produto_id: p.id, nome: p.nome, categoria: p.categoria,
+          preco_unit: p.preco, quantidade: 1,
+        });
+        await recarregarComandas();
+        desenharPainel();
+        desenharCatalogo();
+      } catch (err) { avisar(err.message, "erro"); }
+      return;
+    }
+
+    const existente = carrinho.find((i) => i.id === id);
     if (existente) existente.qtd += 1;
-    else comanda.push({ id: p.id, nome: p.nome, categoria: p.categoria, preco: p.preco, qtd: 1 });
-    desenharComanda();
+    else carrinho.push({ id: p.id, nome: p.nome, categoria: p.categoria, preco: p.preco, qtd: 1 });
+    desenharPainel();
     desenharCatalogo();
   }
 
-  function alterarQtd(id, delta) {
-    const item = comanda.find((i) => i.id === id);
-    if (!item) return;
-    item.qtd += delta;
-    if (item.qtd <= 0) comanda.splice(comanda.indexOf(item), 1);
-    desenharComanda();
-    desenharCatalogo();
+  /* ---------------- Painel lateral ---------------- */
+  function itensDoPainel() {
+    if (vista === "comanda" && comandaAtual) {
+      return (comandaAtual.itens || []).map((i) => ({
+        chave: i.id, nome: i.nome, preco: i.preco_unit, qtd: i.quantidade,
+        hora: new Date(i.criado_em).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+        daComanda: true,
+      }));
+    }
+    return carrinho.map((i) => ({ chave: i.id, nome: i.nome, preco: i.preco, qtd: i.qtd, daComanda: false }));
   }
 
-  function removerItem(id) {
-    const i = comanda.findIndex((x) => x.id === id);
-    if (i !== -1) comanda.splice(i, 1);
-    desenharComanda();
-    desenharCatalogo();
+  function totalPainel() {
+    return Math.round(itensDoPainel().reduce((s, i) => s + i.preco * i.qtd, 0) * 100) / 100;
   }
 
-  function totalComanda() {
-    return Math.round(comanda.reduce((s, i) => s + i.preco * i.qtd, 0) * 100) / 100;
-  }
-
-  function desenharComanda() {
+  function desenharPainel() {
+    const itens = itensDoPainel();
     const alvo = $("#comandaItens");
-    const unidades = comanda.reduce((s, i) => s + i.qtd, 0);
+    const unidades = itens.reduce((s, i) => s + i.qtd, 0);
 
-    if (!comanda.length) {
-      alvo.innerHTML = '<div class="comanda__vazia">Toque nos produtos ao lado<br>para montar a venda.</div>';
+    if (vista === "comanda" && comandaAtual) {
+      $("#comandaNumero").textContent = comandaAtual.numero;
+      $("#comandaNumero2").textContent = comandaAtual.numero;
+      $("#comandaAberta").textContent = comandaAtual.aberta_em
+        ? "Aberta há " + tempoAberta(comandaAtual)
+        : "";
+    }
+
+    if (!itens.length) {
+      alvo.innerHTML = '<div class="comanda__vazia">Toque nos produtos ao lado<br>para lançar.</div>';
     } else {
-      alvo.innerHTML = comanda.map((i) =>
-        '<div class="comanda-item" data-id="' + esc(i.id) + '">' +
+      alvo.innerHTML = itens.map((i) =>
+        '<div class="comanda-item" data-chave="' + esc(i.chave) + '">' +
           '<div class="comanda-item__nome">' + esc(i.nome) + "</div>" +
           '<div class="comanda-item__total">' + moeda(i.preco * i.qtd) + "</div>" +
           '<div class="comanda-item__unit">' + moeda(i.preco) + " a unidade" +
+            (i.hora ? ' <span class="item-comanda__hora">· ' + esc(i.hora) + "</span>" : "") +
             '<div class="contador">' +
-              '<button type="button" data-acao="menos" aria-label="Diminuir">&minus;</button>' +
-              "<span>" + i.qtd + "</span>" +
-              '<button type="button" data-acao="mais" aria-label="Aumentar">+</button>' +
-              '<button type="button" class="remover" data-acao="remover">remover</button>' +
+              (i.daComanda
+                ? '<button type="button" class="remover" data-acao="remover">remover</button>'
+                : '<button type="button" data-acao="menos" aria-label="Diminuir">&minus;</button>' +
+                  "<span>" + i.qtd + "</span>" +
+                  '<button type="button" data-acao="mais" aria-label="Aumentar">+</button>' +
+                  '<button type="button" class="remover" data-acao="remover">remover</button>') +
             "</div>" +
           "</div>" +
         "</div>"
@@ -196,18 +343,35 @@
     $("#contagemItens").textContent = unidades
       ? unidades + (unidades === 1 ? " item" : " itens")
       : "nenhum item";
-    $("#comandaTotal").textContent = moeda(totalComanda());
-    $("#btnFechar").disabled = comanda.length === 0;
+    $("#comandaTotal").textContent = moeda(totalPainel());
+    $("#btnFechar").disabled = itens.length === 0;
   }
 
-  $("#comandaItens").addEventListener("click", function (e) {
+  $("#comandaItens").addEventListener("click", async function (e) {
     const btn = e.target.closest("button[data-acao]");
     if (!btn) return;
-    const id = btn.closest(".comanda-item").getAttribute("data-id");
+    const chaveItem = btn.closest(".comanda-item").getAttribute("data-chave");
     const acao = btn.getAttribute("data-acao");
-    if (acao === "mais") alterarQtd(id, 1);
-    else if (acao === "menos") alterarQtd(id, -1);
-    else removerItem(id);
+
+    if (vista === "comanda" && comandaAtual) {
+      if (acao !== "remover") return;
+      try {
+        await DB.removerItemComanda(comandaAtual.id, chaveItem);
+        await recarregarComandas();
+        desenharPainel();
+        desenharCatalogo();
+      } catch (err) { avisar(err.message, "erro"); }
+      return;
+    }
+
+    const item = carrinho.find((i) => i.id === chaveItem);
+    if (!item) return;
+    if (acao === "mais") item.qtd += 1;
+    else if (acao === "menos") item.qtd -= 1;
+    else item.qtd = 0;
+    if (item.qtd <= 0) carrinho.splice(carrinho.indexOf(item), 1);
+    desenharPainel();
+    desenharCatalogo();
   });
 
   $("#pagamentos").addEventListener("click", function (e) {
@@ -217,50 +381,83 @@
     $$(".pagamento").forEach((b) => b.classList.toggle("ativo", b === btn));
   });
 
+  /* ---------------- Cancelar ---------------- */
   $("#btnCancelar").addEventListener("click", async function () {
-    if (!comanda.length) return;
+    if (vista === "comanda" && comandaAtual) {
+      const ok = await confirmar({
+        titulo: "Cancelar comanda " + comandaAtual.numero,
+        texto: "Todo o consumo lançado será descartado e o cartão volta a ficar livre.\nUse apenas quando o cliente não consumiu nada ou o lançamento foi todo errado.",
+        confirmar: "Descartar e liberar", perigo: true,
+      });
+      if (!ok) return;
+      try {
+        await DB.liberarComanda(comandaAtual.id);
+        avisar("Comanda " + comandaAtual.numero + " liberada.", "ok");
+        comandaAtual = null;
+        await recarregarComandas();
+        mostrarVista("quadro");
+      } catch (err) { avisar(err.message, "erro"); }
+      return;
+    }
+
+    if (!carrinho.length) return;
     const ok = await confirmar({
       titulo: "Cancelar venda",
       texto: "Descartar os itens desta venda?",
       confirmar: "Descartar", perigo: true,
     });
     if (!ok) return;
-    limparComanda();
+    limparVendaRapida();
   });
 
-  function limparComanda() {
-    comanda.length = 0;
+  function limparVendaRapida() {
+    carrinho.length = 0;
     $("#observacao").value = "";
-    desenharComanda();
-    desenharCatalogo();
     campoBusca.value = "";
+    desenharPainel();
     desenharCatalogo();
     campoBusca.focus();
   }
 
   /* ---------------- Fechamento ---------------- */
   $("#btnFechar").addEventListener("click", async function () {
-    if (!comanda.length) return;
+    const itens = itensDoPainel();
+    if (!itens.length) return;
     const btn = $("#btnFechar");
+    const rotulo = btn.textContent;
     btn.disabled = true;
     btn.textContent = "Registrando...";
+
     try {
-      await DB.registrarVenda({
-        pagamento: pagamento,
-        observacao: $("#observacao").value,
-        itens: comanda.map((i) => ({
-          produto_id: i.id, nome: i.nome, categoria: i.categoria,
-          preco_unit: i.preco, quantidade: i.qtd,
-        })),
-      });
-      avisar("Venda de " + moeda(totalComanda()) + " registrada.", "ok");
-      limparComanda();
-      await carregarVendasDoDia();
+      if (vista === "comanda" && comandaAtual) {
+        const numero = comandaAtual.numero;
+        const total = totalPainel();
+        await DB.fecharComanda(comandaAtual.id, pagamento, $("#observacao").value);
+        avisar("Comanda " + numero + " fechada — " + moeda(total) + ".", "ok");
+        comandaAtual = null;
+        $("#observacao").value = "";
+        await recarregarComandas();
+        await carregarVendasDoDia();
+        mostrarVista("quadro");
+      } else {
+        const total = totalPainel();
+        await DB.registrarVenda({
+          pagamento: pagamento,
+          observacao: $("#observacao").value,
+          itens: carrinho.map((i) => ({
+            produto_id: i.id, nome: i.nome, categoria: i.categoria,
+            preco_unit: i.preco, quantidade: i.qtd,
+          })),
+        });
+        avisar("Venda de " + moeda(total) + " registrada.", "ok");
+        limparVendaRapida();
+        await carregarVendasDoDia();
+      }
     } catch (err) {
-      avisar(err.message || "Falha ao registrar a venda.", "erro");
+      avisar(err.message || "Falha ao registrar.", "erro");
     } finally {
-      btn.textContent = "Fechar venda";
-      btn.disabled = comanda.length === 0;
+      btn.textContent = rotulo;
+      btn.disabled = itensDoPainel().length === 0;
     }
   });
 
@@ -274,9 +471,6 @@
       $("#diaQtd").textContent = vendasHoje.length;
       $("#diaTotal").textContent = moeda(total);
       $("#diaTicket").textContent = vendasHoje.length ? moeda(total / vendasHoje.length) : "—";
-      $("#diaUltima").textContent = vendasHoje.length
-        ? new Date(vendasHoje[0].criado_em).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
-        : "—";
 
       const alvo = $("#ultimasVendas");
       if (!vendasHoje.length) {
@@ -285,10 +479,12 @@
       }
       alvo.innerHTML = vendasHoje.slice(0, 8).map((v) => {
         const resumo = (v.itens || []).map((i) => i.quantidade + "x " + i.nome).join(", ");
+        const origem = v.comanda_numero ? "Comanda " + v.comanda_numero + " · " : "";
         return '<div class="ultima-venda" data-id="' + esc(v.id) + '">' +
           '<span class="ultima-venda__hora">' +
             new Date(v.criado_em).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) + "</span>" +
-          '<span class="ultima-venda__itens" title="' + esc(resumo) + '">' + esc(resumo || "—") + "</span>" +
+          '<span class="ultima-venda__itens" title="' + esc(resumo) + '">' +
+            esc(origem + (resumo || "—")) + "</span>" +
           '<span class="ultima-venda__valor">' + moeda(v.total) + "</span>" +
           '<button type="button" data-estornar aria-label="Estornar venda">estornar</button>' +
         "</div>";
@@ -313,17 +509,22 @@
       await DB.excluirVenda(id);
       avisar("Venda estornada.", "ok");
       await carregarVendasDoDia();
-    } catch (err) {
-      avisar(err.message, "erro");
-    }
+    } catch (err) { avisar(err.message, "erro"); }
   });
 
   /* ---------------- Atalhos ---------------- */
   document.addEventListener("keydown", function (e) {
     if (e.target.tagName === "INPUT" && e.key !== "Escape" && e.key !== "F2") return;
-    if (e.key === "F2") { e.preventDefault(); $("#btnFechar").click(); }
-    if (e.key === "Escape" && !document.querySelector(".modal-fundo.aberto")) campoBusca.focus();
+    if (e.key === "F2" && vista !== "quadro") { e.preventDefault(); $("#btnFechar").click(); }
+    if (e.key === "Escape" && !document.querySelector(".modal-fundo.aberto") && vista !== "quadro") {
+      campoBusca.focus();
+    }
   });
+
+  /* Mantém o tempo das comandas em dia sem recarregar a página */
+  setInterval(function () {
+    if (vista === "quadro" && comandas.length) desenharQuadro();
+  }, 60000);
 
   /* ---------------- Início ---------------- */
   (async function iniciar() {

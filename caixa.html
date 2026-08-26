@@ -13,11 +13,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap">
 
-<link rel="stylesheet" href="assets/css/tokens.css?v=20260820c">
-<link rel="stylesheet" href="assets/css/base.css?v=20260820c">
-<link rel="stylesheet" href="assets/css/app.css?v=20260820c">
-<link rel="stylesheet" href="assets/css/admin.css?v=20260820c">
-<link rel="stylesheet" href="assets/css/caixa.css?v=20260820c">
+<link rel="stylesheet" href="assets/css/tokens.css?v=20260820d">
+<link rel="stylesheet" href="assets/css/base.css?v=20260820d">
+<link rel="stylesheet" href="assets/css/app.css?v=20260820d">
+<link rel="stylesheet" href="assets/css/admin.css?v=20260820d">
+<link rel="stylesheet" href="assets/css/caixa.css?v=20260820d">
 </head>
 <body data-pagina="caixa">
 
@@ -39,7 +39,6 @@
       </div>
       <button type="submit" class="btn btn--bloco" id="btnEntrar">Entrar</button>
     </form>
-
     <div id="erroAcessoBaixo" class="nota nota--erro oculto" style="margin-top:16px"></div>
   </div>
 </section>
@@ -52,80 +51,106 @@
   <div class="conteudo">
     <header class="barra" data-barra></header>
 
-  <div class="tira-dia">
-    <div><span>Vendas hoje</span><strong id="diaQtd">0</strong></div>
-    <div><span>Faturamento do dia</span><strong class="ouro" id="diaTotal">R$ 0,00</strong></div>
-    <div><span>Ticket médio</span><strong id="diaTicket">—</strong></div>
-    <div><span>Última venda</span><strong id="diaUltima">—</strong></div>
-  </div>
+    <div class="tira-salao">
+      <div><span>Comandas abertas</span><strong class="aberto" id="salaoAbertas">0</strong></div>
+      <div><span>Em aberto no salão</span><strong class="aberto" id="salaoValor">R$ 0,00</strong></div>
+      <div><span>Vendas hoje</span><strong id="diaQtd">0</strong></div>
+      <div><span>Faturamento do dia</span><strong class="ouro" id="diaTotal">R$ 0,00</strong></div>
+      <div><span>Ticket médio</span><strong id="diaTicket">—</strong></div>
+    </div>
 
-    <div class="caixa">
+    <div class="abas-caixa">
+      <button type="button" class="aba-caixa ativa" data-vista="quadro">Comandas</button>
+      <button type="button" class="aba-caixa" data-vista="rapida">Venda rápida</button>
+    </div>
 
-    <!-- ---------- Catálogo ---------- -->
-    <section class="catalogo">
-      <div class="catalogo__filtros">
-        <div class="busca-caixa">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-            <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
-          </svg>
-          <input type="search" id="buscaProduto" class="entrada" autocomplete="off"
-                 placeholder="Digite para filtrar e pressione Enter para adicionar o primeiro resultado">
-        </div>
-      </div>
-      <div id="catalogo"></div>
+    <!-- ---------- Quadro de comandas ---------- -->
+    <section class="quadro-comandas" id="vistaQuadro">
+      <div class="grade-comandas" id="gradeComandas"></div>
+      <p class="nota" style="margin-top:18px" id="notaQuadro">
+        Verde: cartão livre. Vermelho: cliente consumindo. Toque no cartão para abrir ou lançar itens.
+      </p>
     </section>
 
-    <!-- ---------- Comanda ---------- -->
-    <aside>
-      <div class="comanda">
-        <div class="comanda__cabeca">
-          <h2>Venda atual</h2>
-          <span class="contagem" id="contagemItens">nenhum item</span>
-        </div>
+    <!-- ---------- Lançamento (comanda ou venda rápida) ---------- -->
+    <section class="oculto" id="vistaVenda">
+      <div class="caixa">
 
-        <div class="comanda__itens" id="comandaItens">
-          <div class="comanda__vazia">Toque nos produtos ao lado<br>para montar a venda.</div>
-        </div>
-
-        <div class="comanda__pe">
-          <div class="comanda__total">
-            <span>Total</span>
-            <strong id="comandaTotal">R$ 0,00</strong>
+        <section class="catalogo">
+          <div class="comanda-cabeca oculto" id="comandaCabeca">
+            <span class="comanda-cabeca__num" id="comandaNumero">0</span>
+            <div>
+              <h2>Comanda <span id="comandaNumero2">0</span></h2>
+              <p id="comandaAberta"></p>
+            </div>
+            <button type="button" class="btn btn--fantasma btn--pequeno" id="btnVoltarQuadro">
+              Voltar ao quadro
+            </button>
           </div>
 
-          <div class="pagamentos" id="pagamentos">
-            <button type="button" class="pagamento ativo" data-pg="dinheiro">Dinheiro</button>
-            <button type="button" class="pagamento" data-pg="pix">PIX</button>
-            <button type="button" class="pagamento" data-pg="debito">Débito</button>
-            <button type="button" class="pagamento" data-pg="credito">Crédito</button>
+          <div class="catalogo__filtros">
+            <div class="busca-caixa">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
+              </svg>
+              <input type="search" id="buscaProduto" class="entrada" autocomplete="off"
+                     placeholder="Digite para filtrar e pressione Enter para lançar o primeiro resultado">
+            </div>
+          </div>
+          <div id="catalogo"></div>
+        </section>
+
+        <aside>
+          <div class="comanda">
+            <div class="comanda__cabeca">
+              <h2 id="tituloPainel">Venda atual</h2>
+              <span class="contagem" id="contagemItens">nenhum item</span>
+            </div>
+
+            <div class="comanda__itens" id="comandaItens">
+              <div class="comanda__vazia">Toque nos produtos ao lado<br>para lançar.</div>
+            </div>
+
+            <div class="comanda__pe">
+              <div class="comanda__total">
+                <span>Total</span>
+                <strong id="comandaTotal">R$ 0,00</strong>
+              </div>
+
+              <div class="pagamentos" id="pagamentos">
+                <button type="button" class="pagamento ativo" data-pg="dinheiro">Dinheiro</button>
+                <button type="button" class="pagamento" data-pg="pix">PIX</button>
+                <button type="button" class="pagamento" data-pg="debito">Débito</button>
+                <button type="button" class="pagamento" data-pg="credito">Crédito</button>
+              </div>
+
+              <div class="campo" style="margin-bottom:12px">
+                <input type="text" id="observacao" class="entrada" maxlength="200" placeholder="Observação (opcional)">
+              </div>
+
+              <button type="button" class="btn btn--confirmar btn--bloco" id="btnFechar" disabled>
+                Fechar venda
+              </button>
+              <button type="button" class="btn btn--cancelar btn--bloco btn--pequeno" id="btnCancelar" style="margin-top:8px">
+                Cancelar venda
+              </button>
+            </div>
           </div>
 
-          <div class="campo" style="margin-bottom:12px">
-            <input type="text" id="observacao" class="entrada" maxlength="200" placeholder="Observação (opcional)">
+          <div class="ultimas" id="areaUltimas">
+            <h3>Últimas vendas de hoje</h3>
+            <div id="ultimasVendas"></div>
           </div>
-
-          <button type="button" class="btn btn--confirmar btn--bloco" id="btnFechar" disabled>
-            Fechar venda
-          </button>
-          <button type="button" class="btn btn--cancelar btn--bloco btn--pequeno" id="btnCancelar" style="margin-top:8px">
-            Cancelar venda
-          </button>
-        </div>
+        </aside>
       </div>
-
-      <div class="ultimas">
-        <h3>Últimas vendas de hoje</h3>
-        <div id="ultimasVendas"></div>
-      </div>
-      </aside>
-    </div>
+    </section>
   </div>
 </div>
 
-<script src="assets/js/config.js?v=20260820c"></script>
-<script src="assets/js/ui.js?v=20260820c"></script>
-<script src="assets/js/nav.js?v=20260820c"></script>
-<script src="assets/js/db.js?v=20260820c"></script>
-<script src="assets/js/caixa.js?v=20260820c"></script>
+<script src="assets/js/config.js?v=20260820d"></script>
+<script src="assets/js/ui.js?v=20260820d"></script>
+<script src="assets/js/nav.js?v=20260820d"></script>
+<script src="assets/js/db.js?v=20260820d"></script>
+<script src="assets/js/caixa.js?v=20260820d"></script>
 </body>
 </html>

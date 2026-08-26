@@ -38,77 +38,120 @@
 
 .topo-fixo__acoes { margin-left: auto; display: flex; gap: 8px; align-items: center; }
 
-/* ---------- Capa ---------- */
-/* A capa fica sobre a foto da fachada, que é escura nos dois temas.
-   Por isso ela mantém as cores do tema escuro internamente — texto claro
-   sobre foto escura continua legível de dia e de noite. */
+/* ---------- Capa ----------
+   A foto oficial da casa já contém o logo e o nome, então ela é a capa.
+   Não há texto sobreposto: repetir a marca por cima da própria marca
+   deixaria a tela suja. O degradê no pé costura a foto com a página.
+   ------------------------------------------------------------------ */
 .capa {
-  --texto:       #EFE7DC;
-  --texto-suave: #B5AA9C;
+  --texto:       #F0E4D2;
+  --texto-suave: #B3A38E;
   --texto-fraco: #8A8074;
-  --ouro:        #E8B54C;
-  --ouro-claro:  #F2CE79;
+  --ouro:        #E2B357;
+  --ouro-claro:  #F0CE8A;
+  --ouro-escuro: #A07A22;
   --linha:       rgba(255, 255, 255, .14);
+  --linha-forte: #332A20;
 
   position: relative;
-  padding: 74px 0 64px;
-  text-align: center;
-  overflow: hidden;
-  border-bottom: 1px solid var(--linha);
+  padding-bottom: 34px;
+  border-bottom: 1px solid var(--linha-forte);
+  background: #0C0A08;
 }
-.capa__fundo {
+
+/* A foto ocupa a largura toda, de ponta a ponta.
+   O corte é só na altura, e a proporção foi escolhida para caber o emblema
+   de lúpulo inteiro no alto, as três linhas do barril e o nome gravado no
+   copo. O degradê é leve e curto de propósito: costura a foto com a página
+   sem apagar justamente esses detalhes.
+   Como a foto é 3:2, uma proporção mais larga que 1.5 garante que as
+   laterais nunca sejam cortadas — o corte cai todo na vertical. */
+.capa__imagem { display: block; position: relative; }
+
+.capa__imagem img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  object-position: center 15%;
+}
+
+/* A altura vem só da proporção, nunca de vh: numa janela baixa um teto em
+   vh encolhia a faixa e cortava justamente o pé da foto. */
+@media (min-width: 700px)  { .capa__imagem img { aspect-ratio: 1.9; } }
+@media (min-width: 1000px) { .capa__imagem img { aspect-ratio: 2;   } }
+@media (min-width: 1500px) { .capa__imagem img { aspect-ratio: 2.5; } }
+
+/* Degradê que funde a foto com o fundo da faixa, nos dois temas */
+.capa__imagem::after {
+  content: "";
   position: absolute;
-  inset: 0;
-  background: url("../img/fachada.jpg") center 42% / cover no-repeat;
-  opacity: .28;
-  filter: saturate(.85);
-}
-.capa__veu {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse at 50% 18%, rgba(216,164,58,.16), transparent 62%),
-    linear-gradient(180deg, rgba(10,9,8,.72) 0%, rgba(10,9,8,.90) 62%, var(--fundo-pagina) 100%);
-}
-.capa__interno { position: relative; }
-
-.capa__emblema {
-  width: 108px;
-  height: 108px;
-  margin: 0 auto 22px;
-  filter: drop-shadow(0 8px 22px rgba(216,164,58,.24));
+  inset: auto 0 -1px 0;
+  height: 28%;
+  background: linear-gradient(180deg,
+              rgba(12,10,8,0) 0%,
+              rgba(12,10,8,.24) 55%,
+              rgba(12,10,8,.72) 82%,
+              #0C0A08 100%);
+  pointer-events: none;
 }
 
-.capa__nome {
-  font-size: clamp(2.5rem, 8vw, 4.1rem);
-  letter-spacing: .04em;
-  margin-bottom: 6px;
-}
-.capa__nome em { color: var(--ouro); font-style: italic; }
-
-.capa__sub {
-  margin: 0 auto 20px;
-  font-size: .8rem;
-  font-weight: 600;
-  letter-spacing: .34em;
-  text-transform: uppercase;
-  color: var(--texto-suave);
-}
+.capa__interno { position: relative; margin-top: -14px; text-align: center; }
 
 .capa__lema {
-  max-width: 460px;
-  margin: 0 auto 26px;
+  max-width: 480px;
+  margin: 0 auto 20px;
   font-family: var(--fonte-titulo);
-  font-size: 1.06rem;
+  font-size: clamp(1.02rem, 2.6vw, 1.22rem);
   font-style: italic;
+  line-height: 1.5;
   color: var(--ouro-claro);
 }
 
-.capa__dados {
+/* --- Redes sociais em destaque --- */
+.capa__redes {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 10px;
+  margin-bottom: 18px;
+}
+
+.rede {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 12px 22px;
+  font-size: .92rem;
+  font-weight: 600;
+  letter-spacing: .01em;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  transition: filter var(--transicao), transform 90ms ease;
+}
+.rede:hover { filter: brightness(1.08); }
+.rede:active { transform: scale(.98); }
+.rede svg { width: 19px; height: 19px; flex: none; }
+
+.rede--whatsapp {
+  color: var(--whatsapp-alvo);
+  background: var(--whatsapp);
+}
+.rede--whatsapp:hover { color: var(--whatsapp-alvo); }
+
+.rede--instagram {
+  color: #FFFFFF;
+  background: var(--instagram);
+  background-image: var(--instagram-degrade);
+}
+.rede--instagram:hover { color: #FFFFFF; }
+
+/* --- Endereço, horário e telefone --- */
+.capa__dados {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 9px;
 }
 .capa__dados a, .capa__dados span {
   display: inline-flex;
@@ -117,11 +160,41 @@
   padding: 8px 15px;
   font-size: .82rem;
   color: var(--texto-suave);
-  background: rgba(26, 24, 23, .72);
+  background: rgba(30, 24, 19, .72);
   border: 1px solid var(--linha);
   border-radius: 999px;
 }
 .capa__dados a:hover { color: var(--ouro); border-color: var(--ouro-escuro); }
+
+/* --- Botão flutuante de WhatsApp --- */
+.zap-flutuante {
+  position: fixed;
+  right: 18px;
+  bottom: 76px;
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 13px 18px;
+  font-size: .88rem;
+  font-weight: 600;
+  color: var(--whatsapp-alvo);
+  background: var(--whatsapp);
+  border-radius: 999px;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, .35);
+  transition: filter var(--transicao), transform var(--transicao);
+}
+.zap-flutuante:hover { filter: brightness(1.07); transform: translateY(-1px); color: var(--whatsapp-alvo); }
+.zap-flutuante svg { width: 21px; height: 21px; flex: none; }
+.zap-flutuante span { white-space: nowrap; }
+
+@media (max-width: 640px) {
+  /* No celular vira só o ícone, para não cobrir o cardápio */
+  .zap-flutuante { padding: 14px; bottom: 72px; }
+  .zap-flutuante span { display: none; }
+}
+
+@media print { .zap-flutuante { display: none !important; } }
 
 /* ---------- Navegação do cardápio ---------- */
 .nav-cardapio {
@@ -183,6 +256,7 @@
 
 .secao__cabeca { text-align: center; margin-bottom: 26px; }
 .secao__cabeca h2 {
+  color: var(--creme);
   font-size: 1.72rem;
   letter-spacing: .03em;
   margin-bottom: 8px;
@@ -220,7 +294,7 @@
   background: var(--superficie);
   transition: border-color var(--transicao);
 }
-.item--ilustrado:hover { border-color: var(--linha-forte); }
+.item--ilustrado:hover { border-color: var(--cobre); }
 
 .item__foto {
   width: var(--foto-item);
@@ -362,9 +436,11 @@
 
 /* ---------- Telas pequenas ---------- */
 @media (max-width: 720px) {
-  .capa { padding: 48px 0 42px; }
-  .capa__emblema { width: 86px; height: 86px; margin-bottom: 16px; }
-  .capa__sub { letter-spacing: .22em; font-size: .72rem; }
+  .capa { padding-bottom: 26px; }
+  .capa__lema { margin-bottom: 16px; }
+  .rede { padding: 11px 18px; font-size: .86rem; }
+  .capa__dados { gap: 7px; }
+  .capa__dados a, .capa__dados span { padding: 7px 12px; font-size: .78rem; }
   .itens { grid-template-columns: 1fr; gap: 0; }
   .itens--ilustrados { grid-template-columns: 1fr; gap: 10px; }
   .item__foto { width: var(--foto-item-mobile); height: var(--foto-item-mobile); }
@@ -378,12 +454,14 @@
 /* ---------- Impressão (cardápio de balcão) ---------- */
 @media print {
   @page { size: A4; margin: 14mm; }
-  .topo-fixo, .nav-cardapio, .ao-topo, #avisos, .capa__fundo, .capa__veu { display: none !important; }
+  .topo-fixo, .nav-cardapio, .ao-topo, #avisos, .capa__imagem, .capa__redes { display: none !important; }
   body { background: #fff; color: #111; font-size: 11pt; }
-  .capa { padding: 0 0 14px; border-bottom: 2px solid #111; }
-  .capa__nome { color: #111; font-size: 30pt; }
-  .capa__nome em { color: #8A6A15; }
-  .capa__sub, .capa__lema, .rodape__info { color: #444; }
+  .capa { padding: 0 0 14px; background: none; border-bottom: 2px solid #111; }
+  .capa__interno { margin-top: 0; }
+  .capa__lema, .rodape__info { color: #444; }
+  .sr-only { position: static; width: auto; height: auto; clip: auto;
+             overflow: visible; white-space: normal;
+             font-family: var(--fonte-titulo); font-size: 26pt; color: #111; }
   .capa__dados { display: none; }
   .secao { padding-top: 18px; break-inside: avoid; }
   .secao__cabeca h2 { color: #111; font-size: 15pt; }

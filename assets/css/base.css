@@ -207,8 +207,9 @@ img { max-width: 100%; display: block; }
 }
 .selo--ok    { color: var(--sucesso); background: var(--sucesso-bg); border-color: rgba(78,154,95,.34); }
 .selo--erro  { color: var(--erro);    background: var(--erro-bg);    border-color: rgba(192,80,63,.34); }
-.selo--ouro  { color: var(--ouro);    background: var(--alerta-bg);  border-color: rgba(216,164,58,.34); }
+.selo--ouro  { color: var(--texto-sobre-ouro); background: var(--ouro-fundo); border-color: var(--ouro-fundo); }
 .selo--vazio { color: var(--texto-fraco); border-color: var(--linha-forte); }
+.selo--cobre { color: var(--cobre);   background: var(--cobre-fosco); border-color: var(--cobre); }
 
 /* ---------- Avisos ---------- */
 .nota {

@@ -17,6 +17,8 @@
 <meta property="og:title" content="Front Beer — Adega e Petiscaria">
 <meta property="og:description" content="Espetos na brasa, petiscos, cervejas geladas e destilados. Veja o cardápio completo.">
 <meta property="og:image" content="assets/img/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -33,9 +35,9 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="assets/css/tokens.css?v=20260826e">
-<link rel="stylesheet" href="assets/css/base.css?v=20260826e">
-<link rel="stylesheet" href="assets/css/cardapio.css?v=20260826e">
+<link rel="stylesheet" href="assets/css/tokens.css?v=20260826k">
+<link rel="stylesheet" href="assets/css/base.css?v=20260826k">
+<link rel="stylesheet" href="assets/css/cardapio.css?v=20260826k">
 </head>
 <body>
 
@@ -52,13 +54,19 @@
 
 <!-- ============ Capa ============ -->
 <section class="capa">
-  <div class="capa__fundo" aria-hidden="true"></div>
-  <div class="capa__veu" aria-hidden="true"></div>
+  <!-- A foto oficial já traz o logo e o nome; o h1 fica invisível para
+       leitores de tela e buscadores, sem repetir a marca na tela. -->
+  <h1 class="sr-only"><span data-marca>Front Beer</span> — <span data-segmento>Adega e Petiscaria</span></h1>
+
+  <picture class="capa__imagem">
+    <source media="(max-width: 700px)" srcset="assets/img/capa-900.jpg">
+    <img src="assets/img/capa.jpg" alt="Front Beer, adega e petiscaria: chope, tábua de petiscos e o letreiro da casa"
+         width="1600" height="1067" fetchpriority="high" decoding="async">
+  </picture>
+
   <div class="container capa__interno">
-    <img class="capa__emblema" src="assets/img/emblema.png" alt="Emblema Front Beer" width="108" height="108">
-    <h1 class="capa__nome" data-marca>Front Beer</h1>
-    <p class="capa__sub" data-segmento>Adega e Petiscaria</p>
     <p class="capa__lema" id="lema"></p>
+    <div class="capa__redes" id="redesLoja"></div>
     <div class="capa__dados" id="dadosLoja"></div>
   </div>
 </section>
@@ -106,10 +114,10 @@
   </svg>
 </button>
 
-<script src="assets/js/config.js?v=20260826e"></script>
-<script src="assets/js/ui.js?v=20260826e"></script>
-<script src="assets/js/tema.js?v=20260826e"></script>
-<script src="assets/js/db.js?v=20260826e"></script>
-<script src="assets/js/cardapio.js?v=20260826e"></script>
+<script src="assets/js/config.js?v=20260826k"></script>
+<script src="assets/js/ui.js?v=20260826k"></script>
+<script src="assets/js/tema.js?v=20260826k"></script>
+<script src="assets/js/db.js?v=20260826k"></script>
+<script src="assets/js/cardapio.js?v=20260826k"></script>
 </body>
 </html>

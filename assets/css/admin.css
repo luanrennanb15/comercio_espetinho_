@@ -328,8 +328,8 @@
 }
 .modo-compra__opcao:hover { color: var(--texto); }
 .modo-compra__opcao.ativa {
-  color: var(--preto);
-  background: var(--ouro);
+  color: var(--texto-sobre-ouro);
+  background: var(--ouro-fundo);
 }
 
 .calculadora__dica {

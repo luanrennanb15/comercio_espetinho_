@@ -102,6 +102,7 @@
   });
 
   (async function iniciar() {
+    document.getElementById("acoesExtrato").innerHTML = TEMA.botao();
     const nome = CFG.nome || "";
     const d = CFG.nomeDestaque || "";
     document.querySelectorAll("[data-marca]").forEach(function (el) {

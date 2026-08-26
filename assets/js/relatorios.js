@@ -14,7 +14,20 @@
   };
   const DIAS_SEMANA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
-  const CORES = { ouro: "#D8A43A", ouroClaro: "#F2CE79", linha: "#2C2722", texto: "#A89E92" };
+  /* As cores dos gráficos saem das variáveis do tema, então eles
+     acompanham a troca entre claro e escuro sem código duplicado. */
+  function corDoTema(nome, alternativa) {
+    const v = getComputedStyle(document.documentElement).getPropertyValue(nome).trim();
+    return v || alternativa;
+  }
+
+  const CORES = {
+    get ouro()      { return corDoTema("--ouro", "#D8A43A"); },
+    get ouroClaro() { return corDoTema("--ouro-claro", "#F2CE79"); },
+    get linha()     { return corDoTema("--linha", "#2C2722"); },
+    get texto()     { return corDoTema("--texto-fraco", "#A89E92"); },
+    get superficie(){ return corDoTema("--superficie-2", "#1A1817"); },
+  };
 
   let vendas = [];
   const graficos = {};
@@ -238,10 +251,10 @@
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: "#1A1817",
+          backgroundColor: CORES.superficie,
           borderColor: CORES.linha,
           borderWidth: 1,
-          titleColor: "#EFE7DC",
+          titleColor: corDoTema("--texto", "#EFE7DC"),
           bodyColor: CORES.ouroClaro,
           padding: 10,
           callbacks: { label: (c) => moeda(c.parsed.y) },
@@ -273,7 +286,7 @@
         labels: rotulos,
         datasets: [{
           data: valores,
-          backgroundColor: tipo === "line" ? "rgba(216,164,58,.14)" : CORES.ouro,
+          backgroundColor: tipo === "line" ? CORES.ouro + "26" : CORES.ouro,
           borderColor: CORES.ouro,
           borderWidth: tipo === "line" ? 2 : 0,
           borderRadius: tipo === "bar" ? 4 : 0,
@@ -473,6 +486,11 @@
   });
 
   $("#btnImprimir").addEventListener("click", () => window.print());
+
+  /* Redesenha os gráficos quando o tema muda, para as cores acompanharem */
+  document.addEventListener("temamudou", function () {
+    if (vendas.length) carregar();
+  });
 
   /* ---------------- Início ---------------- */
   (async function iniciar() {

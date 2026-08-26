@@ -31,7 +31,7 @@ a:hover { color: var(--ouro-claro); }
 
 img { max-width: 100%; display: block; }
 
-::selection { background: var(--ouro); color: var(--preto); }
+::selection { background: var(--ouro-fundo); color: var(--preto); }
 
 :focus-visible {
   outline: 2px solid var(--ouro);
@@ -234,7 +234,7 @@ img { max-width: 100%; display: block; }
   justify-content: center;
   padding: 20px;
   overflow-y: auto;
-  background: rgba(5, 4, 4, .78);
+  background: var(--veu-modal);
   backdrop-filter: blur(3px);
 }
 .modal-fundo.aberto { display: flex; }
@@ -331,3 +331,30 @@ img { max-width: 100%; display: block; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* ---------- Alternador de tema ---------- */
+.btn-tema {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  padding: 0;
+  color: var(--texto-suave);
+  background: transparent;
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--raio);
+  cursor: pointer;
+  transition: color var(--transicao), border-color var(--transicao);
+}
+.btn-tema:hover { color: var(--ouro); border-color: var(--ouro-escuro); }
+.btn-tema svg { width: 17px; height: 17px; display: block; }
+
+/* Mostra o sol no tema escuro e a lua no claro — o ícone representa
+   para onde o clique leva, não o estado atual. */
+.btn-tema .icone-claro { display: block; }
+.btn-tema .icone-escuro { display: none; }
+:root[data-tema="claro"] .btn-tema .icone-claro { display: none; }
+:root[data-tema="claro"] .btn-tema .icone-escuro { display: block; }
+
+@media print { .btn-tema { display: none !important; } }

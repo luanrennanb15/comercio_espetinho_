@@ -7,7 +7,7 @@
   position: sticky;
   top: 0;
   z-index: 40;
-  background: rgba(10, 9, 8, .92);
+  background: var(--fundo-translucido);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--linha);
   transition: box-shadow var(--transicao);
@@ -39,7 +39,17 @@
 .topo-fixo__acoes { margin-left: auto; display: flex; gap: 8px; align-items: center; }
 
 /* ---------- Capa ---------- */
+/* A capa fica sobre a foto da fachada, que é escura nos dois temas.
+   Por isso ela mantém as cores do tema escuro internamente — texto claro
+   sobre foto escura continua legível de dia e de noite. */
 .capa {
+  --texto:       #EFE7DC;
+  --texto-suave: #B5AA9C;
+  --texto-fraco: #8A8074;
+  --ouro:        #E8B54C;
+  --ouro-claro:  #F2CE79;
+  --linha:       rgba(255, 255, 255, .14);
+
   position: relative;
   padding: 74px 0 64px;
   text-align: center;
@@ -58,7 +68,7 @@
   inset: 0;
   background:
     radial-gradient(ellipse at 50% 18%, rgba(216,164,58,.16), transparent 62%),
-    linear-gradient(180deg, rgba(10,9,8,.72) 0%, rgba(10,9,8,.90) 62%, var(--preto) 100%);
+    linear-gradient(180deg, rgba(10,9,8,.72) 0%, rgba(10,9,8,.90) 62%, var(--fundo-pagina) 100%);
 }
 .capa__interno { position: relative; }
 
@@ -118,7 +128,7 @@
   position: sticky;
   top: 62px;
   z-index: 30;
-  background: rgba(10, 9, 8, .96);
+  background: var(--fundo-translucido);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--linha);
   padding: 12px 0;
@@ -162,8 +172,8 @@
 }
 .aba:hover { color: var(--texto); border-color: var(--linha-forte); }
 .aba.ativa {
-  color: var(--preto);
-  background: var(--ouro);
+  color: var(--texto-sobre-ouro);
+  background: var(--ouro-fundo);
   border-color: var(--ouro);
 }
 
@@ -207,7 +217,7 @@
   padding: 12px;
   border: 1px solid var(--linha);
   border-radius: var(--raio-md);
-  background: linear-gradient(180deg, var(--superficie) 0%, rgba(18,17,16,.55) 100%);
+  background: var(--superficie);
   transition: border-color var(--transicao);
 }
 .item--ilustrado:hover { border-color: var(--linha-forte); }

@@ -33,7 +33,7 @@
   white-space: nowrap;
 }
 .atalho:hover { color: var(--texto); border-color: var(--ouro-escuro); }
-.atalho.ativo { color: var(--preto); background: var(--ouro); border-color: var(--ouro); }
+.atalho.ativo { color: var(--preto); background: var(--ouro-fundo); border-color: var(--ouro); }
 
 .periodo__datas { display: flex; align-items: center; gap: 8px; margin-left: auto; flex-wrap: wrap; }
 .periodo__datas label { font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--texto-fraco); }
@@ -151,7 +151,7 @@
 }
 .pg-nome { font-size: .85rem; font-weight: 600; }
 .pg-barra { height: 8px; background: var(--superficie-3); border-radius: 999px; overflow: hidden; }
-.pg-barra i { display: block; height: 100%; background: var(--ouro); }
+.pg-barra i { display: block; height: 100%; background: var(--ouro-fundo); }
 .pg-valor { font-size: .85rem; font-weight: 600; white-space: nowrap; }
 .pg-valor small { display: block; font-weight: 400; font-size: .72rem; color: var(--texto-fraco); text-align: right; }
 

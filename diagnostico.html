@@ -6,8 +6,18 @@
 <meta name="robots" content="noindex, nofollow">
 <title>Diagnóstico da conexão | Front Beer</title>
 <link rel="icon" href="assets/img/favicon.png" sizes="any">
-<link rel="stylesheet" href="assets/css/tokens.css?v=20260826a">
-<link rel="stylesheet" href="assets/css/base.css?v=20260826a">
+<script>
+/* Aplica o tema salvo antes do CSS carregar, para a tela não piscar. */
+(function () {
+  try {
+    var t = localStorage.getItem("frontbeer:tema");
+    if (!t) t = matchMedia("(prefers-color-scheme: light)").matches ? "claro" : "escuro";
+    document.documentElement.setAttribute("data-tema", t);
+  } catch (e) {}
+})();
+</script>
+<link rel="stylesheet" href="assets/css/tokens.css?v=20260826e">
+<link rel="stylesheet" href="assets/css/base.css?v=20260826e">
 <style>
   .diag { max-width: 760px; margin-inline: auto; padding: 40px 22px 70px; }
   .diag h1 { font-size: 1.5rem; margin-bottom: 6px; }
@@ -42,7 +52,7 @@
   <div id="resultado"></div>
 </div>
 
-<script src="assets/js/config.js?v=20260826a"></script>
+<script src="assets/js/config.js?v=20260826e"></script>
 <script>
 (function () {
   "use strict";

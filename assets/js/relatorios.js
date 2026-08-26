@@ -124,6 +124,65 @@
     };
   }
 
+  /* Custo da mercadoria vendida e lucro bruto.
+     Itens sem custo cadastrado entram como zero no custo — por isso o
+     relatório informa quantos ficaram de fora, para o número não ser
+     lido como verdade absoluta. */
+  function resumoLucro() {
+    let custo = 0;
+    let receitaComCusto = 0;
+    let unidadesComCusto = 0;
+    let unidadesSemCusto = 0;
+
+    vendas.forEach((v) => (v.itens || []).forEach((i) => {
+      if (i.custo_unit == null) {
+        unidadesSemCusto += i.quantidade;
+      } else {
+        custo += i.custo_unit * i.quantidade;
+        receitaComCusto += i.preco_unit * i.quantidade;
+        unidadesComCusto += i.quantidade;
+      }
+    }));
+
+    custo = Math.round(custo * 100) / 100;
+    receitaComCusto = Math.round(receitaComCusto * 100) / 100;
+    const lucro = Math.round((receitaComCusto - custo) * 100) / 100;
+
+    return {
+      custo: custo,
+      receitaComCusto: receitaComCusto,
+      lucro: lucro,
+      /* Mesma régua do cadastro: ganho sobre o CUSTO da mercadoria.
+         "Cada R$ 1 de mercadoria virou R$ 1 de lucro" são 100%. */
+      markup: custo > 0 ? Math.round((lucro / custo) * 1000) / 10 : null,
+      unidadesComCusto: unidadesComCusto,
+      unidadesSemCusto: unidadesSemCusto,
+    };
+  }
+
+  /* Itens que giram muito com margem apertada — os que drenam dinheiro
+     sem ninguém perceber, porque aparecem no topo do ranking de vendas. */
+  function itensDeAtencao() {
+    const mapa = {};
+    vendas.forEach((v) => (v.itens || []).forEach((i) => {
+      if (i.custo_unit == null) return;
+      if (!mapa[i.nome]) mapa[i.nome] = { nome: i.nome, qtd: 0, receita: 0, custo: 0 };
+      mapa[i.nome].qtd += i.quantidade;
+      mapa[i.nome].receita += i.preco_unit * i.quantidade;
+      mapa[i.nome].custo += i.custo_unit * i.quantidade;
+    }));
+
+    return Object.keys(mapa).map((k) => {
+      const it = mapa[k];
+      it.lucro = Math.round((it.receita - it.custo) * 100) / 100;
+      it.markup = it.custo > 0 ? Math.round((it.lucro / it.custo) * 1000) / 10 : 0;
+      return it;
+    })
+    .filter((it) => it.markup < 100)
+    .sort((a, b) => b.qtd - a.qtd)
+    .slice(0, 6);
+  }
+
   function porDia(de, ate) {
     const mapa = {};
     const cursor = new Date(de);
@@ -258,6 +317,54 @@
       ? (r.itens / r.vendas).toFixed(1).replace(".", ",") + " itens por venda"
       : "";
 
+    /* Custo, lucro e margem */
+    const L = resumoLucro();
+    const temCusto = L.unidadesComCusto > 0;
+
+    $("#kCusto").textContent = temCusto ? moeda(L.custo) : "—";
+    $("#kCustoApoio").textContent = temCusto
+      ? "Referente a " + L.unidadesComCusto + " unidade(s) com custo cadastrado"
+      : "Nenhum produto vendido tem custo cadastrado";
+
+    const blocoLucro = $("#kLucro").closest(".bloco");
+    $("#kLucro").textContent = temCusto ? moeda(L.lucro) : "—";
+    blocoLucro.classList.toggle("prejuizo", temCusto && L.lucro < 0);
+    $("#kLucroApoio").innerHTML = temCusto
+      ? "Faturamento menos custo da mercadoria." +
+        (L.unidadesSemCusto
+          ? '<span class="sem-custo">' + L.unidadesSemCusto +
+            " unidade(s) ficaram de fora por não ter custo cadastrado.</span>"
+          : "")
+      : "Cadastre o custo dos produtos em Produtos para ver o lucro.";
+
+    $("#kMargem").textContent = L.markup == null ? "—" : String(L.markup).replace(".", ",") + "%";
+    $("#kMargemApoio").textContent = temCusto
+      ? "Lucro sobre o custo da mercadoria vendida"
+      : "";
+
+    /* Itens que vendem muito e rendem pouco */
+    const atencao = itensDeAtencao();
+    const painelAtencao = $("#painelAtencao");
+    if (atencao.length) {
+      painelAtencao.classList.remove("oculto");
+      const maior = atencao[0].qtd || 1;
+      $("#listaAtencao").innerHTML = atencao.map((it, i) =>
+        '<div class="rank-linha">' +
+          '<div class="rank-pos">' + (i + 1) + "</div>" +
+          '<div class="rank-corpo">' +
+            '<div class="rank-nome">' + esc(it.nome) + "</div>" +
+            '<div class="rank-barra"><i style="width:' + Math.max(3, (it.qtd / maior) * 100) + '%"></i></div>' +
+          "</div>" +
+          '<div class="rank-valor"><strong>' + it.qtd + "x</strong>" +
+            '<small class="' + (it.markup < 0 ? "ruim" : "baixa") + '">' +
+              String(it.markup).replace(".", ",") + "% · " + moeda(it.lucro) +
+            "</small></div>" +
+        "</div>"
+      ).join("");
+    } else {
+      painelAtencao.classList.add("oculto");
+    }
+
     /* Faturamento por dia */
     $("#legendaFaturamento").textContent = diaCurto(de) + " a " + diaCurto(ate);
     montarGrafico("graficoDias", dias.length > 14 ? "line" : "bar",
@@ -332,7 +439,8 @@
   $("#btnExportar").addEventListener("click", function () {
     if (!vendas.length) { avisar("Não há vendas no período para exportar.", "erro"); return; }
 
-    const linhas = [["Data", "Hora", "Produto", "Categoria", "Quantidade", "Preco unitario", "Subtotal", "Pagamento", "Venda"]];
+    const linhas = [["Data", "Hora", "Produto", "Categoria", "Quantidade", "Preco unitario",
+                     "Subtotal", "Custo unitario", "Lucro", "Pagamento", "Comanda", "Venda"]];
     vendas.slice().reverse().forEach((v) => {
       const d = new Date(v.criado_em);
       (v.itens || []).forEach((i) => {
@@ -342,7 +450,10 @@
           i.nome, i.categoria, i.quantidade,
           i.preco_unit.toFixed(2).replace(".", ","),
           (i.preco_unit * i.quantidade).toFixed(2).replace(".", ","),
+          i.custo_unit == null ? "" : i.custo_unit.toFixed(2).replace(".", ","),
+          i.custo_unit == null ? "" : ((i.preco_unit - i.custo_unit) * i.quantidade).toFixed(2).replace(".", ","),
           ROTULO_PAGAMENTO[v.pagamento] || v.pagamento,
+          v.comanda_numero || "",
           v.id,
         ]);
       });

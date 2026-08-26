@@ -79,6 +79,18 @@
 }
 .bloco__apoio { margin-top: 8px; font-size: .8rem; color: var(--texto-suave); }
 .bloco--neutro .bloco__valor { color: var(--texto); }
+.bloco--lucro .bloco__valor  { color: var(--sucesso); }
+.bloco--lucro.prejuizo .bloco__valor { color: var(--erro); }
+
+.rank-valor small.ruim  { color: var(--erro); }
+.rank-valor small.baixa { color: var(--ouro); }
+
+.sem-custo {
+  margin-top: 8px;
+  font-size: .78rem;
+  color: var(--texto-fraco);
+  line-height: 1.5;
+}
 
 /* ---------- Painéis ---------- */
 .paineis {

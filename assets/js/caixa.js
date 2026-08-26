@@ -14,6 +14,7 @@
   NAV.montar();
 
   let produtos = [];
+  let custos = {};
   let comandas = [];
   let vendasHoje = [];
 
@@ -185,6 +186,7 @@
   async function carregarProdutos() {
     try {
       produtos = (await DB.listarProdutos(false)).filter((p) => p.ativo);
+      custos = await DB.listarCustos();
       desenharCatalogo();
     } catch (e) {
       avisar(e.message || "Falha ao carregar os produtos.", "erro");
@@ -274,6 +276,7 @@
         await DB.lancarItem(comandaAtual.id, {
           produto_id: p.id, nome: p.nome, categoria: p.categoria,
           preco_unit: p.preco, quantidade: 1,
+          custo_unit: DB.custoUnitario(custos[p.id]),
         });
         await recarregarComandas();
         desenharPainel();
@@ -447,6 +450,7 @@
           itens: carrinho.map((i) => ({
             produto_id: i.id, nome: i.nome, categoria: i.categoria,
             preco_unit: i.preco, quantidade: i.qtd,
+            custo_unit: DB.custoUnitario(custos[i.id]),
           })),
         });
         avisar("Venda de " + moeda(total) + " registrada.", "ok");

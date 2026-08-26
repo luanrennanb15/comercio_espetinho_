@@ -15,10 +15,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap">
 
-<link rel="stylesheet" href="assets/css/tokens.css?v=20260820d">
-<link rel="stylesheet" href="assets/css/base.css?v=20260820d">
-<link rel="stylesheet" href="assets/css/app.css?v=20260820d">
-<link rel="stylesheet" href="assets/css/admin.css?v=20260820d">
+<link rel="stylesheet" href="assets/css/tokens.css?v=20260826d">
+<link rel="stylesheet" href="assets/css/base.css?v=20260826d">
+<link rel="stylesheet" href="assets/css/app.css?v=20260826d">
+<link rel="stylesheet" href="assets/css/admin.css?v=20260826d">
 </head>
 <body data-pagina="produtos">
 
@@ -101,6 +101,7 @@
             <th>Produto</th>
             <th>Categoria</th>
             <th>Preço</th>
+            <th>Ganho</th>
             <th>Situação</th>
             <th style="text-align:right">Ações</th>
           </tr>
@@ -147,6 +148,93 @@
           <div class="campo">
             <label for="pPreco">Preço (R$)</label>
             <input type="number" id="pPreco" step="0.01" min="0" required placeholder="0,00">
+          </div>
+        </div>
+
+        <!-- ---------- Custo e margem ---------- -->
+        <div class="bloco-custo">
+          <div class="bloco-custo__cabeca">
+            <h3>Custo e ganho</h3>
+            <span>opcional — fica visível só para a equipe</span>
+          </div>
+
+          <div class="modo-compra" id="modoCompra">
+            <button type="button" class="modo-compra__opcao ativa" data-modo="unidade">
+              Compro em unidades
+            </button>
+            <button type="button" class="modo-compra__opcao" data-modo="medida">
+              Compro por volume ou peso
+            </button>
+          </div>
+
+          <div class="campo">
+            <label for="cCompra">Custo da compra (R$)</label>
+            <input type="number" id="cCompra" step="0.01" min="0" placeholder="66,00">
+            <small class="ajuda">O que foi pago no fardo, pacote, garrafa ou saco.</small>
+          </div>
+
+          <!-- Compra por volume ou peso: o rendimento é calculado -->
+          <div class="oculto" id="areaMedida">
+            <div class="linha">
+              <div class="campo">
+                <label for="cTotal">Conteúdo da compra</label>
+                <input type="number" id="cTotal" step="0.001" min="0" placeholder="1">
+              </div>
+              <div class="campo">
+                <label for="cUnidade">Unidade</label>
+                <select id="cUnidade" class="entrada">
+                  <option value="L">litro (L)</option>
+                  <option value="ml">mililitro (ml)</option>
+                  <option value="kg">quilo (kg)</option>
+                  <option value="g">grama (g)</option>
+                </select>
+              </div>
+              <div class="campo">
+                <label for="cPorcao">Sai por venda</label>
+                <input type="number" id="cPorcao" step="0.001" min="0" placeholder="150">
+                <small class="ajuda" id="ajudaPorcao">em ml</small>
+              </div>
+            </div>
+            <p class="calculadora__dica" id="dicaRendimento"></p>
+          </div>
+
+          <div class="campo">
+            <label for="cRende">Rende quantas unidades</label>
+            <input type="number" id="cRende" step="0.001" min="0" placeholder="12">
+            <small class="ajuda" id="ajudaRende">Quantas unidades de venda saem dessa compra.</small>
+          </div>
+
+          <div class="linha">
+            <div class="campo">
+              <label for="cEmbalagem">Embalagem</label>
+              <input type="text" id="cEmbalagem" maxlength="40" placeholder="fardo 12">
+            </div>
+            <div class="campo">
+              <label for="cFornecedor">Fornecedor</label>
+              <input type="text" id="cFornecedor" maxlength="60" placeholder="opcional">
+            </div>
+          </div>
+
+          <div class="calculadora">
+            <div class="calculadora__linha">
+              <span>Custo por unidade</span>
+              <strong id="calcUnitario">—</strong>
+            </div>
+            <div class="calculadora__linha">
+              <span>Ganho sobre o custo</span>
+              <strong id="calcMarkup">—</strong>
+            </div>
+            <div class="calculadora__sugestao">
+              <label for="cMargemAlvo">Ganho desejado — acompanha o preço digitado</label>
+              <div class="calculadora__alvo">
+                <input type="number" id="cMargemAlvo" step="1" min="0" max="2000" value="100">
+                <span>%</span>
+                <button type="button" class="btn btn--fantasma btn--pequeno" id="btnUsarSugerido">
+                  Usar <strong id="calcSugerido">—</strong>
+                </button>
+              </div>
+            </div>
+            <p class="calculadora__aviso oculto" id="calcAviso"></p>
           </div>
         </div>
 
@@ -253,10 +341,10 @@
   </div>
 </div>
 
-<script src="assets/js/config.js?v=20260820d"></script>
-<script src="assets/js/ui.js?v=20260820d"></script>
-<script src="assets/js/nav.js?v=20260820d"></script>
-<script src="assets/js/db.js?v=20260820d"></script>
-<script src="assets/js/admin.js?v=20260820d"></script>
+<script src="assets/js/config.js?v=20260826d"></script>
+<script src="assets/js/ui.js?v=20260826d"></script>
+<script src="assets/js/nav.js?v=20260826d"></script>
+<script src="assets/js/db.js?v=20260826d"></script>
+<script src="assets/js/admin.js?v=20260826d"></script>
 </body>
 </html>

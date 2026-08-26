@@ -209,3 +209,137 @@
 }
 .foto-estado.enviando { color: var(--ouro); }
 .foto-estado.erro { color: #E68B7E; }
+
+/* ---------- Bloco de custo e margem ---------- */
+.bloco-custo {
+  margin: 18px 0;
+  padding: 16px;
+  background: var(--superficie-2);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio-md);
+}
+
+.bloco-custo__cabeca {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.bloco-custo__cabeca h3 { font-size: .95rem; }
+.bloco-custo__cabeca span { font-size: .72rem; color: var(--texto-fraco); }
+
+.calculadora {
+  margin-top: 6px;
+  padding: 13px 15px;
+  background: var(--preto);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+}
+
+.calculadora__linha {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 5px 0;
+  font-size: .84rem;
+  color: var(--texto-suave);
+}
+.calculadora__linha strong {
+  font-family: var(--fonte-titulo);
+  font-size: 1.05rem;
+  color: var(--texto);
+}
+.calculadora__linha strong.ok    { color: var(--sucesso); }
+.calculadora__linha strong.baixa { color: var(--ouro); }
+.calculadora__linha strong.ruim  { color: var(--erro); }
+
+.calculadora__sugestao {
+  margin-top: 10px;
+  padding-top: 11px;
+  border-top: 1px solid var(--linha);
+}
+.calculadora__sugestao > label {
+  display: block;
+  margin-bottom: 7px;
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--texto-fraco);
+}
+.calculadora__alvo { display: flex; align-items: center; gap: 8px; }
+.calculadora__alvo input {
+  width: 78px;
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: .9rem;
+  color: var(--texto);
+  background: var(--superficie);
+  border: 1px solid var(--linha-forte);
+  border-radius: var(--raio);
+}
+.calculadora__alvo > span { color: var(--texto-fraco); font-size: .9rem; }
+.calculadora__alvo .btn { margin-left: auto; }
+.calculadora__alvo .btn strong { color: inherit; }
+
+.calculadora__aviso {
+  margin: 11px 0 0;
+  padding: 9px 11px;
+  font-size: .8rem;
+  line-height: 1.5;
+  color: #F0B5AB;
+  background: var(--erro-bg);
+  border: 1px solid rgba(192,80,63,.35);
+  border-radius: var(--raio);
+}
+
+/* Margem na tabela de produtos */
+.margem-celula { font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.margem-celula.ok    { color: var(--sucesso); }
+.margem-celula.baixa { color: var(--ouro); }
+.margem-celula.ruim  { color: var(--erro); }
+.margem-celula.vazia { color: var(--texto-fraco); font-weight: 400; font-size: .82rem; }
+
+/* ---------- Alternador do modo de compra ---------- */
+.modo-compra {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+  padding: 4px;
+  background: var(--preto);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+}
+
+.modo-compra__opcao {
+  flex: 1;
+  padding: 9px 10px;
+  font-family: inherit;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+  background: transparent;
+  border: 0;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all var(--transicao);
+}
+.modo-compra__opcao:hover { color: var(--texto); }
+.modo-compra__opcao.ativa {
+  color: var(--preto);
+  background: var(--ouro);
+}
+
+.calculadora__dica {
+  margin: 4px 0 14px;
+  padding: 9px 12px;
+  font-size: .82rem;
+  line-height: 1.5;
+  color: var(--ouro-claro);
+  background: var(--alerta-bg);
+  border: 1px solid rgba(216,164,58,.28);
+  border-radius: var(--raio);
+}
+.calculadora__dica.oculto { display: none; }

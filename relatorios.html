@@ -13,11 +13,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap">
 
-<link rel="stylesheet" href="assets/css/tokens.css?v=20260820d">
-<link rel="stylesheet" href="assets/css/base.css?v=20260820d">
-<link rel="stylesheet" href="assets/css/app.css?v=20260820d">
-<link rel="stylesheet" href="assets/css/admin.css?v=20260820d">
-<link rel="stylesheet" href="assets/css/relatorios.css?v=20260820d">
+<link rel="stylesheet" href="assets/css/tokens.css?v=20260826d">
+<link rel="stylesheet" href="assets/css/base.css?v=20260826d">
+<link rel="stylesheet" href="assets/css/app.css?v=20260826d">
+<link rel="stylesheet" href="assets/css/admin.css?v=20260826d">
+<link rel="stylesheet" href="assets/css/relatorios.css?v=20260826d">
 </head>
 <body data-pagina="relatorios">
 
@@ -102,6 +102,34 @@
     </div>
   </section>
 
+  <section class="blocos">
+    <div class="bloco bloco--neutro">
+      <div class="bloco__rotulo">Custo da mercadoria</div>
+      <div class="bloco__valor" id="kCusto">—</div>
+      <div class="bloco__apoio" id="kCustoApoio"></div>
+    </div>
+    <div class="bloco bloco--lucro">
+      <div class="bloco__rotulo">Lucro bruto</div>
+      <div class="bloco__valor" id="kLucro">—</div>
+      <div class="bloco__apoio" id="kLucroApoio"></div>
+    </div>
+    <div class="bloco bloco--neutro">
+      <div class="bloco__rotulo">Ganho sobre o custo</div>
+      <div class="bloco__valor" id="kMargem">—</div>
+      <div class="bloco__apoio" id="kMargemApoio"></div>
+    </div>
+  </section>
+
+  <section class="paineis paineis--largo oculto" id="painelAtencao">
+    <div class="painel-rel">
+      <div class="painel-rel__cabeca">
+        <h2>Vende muito e ganha pouco</h2>
+        <span>itens campeões com ganho apertado</span>
+      </div>
+      <div class="ranking" id="listaAtencao"></div>
+    </div>
+  </section>
+
   <section class="paineis paineis--largo">
     <div class="painel-rel">
       <div class="painel-rel__cabeca">
@@ -172,10 +200,10 @@
 </template>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="assets/js/config.js?v=20260820d"></script>
-<script src="assets/js/ui.js?v=20260820d"></script>
-<script src="assets/js/nav.js?v=20260820d"></script>
-<script src="assets/js/db.js?v=20260820d"></script>
-<script src="assets/js/relatorios.js?v=20260820d"></script>
+<script src="assets/js/config.js?v=20260826d"></script>
+<script src="assets/js/ui.js?v=20260826d"></script>
+<script src="assets/js/nav.js?v=20260826d"></script>
+<script src="assets/js/db.js?v=20260826d"></script>
+<script src="assets/js/relatorios.js?v=20260826d"></script>
 </body>
 </html>

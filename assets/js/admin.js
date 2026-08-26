@@ -9,6 +9,8 @@
   const { esc, urlSegura, moeda, chave, $, $$, avisar, abrirModal, fecharModal, confirmar } = UI;
 
   let produtos = [];
+  let custos = {};                    // { produto_id: { custo_compra, rende_unidades, ... } }
+  const GANHO_BOM = 100;             // markup de 100% = dobrar o dinheiro
 
   NAV.montar();   // menu lateral e barra superior
 
@@ -79,6 +81,7 @@
   async function recarregar() {
     try {
       produtos = await DB.listarProdutos(false);
+      custos = await DB.listarCustos();
       atualizarCategorias();
       atualizarIndicadores();
       desenharTabela();
@@ -137,6 +140,19 @@
     });
   }
 
+  /* Ganho sobre o custo (markup) para a lista, já com a cor da faixa */
+  function margemDoProduto(p) {
+    const unitario = DB.custoUnitario(custos[p.id]);
+    if (unitario == null) {
+      return '<span class="margem-celula vazia">sem custo</span>';
+    }
+    const k = DB.markupDe(p.preco, unitario);
+    const faixa = k == null ? "vazia" : k < 0 ? "ruim" : k < GANHO_BOM ? "baixa" : "ok";
+    return '<span class="margem-celula ' + faixa + '" title="Custo ' + moeda(unitario) +
+      ' por unidade · lucro ' + moeda(p.preco - unitario) + ' por venda">' +
+      (k == null ? "—" : String(k).replace(".", ",") + "%") + "</span>";
+  }
+
   function linha(p) {
     const foto = urlSegura(p.imagem_url);
     const selos = [];
@@ -156,6 +172,7 @@
         "</div></div></td>" +
       '<td data-rotulo="Categoria">' + esc(p.categoria) + "</td>" +
       '<td data-rotulo="Preço" class="preco-celula">' + moeda(p.preco) + "</td>" +
+      '<td data-rotulo="Margem">' + margemDoProduto(p) + "</td>" +
       '<td data-rotulo="Situação"><div class="item__selos">' + selos.join(" ") + "</div></td>" +
       '<td data-rotulo="Ações"><div class="acoes-celula">' +
         '<button type="button" class="btn btn--fantasma btn--pequeno" data-acao="esgotar">' +
@@ -241,6 +258,182 @@
     return existente ? existente.categoria : digitada;
   }
 
+  /* ---------------- Custo e margem ---------------- */
+
+  /* Conversão para a unidade base: tudo vira ml ou g, para o dono poder
+     digitar "1 L" ou "5 kg" sem converter na mão. */
+  const FATOR = { L: 1000, ml: 1, kg: 1000, g: 1 };
+  const BASE  = { L: "ml", ml: "ml", kg: "g", g: "g" };
+
+  let modoCompra = "unidade";        // unidade | medida
+
+  function trocarModo(novo) {
+    modoCompra = novo;
+    $$(".modo-compra__opcao").forEach((b) =>
+      b.classList.toggle("ativa", b.getAttribute("data-modo") === novo));
+    $("#areaMedida").classList.toggle("oculto", novo !== "medida");
+    $("#cRende").readOnly = novo === "medida";
+    $("#ajudaRende").textContent = novo === "medida"
+      ? "Calculado a partir das medidas acima. Ajuste manualmente se houver perda no copo."
+      : "Quantas unidades de venda saem dessa compra.";
+    if (novo === "medida") $("#cRende").readOnly = false;   // permitir correção
+    calcularRendimento();
+  }
+
+  /* Converte as medidas em rendimento e escreve no campo de unidades */
+  function calcularRendimento() {
+    const dica = $("#dicaRendimento");
+    if (modoCompra !== "medida") { dica.classList.add("oculto"); return; }
+
+    const unidade = $("#cUnidade").value;
+    $("#ajudaPorcao").textContent = "em " + BASE[unidade];
+
+    const total = Number($("#cTotal").value) * (FATOR[unidade] || 1);
+    const porcao = Number($("#cPorcao").value);
+
+    if (!total || !porcao || porcao <= 0) {
+      dica.classList.add("oculto");
+      return;
+    }
+
+    const rende = Math.round((total / porcao) * 1000) / 1000;
+    $("#cRende").value = rende;
+
+    const compra = Number($("#cCompra").value);
+    const unitario = compra ? Math.round((compra / rende) * 100) / 100 : null;
+
+    dica.classList.remove("oculto");
+    dica.innerHTML =
+      "<strong>" + total.toLocaleString("pt-BR") + " " + BASE[unidade] +
+      " ÷ " + porcao.toLocaleString("pt-BR") + " " + BASE[unidade] + " = " +
+      String(rende).replace(".", ",") + " doses</strong>" +
+      (unitario ? " · custo de " + moeda(unitario) + " por dose" : "") +
+      "<br>Se sobrar líquido no fundo ou houver perda no copo, corrija o rendimento no campo abaixo.";
+
+    pintarCalculadora();
+  }
+
+  $("#modoCompra").addEventListener("click", function (e) {
+    const btn = e.target.closest(".modo-compra__opcao");
+    if (btn) trocarModo(btn.getAttribute("data-modo"));
+  });
+
+  ["#cTotal", "#cPorcao", "#cUnidade"].forEach(function (sel) {
+    $(sel).addEventListener("input", calcularRendimento);
+    $(sel).addEventListener("change", calcularRendimento);
+  });
+
+  function lerCustoDoFormulario() {
+    const compra = Number($("#cCompra").value);
+    const rende = Number($("#cRende").value);
+    if (!compra || !rende) return null;
+    const unidade = $("#cUnidade").value;
+    const usaMedida = modoCompra === "medida" && Number($("#cTotal").value) > 0;
+
+    return {
+      custo_compra: compra,
+      rende_unidades: rende,
+      embalagem: $("#cEmbalagem").value,
+      fornecedor: $("#cFornecedor").value,
+      medida_total: usaMedida ? Number($("#cTotal").value) * (FATOR[unidade] || 1) : null,
+      medida_porcao: usaMedida ? Number($("#cPorcao").value) : null,
+      medida_unidade: usaMedida ? BASE[unidade] : "",
+    };
+  }
+
+  function pintarCalculadora() {
+    const custo = lerCustoDoFormulario();
+    const unitario = DB.custoUnitario(custo);
+    const preco = Number($("#pPreco").value);
+    const alvo = Number($("#cMargemAlvo").value);
+
+    $("#calcUnitario").textContent = unitario == null ? "—" : moeda(unitario);
+
+    /* Uma régua só: ganho sobre o CUSTO (markup), que é como o balcão
+       raciocina — "botei o dobro" são 100%. Mostrar margem junto só
+       confundiria quem vai usar isso todo dia. */
+    const k = DB.markupDe(preco, unitario);
+    const elMarkup = $("#calcMarkup");
+
+    if (k == null) {
+      elMarkup.textContent = "—";
+      elMarkup.className = "";
+    } else {
+      elMarkup.textContent = String(k).replace(".", ",") + "%" +
+        (preco > 0 ? " · lucro de " + moeda(preco - unitario) : "");
+      elMarkup.className = k < 0 ? "ruim" : k < GANHO_BOM ? "baixa" : "ok";
+    }
+
+    /* Preço que atinge a margem desejada.
+       Se o preço digitado já alcança a meta, não faz sentido sugerir
+       outro — antes o botão mostrava um valor diferente do campo acima
+       e os dois números se contradiziam na tela. */
+    const sugerido = DB.precoParaMarkup(unitario, alvo);
+    const botao = $("#btnUsarSugerido");
+    const rotulo = $("#calcSugerido");
+
+    if (sugerido == null) {
+      rotulo.textContent = "—";
+      botao.disabled = true;
+      botao.firstChild.textContent = "Usar ";
+    } else if (k != null && k + 0.05 >= alvo) {
+      rotulo.textContent = "";
+      botao.disabled = true;
+      botao.firstChild.textContent = "Preço atual já atende";
+    } else {
+      rotulo.textContent = moeda(sugerido);
+      botao.disabled = false;
+      botao.firstChild.textContent = "Usar ";
+    }
+
+    /* Aviso de prejuízo — o erro que custa dinheiro de verdade */
+    const aviso = $("#calcAviso");
+    if (unitario != null && preco > 0 && preco < unitario) {
+      aviso.textContent = "Atenção: o preço de venda está ABAIXO do custo. " +
+        "Cada unidade vendida dá prejuízo de " + moeda(unitario - preco) + ".";
+      aviso.classList.remove("oculto");
+    } else if (unitario != null && preco > 0 && k != null && k < 15) {
+      aviso.textContent = "Ganho muito apertado. Depois de carvão, gelo e gás, " +
+        "esse item provavelmente não paga o próprio trabalho.";
+      aviso.classList.remove("oculto");
+    } else {
+      aviso.classList.add("oculto");
+    }
+  }
+
+  /* Quando o dono digita o preço direto, a "margem desejada" passa a
+     refletir esse preço. Sem isso ela ficaria parada no valor antigo e a
+     sugestão apontaria um preço diferente do que está no campo acima —
+     dois números se contradizendo na mesma tela. */
+  function sincronizarMargemAlvo() {
+    const unitario = DB.custoUnitario(lerCustoDoFormulario());
+    const k = DB.markupDe(Number($("#pPreco").value), unitario);
+    if (k != null && k > 0) $("#cMargemAlvo").value = k;
+  }
+
+  $("#pPreco").addEventListener("input", function () {
+    sincronizarMargemAlvo();
+    pintarCalculadora();
+  });
+
+  ["#cCompra", "#cRende", "#cMargemAlvo"].forEach(function (sel) {
+    $(sel).addEventListener("input", pintarCalculadora);
+  });
+
+  /* Mexer no custo também reacerta a margem desejada */
+  ["#cCompra", "#cRende"].forEach(function (sel) {
+    $(sel).addEventListener("input", sincronizarMargemAlvo);
+  });
+
+  $("#btnUsarSugerido").addEventListener("click", function () {
+    if (this.disabled) return;        // o preço atual já atende à meta
+    const unitario = DB.custoUnitario(lerCustoDoFormulario());
+    const sugerido = DB.precoParaMarkup(unitario, Number($("#cMargemAlvo").value));
+    if (sugerido == null) return;
+    $("#pPreco").value = sugerido.toFixed(2);
+    pintarCalculadora();
+  });
+
   /* ---------------- Foto do produto ---------------- */
   let fotoAnterior = "";        // foto que estava salva ao abrir o formulário
 
@@ -307,6 +500,33 @@
     fotoAnterior = p ? p.imagem_url : "";
     pintarFoto(p ? p.imagem_url : "");
     estadoFoto(TEXTO_FOTO_PADRAO, "");
+    const custo = p ? custos[p.id] : null;
+    $("#cCompra").value     = custo ? custo.custo_compra : "";
+    $("#cRende").value      = custo ? custo.rende_unidades : "";
+    $("#cEmbalagem").value  = custo ? custo.embalagem : "";
+    $("#cFornecedor").value = custo ? custo.fornecedor : "";
+
+    /* Reconstrói o modo por medida quando o produto foi cadastrado assim */
+    if (custo && custo.medida_total && custo.medida_porcao) {
+      const emLitroOuQuilo = custo.medida_total >= 1000;
+      const unidadeBase = custo.medida_unidade === "g" ? "g" : "ml";
+      const unidadeExibida = emLitroOuQuilo
+        ? (unidadeBase === "g" ? "kg" : "L")
+        : unidadeBase;
+      $("#cUnidade").value = unidadeExibida;
+      $("#cTotal").value = custo.medida_total / (FATOR[unidadeExibida] || 1);
+      $("#cPorcao").value = custo.medida_porcao;
+      trocarModo("medida");
+    } else {
+      $("#cTotal").value = "";
+      $("#cPorcao").value = "";
+      $("#cUnidade").value = "L";
+      trocarModo("unidade");
+    }
+
+    sincronizarMargemAlvo();
+    pintarCalculadora();
+
     $("#pAtivo").checked = p ? p.ativo : true;
     $("#pEsgotado").checked = p ? p.esgotado : false;
     $("#pAlcoolico").checked = p ? p.alcoolico : false;
@@ -333,6 +553,11 @@
         esgotado: $("#pEsgotado").checked,
         alcoolico: $("#pAlcoolico").checked,
       });
+      /* Custo vai para a tabela protegida, nunca junto do produto */
+      const custoInformado = lerCustoDoFormulario();
+      if (custoInformado) await DB.salvarCusto(salvo.id, custoInformado);
+      else if (custos[salvo.id]) await DB.apagarCusto(salvo.id);
+
       if (fotoAnterior && fotoAnterior !== salvo.imagem_url) {
         DB.apagarFoto(fotoAnterior);           // libera espaço da foto trocada
       }

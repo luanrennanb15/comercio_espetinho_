@@ -12,6 +12,7 @@ const DB = (() => {
   const CHAVE_PRODUTOS = "frontbeer:produtos";
   const CHAVE_VENDAS   = "frontbeer:vendas";
   const CHAVE_COMANDAS = "frontbeer:comandas";
+  const CHAVE_CUSTOS   = "frontbeer:custos";
   const CHAVE_SESSAO   = "frontbeer:sessao";
   const CDN_SUPABASE   = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js";
   const BALDE_FOTOS    = "produtos";           // bucket criado por supabase/storage.sql
@@ -182,6 +183,58 @@ const DB = (() => {
         "ou um arquivo do próprio site, como assets/img/fotos/espeto.jpg"
       );
     }
+  }
+
+  /* ------------------------------------------------------------------
+     Contas de custo e margem
+
+     custo unitário = custo da compra / quantas unidades ela rende
+     margem sobre a venda = (preço - custo) / preço
+
+     Usamos margem sobre a venda, e não markup sobre o custo. Custo 4 e
+     preço 6 dá 33% de margem (e 50% de markup) — confundir os dois faz
+     o preço sair barato demais.
+  ------------------------------------------------------------------ */
+  function custoUnitario(custo) {
+    if (!custo) return null;
+    const compra = Number(custo.custo_compra);
+    const rende = Number(custo.rende_unidades);
+    if (!isFinite(compra) || !isFinite(rende) || rende <= 0) return null;
+    return Math.round((compra / rende) * 100) / 100;
+  }
+
+  function margemDe(preco, unitario) {
+    const p = Number(preco);
+    if (unitario == null || !isFinite(p) || p <= 0) return null;
+    return Math.round(((p - unitario) / p) * 1000) / 10;      // uma casa decimal
+  }
+
+  /* Markup: lucro sobre o CUSTO — a régua do balcão.
+     "Botei o dobro" é markup de 100%. É o que o sistema exibe. */
+  function markupDe(preco, unitario) {
+    const p = Number(preco);
+    if (unitario == null || unitario <= 0 || !isFinite(p)) return null;
+    return Math.round(((p - unitario) / unitario) * 1000) / 10;
+  }
+
+  /* Preço que atinge o markup desejado, arredondado para cima em
+     múltiplos de R$ 0,50 — arredondar para baixo entregaria menos
+     lucro que o pedido. */
+  function precoParaMarkup(unitario, markupPercentual) {
+    const u = Number(unitario);
+    const k = Number(markupPercentual);
+    if (!isFinite(u) || u <= 0 || !isFinite(k) || k < 0) return null;
+    return Math.ceil(u * (1 + k / 100) * 2) / 2;
+  }
+
+  /* Preço que atinge a margem desejada, arredondado para valor de bar:
+     nada de R$ 5,83 — sobe para R$ 6,00. */
+  function precoParaMargem(unitario, margemPercentual) {
+    const u = Number(unitario);
+    const m = Number(margemPercentual);
+    if (!isFinite(u) || u <= 0 || !isFinite(m) || m >= 100) return null;
+    const bruto = u / (1 - m / 100);
+    return Math.ceil(bruto * 2) / 2;                          // múltiplos de R$ 0,50
   }
 
   /* Redimensiona e recomprime a foto usando o próprio navegador */
@@ -444,6 +497,87 @@ const DB = (() => {
     },
 
     /* ------------------------------------------------------------
+       CUSTOS
+       Guardados em tabela separada, sem acesso público: a tabela de
+       produtos é lida por qualquer visitante do cardápio.
+    ------------------------------------------------------------ */
+
+    custoUnitario: custoUnitario,
+    margemDe: margemDe,
+    markupDe: markupDe,
+    precoParaMargem: precoParaMargem,
+    precoParaMarkup: precoParaMarkup,
+
+    async listarCustos() {
+      if (modo === "supabase") {
+        const { data, error } = await sb.from("produto_custos")
+          .select("produto_id, custo_compra, rende_unidades, embalagem, fornecedor, atualizado_em, medida_total, medida_porcao, medida_unidade");
+        if (error) {
+          if (colunaAusente(error) || /produto_custos/i.test(error.message || "")) {
+            bancoAntigo = true;
+            console.warn("Banco sem a tabela de custos — rode supabase/custos.sql.");
+            return {};
+          }
+          throw traduzirErro(error);
+        }
+        const mapa = {};
+        (data || []).forEach((c) => {
+          mapa[c.produto_id] = {
+            custo_compra: Number(c.custo_compra) || 0,
+            rende_unidades: Number(c.rende_unidades) || 1,
+            embalagem: c.embalagem || "",
+            fornecedor: c.fornecedor || "",
+            atualizado_em: c.atualizado_em,
+            medida_total: c.medida_total == null ? null : Number(c.medida_total),
+            medida_porcao: c.medida_porcao == null ? null : Number(c.medida_porcao),
+            medida_unidade: c.medida_unidade || "",
+          };
+        });
+        return mapa;
+      }
+      try {
+        return JSON.parse(localStorage.getItem(CHAVE_CUSTOS) || "{}");
+      } catch (e) { return {}; }
+    },
+
+    async salvarCusto(produtoId, custo) {
+      const dados = {
+        custo_compra: Math.round((Number(custo.custo_compra) || 0) * 100) / 100,
+        rende_unidades: Math.round((Number(custo.rende_unidades) || 0) * 1000) / 1000,
+        embalagem: String(custo.embalagem || "").trim().slice(0, 40),
+        fornecedor: String(custo.fornecedor || "").trim().slice(0, 60),
+        medida_total: custo.medida_total == null ? null : Number(custo.medida_total),
+        medida_porcao: custo.medida_porcao == null ? null : Number(custo.medida_porcao),
+        medida_unidade: String(custo.medida_unidade || ""),
+      };
+      if (dados.custo_compra < 0) throw new Error("O custo não pode ser negativo.");
+      if (dados.rende_unidades <= 0) throw new Error("Informe quantas unidades a compra rende.");
+
+      if (modo === "supabase") {
+        const { error } = await sb.from("produto_custos")
+          .upsert(Object.assign({ produto_id: produtoId }, dados), { onConflict: "produto_id" });
+        if (error) throw traduzirErro(error);
+        return true;
+      }
+      const mapa = await this.listarCustos();
+      mapa[produtoId] = Object.assign(dados, { atualizado_em: new Date().toISOString() });
+      localStorage.setItem(CHAVE_CUSTOS, JSON.stringify(mapa));
+      return true;
+    },
+
+    async apagarCusto(produtoId) {
+      if (modo === "supabase") {
+        const { error } = await sb.from("produto_custos").delete().eq("produto_id", produtoId);
+        if (error) throw traduzirErro(error);
+        return true;
+      }
+      const mapa = await this.listarCustos();
+      delete mapa[produtoId];
+      localStorage.setItem(CHAVE_CUSTOS, JSON.stringify(mapa));
+      return true;
+    },
+
+    /* ------------------------------------------------------------
        COMANDAS
        Cartões numerados que o cliente leva para a mesa. Enquanto a
        comanda está aberta, os itens ficam em comanda_itens; ao fechar,
@@ -454,7 +588,7 @@ const DB = (() => {
       if (modo === "supabase") {
         const { data, error } = await sb
           .from("comandas")
-          .select("id, numero, token, status, aberta_em, comanda_itens(id, nome, categoria, preco_unit, quantidade, criado_em)")
+          .select("id, numero, token, status, aberta_em, comanda_itens(id, nome, categoria, preco_unit, quantidade, criado_em, custo_unit)")
           .order("numero");
         if (error) throw traduzirErro(error);
         return (data || []).map((c) => ({
@@ -469,6 +603,7 @@ const DB = (() => {
               preco_unit: Number(i.preco_unit) || 0,
               quantidade: Number(i.quantidade) || 0,
               criado_em: i.criado_em,
+              custo_unit: i.custo_unit == null ? null : Number(i.custo_unit),
             }))
             .sort((a, b) => new Date(a.criado_em) - new Date(b.criado_em)),
         }));
@@ -504,6 +639,7 @@ const DB = (() => {
         categoria:  String(item.categoria || "Outros").trim() || "Outros",
         preco_unit: Math.round((Number(item.preco_unit) || 0) * 100) / 100,
         quantidade: Math.max(1, Math.min(999, parseInt(item.quantidade, 10) || 1)),
+        custo_unit: item.custo_unit == null ? null : Math.round(Number(item.custo_unit) * 100) / 100,
       };
       if (!dados.nome) throw new Error("Item inválido.");
 
@@ -554,7 +690,7 @@ const DB = (() => {
         itens: c.itens.map((i) => ({
           nome: i.nome, categoria: i.categoria,
           preco_unit: i.preco_unit, quantidade: i.quantidade,
-          criado_em: i.criado_em,
+          criado_em: i.criado_em, custo_unit: i.custo_unit,
         })),
       });
 
@@ -620,6 +756,7 @@ const DB = (() => {
         preco_unit: Math.round((Number(i.preco_unit) || 0) * 100) / 100,
         quantidade: Math.max(1, Math.min(999, parseInt(i.quantidade, 10) || 1)),
         criado_em:  i.criado_em || new Date().toISOString(),
+        custo_unit: i.custo_unit == null ? null : Math.round(Number(i.custo_unit) * 100) / 100,
       })).filter((i) => i.nome);
 
       if (!itens.length) throw new Error("Adicione ao menos um item à venda.");
@@ -696,7 +833,7 @@ const DB = (() => {
 
         let { data, error } = await consulta(
           "id, criado_em, total, pagamento, observacao, comanda_numero, aberta_em, " +
-          "venda_itens(nome, categoria, preco_unit, quantidade, criado_em)"
+          "venda_itens(nome, categoria, preco_unit, quantidade, criado_em, custo_unit)"
         );
 
         if (error && colunaAusente(error)) {
@@ -718,6 +855,7 @@ const DB = (() => {
             preco_unit: Number(i.preco_unit) || 0,
             quantidade: Number(i.quantidade) || 0,
             criado_em: i.criado_em || v.criado_em,
+            custo_unit: i.custo_unit == null ? null : Number(i.custo_unit),
           })),
         }));
       }

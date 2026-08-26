@@ -98,7 +98,8 @@ const NAV = (() => {
         svg("menu") + "</button>" +
       '<div class="barra__titulo"><h1>' + esc(p.titulo) + "</h1>" +
         (p.apoio ? "<p>" + esc(p.apoio) + "</p>" : "") + "</div>" +
-      '<div class="barra__acoes">' + (acoes || "") + "</div>";
+      '<div class="barra__acoes">' + (acoes || "") +
+        (window.TEMA ? TEMA.botao() : "") + "</div>";
   }
 
   return {

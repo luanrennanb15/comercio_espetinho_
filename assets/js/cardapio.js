@@ -205,6 +205,7 @@
 
   /* ---------------- Início ---------------- */
   (async function iniciar() {
+    $("#acoesTopo").innerHTML = TEMA.botao();
     montarIdentidade();
     try {
       await DB.init();

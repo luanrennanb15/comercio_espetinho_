@@ -9,8 +9,18 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="assets/css/tokens.css?v=20260826d">
-<link rel="stylesheet" href="assets/css/base.css?v=20260826d">
+<script>
+/* Aplica o tema salvo antes do CSS carregar, para a tela não piscar. */
+(function () {
+  try {
+    var t = localStorage.getItem("frontbeer:tema");
+    if (!t) t = matchMedia("(prefers-color-scheme: light)").matches ? "claro" : "escuro";
+    document.documentElement.setAttribute("data-tema", t);
+  } catch (e) {}
+})();
+</script>
+<link rel="stylesheet" href="assets/css/tokens.css?v=20260826e">
+<link rel="stylesheet" href="assets/css/base.css?v=20260826e">
 <style>
   .doc { max-width: 780px; margin-inline: auto; padding: 46px 22px 80px; }
   .doc__capa { text-align: center; padding-bottom: 30px; margin-bottom: 34px; border-bottom: 1px solid var(--linha); }
@@ -223,7 +233,18 @@
     hoje não altera o faturamento já registrado.
   </p>
 
-  <h2><span>8</span>Cuidados importantes</h2>
+  <h2><span>8</span>Tema claro e escuro</h2>
+  <p>
+    O botão de <strong>sol e lua</strong>, no alto de cada tela, troca entre o visual escuro e o
+    claro. Vale a pena conhecer os dois: o escuro combina com o ambiente à noite, e o claro se lê
+    muito melhor no celular sob sol forte, o que ajuda o cliente na mesa de fora à tarde.
+  </p>
+  <p>
+    A escolha vale só para o aparelho de quem escolheu. Se o cliente deixar o celular dele no
+    claro, o computador do balcão continua como estava.
+  </p>
+
+  <h2><span>9</span>Cuidados importantes</h2>
   <p>
     Não compartilhe a senha do painel com toda a equipe; qualquer pessoa com ela pode alterar preços.
     Se um dia ninguém conseguir entrar no sistema, o primeiro lugar a conferir é o Supabase, em
@@ -233,7 +254,7 @@
     física obrigatória sobre venda de bebida alcoólica a menores de 18 anos.
   </p>
 
-  <h2><span>9</span>O que o sistema não faz</h2>
+  <h2><span>10</span>O que o sistema não faz</h2>
   <p>
     O cliente não faz pedido nem paga pelo site — o cardápio é só de consulta, e a venda continua no
     balcão. Também não há entrega: o rodapé avisa que o consumo e a retirada são no local. O sistema

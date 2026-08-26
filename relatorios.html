@@ -13,11 +13,21 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap">
 
-<link rel="stylesheet" href="assets/css/tokens.css?v=20260826d">
-<link rel="stylesheet" href="assets/css/base.css?v=20260826d">
-<link rel="stylesheet" href="assets/css/app.css?v=20260826d">
-<link rel="stylesheet" href="assets/css/admin.css?v=20260826d">
-<link rel="stylesheet" href="assets/css/relatorios.css?v=20260826d">
+<script>
+/* Aplica o tema salvo antes do CSS carregar, para a tela não piscar. */
+(function () {
+  try {
+    var t = localStorage.getItem("frontbeer:tema");
+    if (!t) t = matchMedia("(prefers-color-scheme: light)").matches ? "claro" : "escuro";
+    document.documentElement.setAttribute("data-tema", t);
+  } catch (e) {}
+})();
+</script>
+<link rel="stylesheet" href="assets/css/tokens.css?v=20260826e">
+<link rel="stylesheet" href="assets/css/base.css?v=20260826e">
+<link rel="stylesheet" href="assets/css/app.css?v=20260826e">
+<link rel="stylesheet" href="assets/css/admin.css?v=20260826e">
+<link rel="stylesheet" href="assets/css/relatorios.css?v=20260826e">
 </head>
 <body data-pagina="relatorios">
 
@@ -200,10 +210,11 @@
 </template>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="assets/js/config.js?v=20260826d"></script>
-<script src="assets/js/ui.js?v=20260826d"></script>
-<script src="assets/js/nav.js?v=20260826d"></script>
-<script src="assets/js/db.js?v=20260826d"></script>
-<script src="assets/js/relatorios.js?v=20260826d"></script>
+<script src="assets/js/config.js?v=20260826e"></script>
+<script src="assets/js/ui.js?v=20260826e"></script>
+<script src="assets/js/tema.js?v=20260826e"></script>
+<script src="assets/js/nav.js?v=20260826e"></script>
+<script src="assets/js/db.js?v=20260826e"></script>
+<script src="assets/js/relatorios.js?v=20260826e"></script>
 </body>
 </html>

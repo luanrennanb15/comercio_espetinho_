@@ -6,7 +6,8 @@
 
 :root {
   /* --- Marca --- */
-  --ouro:         #D8A43A;
+  --ouro:         #D8A43A;   /* dourado usado como TEXTO */
+  --ouro-fundo:   #D8A43A;   /* dourado usado como FUNDO de botão */
   --ouro-claro:   #F2CE79;
   --ouro-escuro:  #96691A;
   --ouro-fosco:   rgba(216, 164, 58, .16);
@@ -51,4 +52,57 @@
   --sombra:    0 18px 48px rgba(0, 0, 0, .55);
   --sombra-sm: 0 4px 16px rgba(0, 0, 0, .35);
   --transicao: 160ms ease;
+
+  /* --- Superfícies translúcidas (barras fixas e véus) --- */
+  --fundo-pagina:      #0A0908;
+  --fundo-translucido: rgba(10, 9, 8, .93);
+  --veu-modal:         rgba(5, 4, 4, .78);
+  --texto-sobre-ouro:  #17120A;
+}
+
+/* =====================================================================
+   TEMA CLARO
+   Mesma identidade, outra luz. Escolhido pelo botão de sol e lua e
+   guardado no navegador de quem escolheu.
+
+   O dourado precisa de dois tons aqui: um escuro para funcionar como
+   TEXTO sobre fundo claro (5,0:1 de contraste) e um vivo para continuar
+   sendo FUNDO de botão com texto escuro por cima (6,7:1). No tema
+   escuro os dois são o mesmo tom.
+   ===================================================================== */
+:root[data-tema="claro"] {
+  --ouro:         #8A6410;
+  --ouro-fundo:   #C89528;
+  --ouro-claro:   #7A5A10;
+  --ouro-escuro:  #C9A24A;
+  --ouro-fosco:   rgba(200, 149, 40, .16);
+
+  --preto:        #FAF7F1;
+  --superficie:   #FFFFFF;
+  --superficie-2: #F4EFE7;
+  --superficie-3: #EDE6DA;
+  --linha:        #E4DCCE;
+  --linha-forte:  #CFC4B2;
+
+  --texto:        #1A1512;
+  --texto-suave:  #5A5147;
+  --texto-fraco:  #8B8177;
+
+  --sucesso:      #1F7A3C;
+  --sucesso-bg:   rgba(31, 122, 60, .12);
+  --verde-acao:   #1F7A3C;
+  --verde-acao-2: #268C48;
+  --alerta:       #8A6410;
+  --alerta-bg:    rgba(200, 149, 40, .18);
+  --erro:         #B3302A;
+  --erro-bg:      rgba(179, 48, 42, .10);
+  --vermelho-acao:#B3302A;
+
+  --sombra:    0 16px 40px rgba(60, 48, 30, .16);
+  --sombra-sm: 0 3px 12px rgba(60, 48, 30, .12);
+
+  --fundo-pagina:      #FAF7F1;
+  --fundo-translucido: rgba(250, 247, 241, .94);
+  --veu-modal:         rgba(40, 33, 24, .55);
+  --texto-sobre-ouro:  #17120A;
 }

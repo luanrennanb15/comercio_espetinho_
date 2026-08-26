@@ -16,7 +16,7 @@ qrcode.html             Gerador da placa de QR Code para as mesas
 manual.html             Manual do proprietário (feito para imprimir)
 
 assets/
-  css/tokens.css        Cores, fontes e medidas da marca
+  css/tokens.css        Cores, fontes e medidas da marca (tema escuro e claro)
   css/base.css          Componentes compartilhados (botões, formulários, modais)
   css/cardapio.css      Estilos do cardápio público
   css/app.css           Menu lateral e estrutura da área interna
@@ -25,6 +25,7 @@ assets/
   css/relatorios.css    Estilos dos relatórios
   js/config.js          ÚNICO arquivo a editar para personalizar
   js/ui.js              Utilidades (escape, moeda, avisos, modais)
+  js/tema.js            Alternador entre tema claro e escuro
   js/nav.js             Menu lateral compartilhado pelas telas internas
   js/db.js              Camada de dados (Supabase ou modo demonstração)
   js/cardapio.js        Lógica do cardápio
@@ -55,6 +56,25 @@ Abra `index.html` no navegador. O painel fica em `admin.html`, com acesso
 Sem o Supabase configurado o sistema roda em **modo demonstração**: os dados
 ficam apenas naquele navegador e não há segurança real. Serve para avaliar a
 interface, não para operar.
+
+---
+
+## Tema claro e escuro
+
+Todas as telas têm um botão de sol e lua. A escolha fica salva **no navegador
+de quem escolheu**: o cliente que prefere claro no celular não altera nada para o
+dono no balcão. Sem escolha salva, o site segue a preferência do próprio
+aparelho.
+
+O tema é aplicado por um trecho no `<head>` de cada página, antes do CSS
+carregar — sem isso a tela piscaria branca antes de escurecer.
+
+A capa do cardápio é exceção proposital: ela fica sobre a foto da fachada, que é
+escura nos dois temas, então mantém texto claro para continuar legível.
+
+Para revender, os dois temas vivem em `assets/css/tokens.css`. O dourado tem dois
+tons no tema claro: um escuro para funcionar como texto sobre fundo claro e um
+vivo para continuar sendo fundo de botão.
 
 ---
 

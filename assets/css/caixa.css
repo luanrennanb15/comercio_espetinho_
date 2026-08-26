@@ -77,8 +77,8 @@
   font-size: .74rem;
   font-weight: 700;
   text-align: center;
-  color: var(--preto);
-  background: var(--ouro);
+  color: var(--texto-sobre-ouro);
+  background: var(--ouro-fundo);
   border-radius: 999px;
 }
 
@@ -186,7 +186,7 @@
   transition: all var(--transicao);
 }
 .pagamento:hover { color: var(--texto); border-color: var(--ouro-escuro); }
-.pagamento.ativo { color: var(--preto); background: var(--ouro); border-color: var(--ouro); }
+.pagamento.ativo { color: var(--preto); background: var(--ouro-fundo); border-color: var(--ouro); }
 
 /* ---------- Últimas vendas ---------- */
 .ultimas { margin-top: 18px; }

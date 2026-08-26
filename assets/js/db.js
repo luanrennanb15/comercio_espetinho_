@@ -18,6 +18,7 @@ const DB = (() => {
   const BALDE_FOTOS    = "produtos";           // bucket criado por supabase/storage.sql
   const LADO_MAXIMO    = 900;                  // maior lado da foto, em pixels
   const QUALIDADE      = 0.82;
+  const TEMPO_LIMITE   = 12000;              // desistir de esperar a rede, em ms
 
   let modo = "demo";
   let sb = null;
@@ -138,14 +139,49 @@ const DB = (() => {
     localStorage.setItem(CHAVE_COMANDAS, JSON.stringify(lista));
   }
 
-  function carregarScript(src) {
+  /* Carrega a biblioteca do Supabase.
+
+     O prazo existe porque `onerror` não cobre todos os casos: numa rede
+     que aceita a conexão e nunca responde — wi-fi de bar, portal cativo,
+     3G ruim — nem `onload` nem `onerror` disparam, e a promessa fica
+     pendurada para sempre. Sem prazo, o cliente encara o "carregando"
+     até desistir. Com prazo, o sistema desiste primeiro e explica. */
+  function carregarScript(src, prazoMs) {
     return new Promise((ok, falha) => {
       const s = document.createElement("script");
+      let encerrado = false;
+      const relogio = setTimeout(() => {
+        if (encerrado) return;
+        encerrado = true;
+        s.remove();
+        falha(new Error("Tempo esgotado ao carregar " + src));
+      }, prazoMs || TEMPO_LIMITE);
+
       s.src = src;
-      s.onload = ok;
-      s.onerror = () => falha(new Error("Falha ao carregar " + src));
+      s.onload = () => { if (!encerrado) { encerrado = true; clearTimeout(relogio); ok(); } };
+      s.onerror = () => {
+        if (encerrado) return;
+        encerrado = true;
+        clearTimeout(relogio);
+        falha(new Error("Falha ao carregar " + src));
+      };
       document.head.appendChild(s);
     });
+  }
+
+  /* Qualquer espera pode acabar. Vale para a rede inteira, não só para
+     o script: uma consulta que não volta trava a tela do mesmo jeito. */
+  function comPrazo(promessa, prazoMs, oQue) {
+    let relogio;
+    return Promise.race([
+      promessa,
+      new Promise((_, falha) => {
+        relogio = setTimeout(
+          () => falha(new Error("O servidor demorou demais para responder" + (oQue ? " (" + oQue + ")" : "") + ".")),
+          prazoMs || TEMPO_LIMITE
+        );
+      }),
+    ]).finally(() => clearTimeout(relogio));
   }
 
   /* ---------------- Normalização e validação ---------------- */
@@ -200,7 +236,11 @@ const DB = (() => {
     const compra = Number(custo.custo_compra);
     const rende = Number(custo.rende_unidades);
     if (!isFinite(compra) || !isFinite(rende) || rende <= 0) return null;
-    return Math.round((compra / rende) * 100) / 100;
+    /* Números válidos ainda podem gerar um quociente que estoura
+       (1e308 dividido por 1e-308). Melhor não devolver nada do que
+       devolver Infinity e escrever "R$ Infinity" na tela. */
+    const unitario = Math.round((compra / rende) * 100) / 100;
+    return isFinite(unitario) ? unitario : null;
   }
 
   function margemDe(preco, unitario) {
@@ -306,6 +346,14 @@ const DB = (() => {
     get bancoDesatualizado() { return bancoAntigo; },
     get exemplos() { return JSON.parse(JSON.stringify(EXEMPLOS)); },
 
+    /* Sem chave configurada, o sistema roda em demonstração de propósito:
+       é assim que se avalia a interface antes de contratar o banco.
+
+       COM chave configurada, uma falha NÃO pode virar demonstração. O modo
+       demo carrega um cardápio de exemplo com preços fictícios — mostrar
+       isso a um cliente que acabou de ler o QR na mesa é pior do que
+       mostrar erro: ele pediria pelo preço errado. Então aqui a falha
+       sobe, e cada tela decide como avisar. */
     async init() {
       if (!CFG.supabaseUrl || !CHAVE_API) { modo = "demo"; return modo; }
       try {
@@ -314,11 +362,14 @@ const DB = (() => {
           auth: { persistSession: true, autoRefreshToken: true },
         });
         modo = "supabase";
+        return modo;
       } catch (e) {
-        console.error("Supabase indisponível; caindo para modo demonstração.", e);
-        modo = "demo";
+        console.error("Não foi possível falar com o banco.", e);
+        modo = "indisponivel";
+        throw new Error(
+          "Não foi possível conectar ao servidor. Verifique a internet e tente de novo."
+        );
       }
-      return modo;
     },
 
     /* --- Leitura --- */

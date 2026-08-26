@@ -1,0 +1,7 @@
+{
+  "name": "front-beer",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node testes/rodar.mjs" },
+  "devDependencies": { "jsdom": "^26.0.0" }
+}

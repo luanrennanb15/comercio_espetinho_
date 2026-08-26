@@ -70,7 +70,7 @@ const NAV = (() => {
     const itens = MENU.map((m) => {
       if (m.grupo) return '<div class="lateral__grupo">' + esc(m.grupo) + "</div>";
       return '<a class="item-nav' + (m.id === atual ? " ativo" : "") + '" href="' + m.href + '"' +
-        (m.externo ? ' target="_blank" rel="noopener"' : "") +
+        (m.externo ? ' target="_blank" rel="noopener noreferrer"' : "") +
         (m.id === atual ? ' aria-current="page"' : "") + ">" +
         svg(m.icone) + "<span>" + esc(m.rotulo) + "</span>" +
         (m.externo ? svg("externo", "externo") : "") +

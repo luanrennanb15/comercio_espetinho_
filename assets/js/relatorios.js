@@ -472,8 +472,16 @@
       });
     });
 
+    /* Aspas não protegem contra fórmula: o Excel lê "=1+1" como conta e
+       executa. Um produto batizado de =HYPERLINK(...) viraria armadilha na
+       planilha de quem abrir o relatório. Uma aspa simples na frente
+       obriga o Excel a tratar o valor como texto. */
+    const seguro = (v) => {
+      const t = String(v == null ? "" : v);
+      return /^[=+\-@\t\r]/.test(t) ? "'" + t : t;
+    };
     const csv = "﻿" + linhas.map((l) =>
-      l.map((c) => '"' + String(c).replace(/"/g, '""') + '"').join(";")
+      l.map((c) => '"' + seguro(c).replace(/"/g, '""') + '"').join(";")
     ).join("\r\n");
 
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
@@ -502,7 +510,12 @@
         : esc(nome);
     });
     document.title = "Relatórios | " + nome;
-    await DB.init();
+    try {
+      await DB.init();
+    } catch (e) {
+      avisar(e.message, "erro");
+      return;
+    }
     const usuario = await DB.usuarioAtual();
     if (usuario) await abrirRelatorios(usuario);
   })();

@@ -31,6 +31,19 @@ function rodar(arquivo) {
   });
 }
 
+/* Guarda contra suíte muda: se um arquivo de teste não termina chamando
+   encerrar() ou process.exit(), ele sai com código 0 mesmo tendo falhas,
+   e o executor daria tudo certo enquanto o sistema estava quebrado.
+   Já aconteceu neste projeto. */
+import fs from "fs";
+const mudas = SUITES
+  .map(([a]) => a)
+  .filter((a) => !/encerrar\(\)|process\.exit/.test(fs.readFileSync(path.join(AQUI, a), "utf8")));
+if (mudas.length) {
+  console.log("\x1b[31mSuítes que não sabem reprovar: " + mudas.join(", ") + "\x1b[0m");
+  process.exit(1);
+}
+
 console.log("\n\x1b[1m═══ FRONT BEER — bateria de testes ═══\x1b[0m");
 
 const reprovadas = [];

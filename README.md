@@ -335,6 +335,14 @@ confere que a versão é a mesma em todas as telas.
 Se um dia você ligar o Vercel Analytics ou o Speed Insights, o script deles
 precisa entrar na CSP, senão o navegador vai bloqueá-lo em silêncio.
 
+**Cuidado ao editar o `vercel.json`.** O Vercel valida o arquivo contra um
+esquema fechado: qualquer propriedade fora da lista da documentação derruba o
+deploy inteiro, não só a configuração. JSON também não aceita comentários — a
+explicação do arquivo vive aqui neste README, de propósito. A bateria de testes
+confere as propriedades usadas antes de o deploy acontecer.
+
+A lista válida está em <https://vercel.com/docs/project-configuration>.
+
 ---
 
 ## Segurança

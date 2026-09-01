@@ -305,6 +305,26 @@ suite("Segurança — cabeçalhos da hospedagem");
 
 if (existe("vercel.json")) {
   const vercel = JSON.parse(ler("vercel.json"));
+
+  /* O Vercel valida o vercel.json contra um esquema FECHADO: qualquer
+     propriedade fora da lista da documentação derruba o deploy inteiro.
+     Já aconteceu aqui — tentei escrever um comentário num arquivo JSON,
+     que não aceita comentários, inventando um campo "_comentario".
+     A explicação vive no README; este teste garante que ninguém repita. */
+  const PROPRIEDADES_VALIDAS = [
+    "$schema", "buildCommand", "bunVersion", "cleanUrls", "crons", "devCommand",
+    "fluid", "framework", "functions", "headers", "ignoreCommand", "images",
+    "installCommand", "outputDirectory", "public", "redirects", "bulkRedirectsPath",
+    "regions", "functionFailoverRegions", "rewrites", "trailingSlash", "git",
+  ];
+  const inventadas = Object.keys(vercel).filter((k) => !PROPRIEDADES_VALIDAS.includes(k));
+  conf("vercel.json só usa propriedades que o Vercel conhece",
+    inventadas.length === 0,
+    "o deploy falha inteiro por causa de: " + inventadas.join(", "));
+
+  conf("todo cabeçalho tem origem, chave e valor",
+    (vercel.headers || []).every((h) => h.source &&
+      Array.isArray(h.headers) && h.headers.every((c) => c.key && typeof c.value === "string")));
   const todos = (vercel.headers || []).flatMap((h) => h.headers || []);
   const valor = (nome) => (todos.find((h) => h.key.toLowerCase() === nome.toLowerCase()) || {}).value || "";
 

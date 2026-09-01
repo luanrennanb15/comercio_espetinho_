@@ -23,7 +23,7 @@ window.APP_CONFIG = {
   idadeMinima:   18,
 
   /* --- Endereço público do cardápio (usado no QR Code e na prévia do link) --- */
-  siteUrl: "",
+  siteUrl: "https://espetinho-front-beer.vercel.app",
 
   /* --- Assinatura discreta no rodapé (opcional) --- */
   credito:    "",

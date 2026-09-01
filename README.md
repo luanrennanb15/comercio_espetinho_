@@ -194,9 +194,17 @@ Ao salvar, o aviso de "modo demonstração" some do painel.
 
 ### 5. Publicar e divulgar
 
-Suba a pasta em qualquer hospedagem estática gratuita — Netlify, Vercel,
+Suba a pasta em qualquer hospedagem estática gratuita — Vercel, Netlify,
 Cloudflare Pages ou GitHub Pages. Depois preencha `siteUrl` no `config.js`,
 abra `qrcode.html`, gere a placa e imprima para as mesas.
+
+**No ar hoje:** <https://espetinho-front-beer.vercel.app>
+
+O Vercel foi escolhido em vez do GitHub Pages por dois motivos práticos: o
+endereço não carrega o nome de usuário do GitHub, o que importa quando o
+sistema é entregue a um cliente, e ele lê o `vercel.json` — o arquivo que
+define os cabeçalhos de segurança descritos abaixo. O GitHub Pages não
+permite configurar cabeçalho nenhum.
 
 ---
 
@@ -297,6 +305,38 @@ que dependem de uma decisão sua, não de um defeito no código.
 
 ---
 
+## Cabeçalhos da hospedagem (vercel.json)
+
+O `vercel.json` define o que o navegador aceita fazer nesta página. A peça
+central é a **Content-Security-Policy**: uma lista do que pode ser carregado.
+Script que não está na lista é recusado antes de executar — mesmo que alguém
+consiga injetá-lo.
+
+Os scripts escritos dentro do HTML (o trecho que aplica o tema antes do CSS,
+e os geradores de QR Code) são autorizados por **hash**, não por
+`'unsafe-inline'`. A diferença importa: `'unsafe-inline'` liberaria qualquer
+script inline, inclusive um injetado, e a política viraria enfeite.
+
+O preço disso é que **mexer nesses trechos muda o hash**, e o navegador passa
+a recusar o script — quebrando a tela em produção, não no seu computador. Por
+isso a bateria de testes recalcula os hashes a partir do HTML e compara com o
+`vercel.json`. Se divergir, ela reprova antes do deploy.
+
+Junto vão HSTS (HTTPS obrigatório), `nosniff`, `frame-ancestors 'none'`
+(ninguém embute o site numa página falsa), `Referrer-Policy: no-referrer` e
+`Permissions-Policy` negando câmera, microfone e localização.
+
+Sobre cache: o HTML sempre revalida, e `/assets/` é cacheado por um ano com
+`immutable`. Isso só funciona porque todo CSS e JS é carregado com `?v=`.
+**Ao alterar qualquer arquivo em `assets/`, mude o número de versão nos HTML**
+— senão quem já visitou continua com a versão antiga por um ano. A bateria
+confere que a versão é a mesma em todas as telas.
+
+Se um dia você ligar o Vercel Analytics ou o Speed Insights, o script deles
+precisa entrar na CSP, senão o navegador vai bloqueá-lo em silêncio.
+
+---
+
 ## Segurança
 
 A `anon key` é pública por natureza: qualquer visitante consegue lê-la no
@@ -369,6 +409,11 @@ Envolve mexer no banco (uma tabela de unidades ligada ao produto), no cadastro,
 no caixa e nos relatórios. É a maior mudança prevista até agora.
 
 ### Endurecimento pendente
+
+Preencher cidade e bairro no endereço. Sem isso o Google tem dificuldade de
+casar este site com a ficha do Maps, e a ficha `schema.org` do `index.html`
+fica incompleta — é o item de maior retorno da lista, e depende só de um dado.
+
 
 Colar o `integrity` nos três scripts do cdnjs e prender o `supabase-js` a uma
 versão exata, no lugar do `@2` de hoje, que muda sozinho quando a biblioteca é

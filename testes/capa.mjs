@@ -85,7 +85,7 @@ conf("degradê do Instagram definido", tokens.includes("--instagram-degrade"));
 conf("botão flutuante some na impressão", /@media print \{ \.zap-flutuante \{ display: none/.test(css));
 conf("prévia do link declara tamanho", idx.includes('og:image:width'));
 for (const f of ["capa.jpg", "capa-900.jpg", "og.jpg"]) {
-  conf("imagem gerada: " + f, fs.existsSync(raiz + "/assets/img/" + f) || fs.existsSync("/sessions/friendly-funny-mayer/mnt/comercio_espetinho/assets/img/" + f));
+  conf("imagem gerada: " + f, fs.existsSync(raiz + "/assets/img/" + f));
 }
 
 console.log(falhas === 0 ? "\n>>> TUDO PASSOU" : "\n>>> " + falhas + " FALHA(S)");

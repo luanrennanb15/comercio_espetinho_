@@ -1,0 +1,25 @@
+# Front Beer — Adega e Petiscaria
+#
+# O cardápio é público e deve ser indexado. As telas internas não:
+# elas não têm nada de útil para quem pesquisa e ainda apareceriam
+# como resultado confuso ("Caixa | Front Beer") em busca pelo nome
+# da casa. O bloqueio aqui é só de indexação, não de acesso — quem
+# protege os dados são as regras do banco.
+
+User-agent: *
+Allow: /$
+Allow: /index.html
+Allow: /assets/
+
+Disallow: /admin.html
+Disallow: /caixa.html
+Disallow: /relatorios.html
+Disallow: /cartoes.html
+Disallow: /qrcode.html
+Disallow: /manual.html
+Disallow: /diagnostico.html
+Disallow: /comanda.html
+Disallow: /supabase/
+Disallow: /testes/
+
+Sitemap: https://espetinho-front-beer.vercel.app/sitemap.xml

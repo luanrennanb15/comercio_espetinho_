@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Só o cardápio entra aqui. As telas internas estão bloqueadas no
+  robots.txt e a comanda é privada por token, então nenhuma delas
+  deve ser oferecida ao Google.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://espetinho-front-beer.vercel.app/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>

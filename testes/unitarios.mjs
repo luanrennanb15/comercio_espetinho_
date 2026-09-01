@@ -6,7 +6,7 @@
    no lugar de número, campo vazio.
    ===================================================================== */
 
-import { suite, conf, abrirTela } from "./ajuda.mjs";
+import { suite, conf, abrirTela, encerrar } from "./ajuda.mjs";
 
 const { window } = await abrirTela("admin.html", { scripts: ["config.js", "ui.js", "db.js"] });
 const UI = window.UI;
@@ -66,10 +66,12 @@ conf("markup 0% devolve o próprio custo arredondado",
 
 /* Este é o teste que protege o lucro: arredondar para baixo entregaria
    menos do que o dono pediu. */
+/* 6,49 com 70% dá 11,033. Arredondar para 11,00 pareceria mais bonito,
+   mas entregaria menos lucro que o pedido — tem que subir para 11,50. */
 const sugerido = DB.precoParaMarkup(6.49, 70);
 conf("arredonda para CIMA em múltiplos de R$ 0,50",
-  sugerido === 11 && sugerido >= 6.49 * 1.7,
-  "sugerido = " + sugerido + ", mínimo aceitável = " + (6.49 * 1.7).toFixed(2));
+  sugerido === 11.5,
+  "sugerido = " + sugerido + ", esperado 11.5 (11,00 ficaria abaixo de " + (6.49 * 1.7).toFixed(2) + ")");
 
 let semQuebra = true;
 for (let c = 0.5; c <= 60; c += 0.37) {
@@ -136,3 +138,4 @@ conf("busca ignora espaço nas pontas", UI.chave("  gin  ") === "gin");
 conf("busca com nulo não quebra", UI.chave(null) === "");
 
 window.close();
+encerrar();

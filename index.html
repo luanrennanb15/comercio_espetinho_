@@ -9,17 +9,58 @@
 
 <title>Front Beer — Adega e Petiscaria | Cardápio</title>
 
+<link rel="canonical" href="https://espetinho-front-beer.vercel.app/">
 <link rel="icon" href="assets/img/favicon.png" sizes="any">
 <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
 
+<meta property="og:url" content="https://espetinho-front-beer.vercel.app/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Front Beer">
 <meta property="og:title" content="Front Beer — Adega e Petiscaria">
 <meta property="og:description" content="Espetos na brasa, petiscos, cervejas geladas e destilados. Veja o cardápio completo.">
-<meta property="og:image" content="assets/img/og.jpg">
+<meta property="og:image" content="https://espetinho-front-beer.vercel.app/assets/img/og.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
+
+<!-- Ficha do estabelecimento em linguagem de máquina. É isto que
+     permite ao Google ligar este site à ficha do Maps e mostrar
+     horário e telefone direto no resultado da busca.
+
+     Fica estático de propósito: JSON-LD injetado por JavaScript é
+     lido com menos confiabilidade. Em troca, um teste automatizado
+     confere que estes valores continuam iguais aos do config.js —
+     se um dia mudar lá e não aqui, a bateria reprova. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BarOrPub",
+  "name": "Front Beer",
+  "alternateName": "Front Beer — Adega e Petiscaria",
+  "description": "Adega e petiscaria com espetos na brasa, petiscos, cervejas geladas e destilados. Consumo e retirada no local.",
+  "url": "https://espetinho-front-beer.vercel.app/",
+  "image": "https://espetinho-front-beer.vercel.app/assets/img/og.jpg",
+  "logo": "https://espetinho-front-beer.vercel.app/assets/img/emblema.png",
+  "telephone": "+5515981427143",
+  "priceRange": "$$",
+  "currenciesAccepted": "BRL",
+  "paymentAccepted": "Dinheiro, Pix, Cartão de débito, Cartão de crédito",
+  "servesCuisine": ["Petiscos", "Espetinhos"],
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "Antônio Silva Saladino, 875",
+    "addressCountry": "BR"
+  },
+  "openingHoursSpecification": [{
+    "@type": "OpeningHoursSpecification",
+    "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+    "opens": "16:00",
+    "closes": "02:00"
+  }],
+  "sameAs": ["https://instagram.com/frontbeer_adega"],
+  "hasMenu": "https://espetinho-front-beer.vercel.app/"
+}
+</script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

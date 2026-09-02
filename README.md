@@ -36,10 +36,13 @@ assets/
 
 supabase/schema.sql     Banco de dados e regras de segurança
 supabase/storage.sql    Armazenamento das fotos enviadas pelo painel
+fontes/                 Originais em alta das imagens (não vão para o ar)
+.vercelignore           O que fica fora do servidor
 testes/rodar.mjs        Executa a bateria inteira de testes
 testes/ajuda.mjs        Apoio: abre uma tela num navegador de mentira
 testes/unitarios.mjs    Cálculos de preço, escape de texto, utilidades
 testes/seguranca.mjs    Segredos, XSS, permissões do banco, terceiros
+testes/funcionais.mjs   Cadastro, venda, comanda, cardápio, custos, relatórios
 testes/quebra.mjs       Banco fora do ar, dados tortos, entradas absurdas
 testes/telas.mjs        Arquivos, cache, acessibilidade, temas, obrigações legais
 testes/capa.mjs         Enquadramento da capa e botões de contato
@@ -273,7 +276,7 @@ npm install jsdom      (só na primeira vez)
 node testes/rodar.mjs
 ```
 
-São 238 verificações em cinco suítes. Elas rodam as telas de
+São 399 verificações em seis suítes. Elas rodam as telas de
 verdade num navegador de mentira (jsdom), sem tocar na internet nem no
 banco: nenhum teste depende de conexão e nenhum grava dado real.
 
@@ -289,6 +292,12 @@ texto vindo do banco nunca vira código na tela, e que as permissões do
 Postgres estão como deveriam. O auditor de HTML tem um autoteste: antes
 de confiar nele, a suíte prova que ele reprova um código sabidamente
 furado. Auditor que nunca acusa nada é decoração.
+
+**Funcionais** — os fluxos de verdade, módulo a módulo: cadastrar um
+produto, vender no balcão, abrir e fechar comanda, filtrar o cardápio,
+calcular custo e fechar o relatório. Dois deles importam mais que os
+outros: que reajustar preço hoje não reescreve o faturamento de ontem, e
+que limpar o cardápio não leva as vendas junto.
 
 **Quebra** — banco fora do ar, cardápio vazio, produto com nome nulo,
 preço `"abc"`, texto de 5.000 caracteres, armazenamento corrompido.
@@ -342,6 +351,24 @@ explicação do arquivo vive aqui neste README, de propósito. A bateria de test
 confere as propriedades usadas antes de o deploy acontecer.
 
 A lista válida está em <https://vercel.com/docs/project-configuration>.
+
+---
+
+## O que fica fora do ar
+
+O Vercel publica tudo que está no repositório. Sem o `.vercelignore`, o
+schema do banco, as políticas de segurança e a bateria de testes ficariam
+acessíveis a quem digitasse o caminho no navegador.
+
+Nenhum desses arquivos contém senha — quem protege os dados são as regras
+do Postgres, e elas continuam de pé mesmo com o schema à vista. Mas
+entregar o mapa da casa é desnecessário, e num sistema que vai ser vendido
+pega mal. Ficam de fora: `supabase/`, `testes/`, `package.json`, o próprio
+README e a pasta `fontes/`.
+
+`fontes/` guarda os originais em alta das imagens — fachada, foto da marca,
+o arquivo de onde a capa foi recortada. Ficam versionados para futuras
+edições, mas o navegador nunca precisa baixá-los.
 
 ---
 

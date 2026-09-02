@@ -1,0 +1,27 @@
+# =====================================================================
+# O que NÃO vai para o servidor.
+#
+# O Vercel publica tudo que está no repositório. Sem esta lista, o
+# schema do banco, as políticas de segurança e a bateria de testes
+# ficariam acessíveis a quem digitasse o caminho no navegador.
+#
+# Nenhum desses arquivos contém senha — quem protege os dados são as
+# regras do Postgres. Mas entregar o mapa da casa a quem quiser olhar
+# é desnecessário, e num sistema que vai ser vendido pega mal.
+# =====================================================================
+
+# Banco de dados: schema, políticas RLS e migrações
+supabase/
+
+# Bateria de testes
+testes/
+package.json
+
+# Documentação do projeto (é para quem mantém, não para quem visita)
+README.md
+LICENSE
+.gitattributes
+
+# Originais em alta das imagens: ficam versionados para futuras
+# edições, mas o navegador nunca precisa baixá-los
+fontes/

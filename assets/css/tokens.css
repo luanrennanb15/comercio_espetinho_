@@ -38,7 +38,6 @@
   --sucesso-bg:   rgba(78, 154, 95, .14);
   --verde-acao:   #237F41;   /* contraste 5,0:1 com texto branco */
   --verde-acao-2: #2A9850;
-  --alerta:       #D8A43A;
   --alerta-bg:    rgba(216, 164, 58, .14);
   --erro:         #C0503F;
   --erro-bg:      rgba(192, 80, 63, .14);
@@ -62,7 +61,6 @@
   --transicao: 160ms ease;
 
   /* --- Superfícies translúcidas (barras fixas e véus) --- */
-  --fundo-pagina:      #0C0A08;
   --fundo-translucido: rgba(12, 10, 8, .93);
   --veu-modal:         rgba(6, 5, 4, .78);
   --texto-sobre-ouro:  #412402;
@@ -112,7 +110,6 @@
   --sucesso-bg:   rgba(31, 122, 60, .12);
   --verde-acao:   #1F7A3C;
   --verde-acao-2: #268C48;
-  --alerta:       #8A6410;
   --alerta-bg:    rgba(200, 149, 40, .18);
   --erro:         #B3302A;
   --erro-bg:      rgba(179, 48, 42, .10);
@@ -121,7 +118,6 @@
   --sombra:    0 16px 40px rgba(60, 48, 30, .16);
   --sombra-sm: 0 3px 12px rgba(60, 48, 30, .12);
 
-  --fundo-pagina:      #FBF7F0;
   --fundo-translucido: rgba(251, 247, 240, .94);
   --veu-modal:         rgba(40, 33, 24, .55);
   --texto-sobre-ouro:  #17120A;

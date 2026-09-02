@@ -19,6 +19,7 @@ const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const SUITES = [
   ["unitarios.mjs", "Cálculos de preço, escape de texto e utilidades"],
   ["seguranca.mjs", "Segredos, XSS, permissões do banco e código de terceiros"],
+  ["funcionais.mjs","Cadastro, venda, comanda, cardápio, custos e relatórios"],
   ["quebra.mjs",    "Banco fora do ar, dados tortos e entradas absurdas"],
   ["telas.mjs",     "Arquivos, cache, acessibilidade, temas e obrigações legais"],
   ["capa.mjs",      "Enquadramento da capa e botões de contato"],

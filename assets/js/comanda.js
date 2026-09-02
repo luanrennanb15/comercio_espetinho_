@@ -15,7 +15,8 @@
   const CFG = window.APP_CONFIG || {};
   const { esc, moeda, $ } = UI;
 
-  const INTERVALO = 20000;        // atualiza a cada 20 segundos
+  const INTERVALO = 20000;       // atualiza a cada 20 segundos
+  let semBanco = false;          // o banco não respondeu na abertura
   let timer = null;
 
   function codigoDaUrl() {
@@ -90,12 +91,14 @@
     }
   }
 
-  /* Para de consultar quando a tela sai de vista, para poupar bateria */
+  /* Para de consultar quando a tela sai de vista, para poupar bateria.
+     Se o banco nunca chegou a responder, não adianta voltar a consultar:
+     a camada de dados não foi iniciada e cada tentativa daria erro. */
   document.addEventListener("visibilitychange", function () {
     if (document.hidden) {
       clearInterval(timer);
       timer = null;
-    } else if (!timer) {
+    } else if (!timer && !semBanco) {
       atualizar();
       timer = setInterval(atualizar, INTERVALO);
     }
@@ -116,10 +119,30 @@
       /* O cliente está de pé, com o celular na mão, olhando a tela.
          Ficar em "Carregando..." é o pior desfecho: ele não sabe se
          esperar ou chamar o garçom. */
-      mensagem("Sem conexão", e.message + " A tela tenta de novo sozinha.");
-      timer = setInterval(function () { location.reload(); }, INTERVALO * 3);
+      /* Tenta de novo algumas vezes e desiste.
+
+         Recarregar para sempre parece prestativo, mas é o contrário: o
+         celular fica no bolso do cliente gastando bateria e dados a noite
+         inteira, e se o sinal do bar não voltar isso nunca termina.
+         Depois de algumas tentativas é mais honesto parar e dizer para
+         chamar o atendente, que é quem resolve de verdade. */
+      semBanco = true;
+      const TENTATIVAS = 4;
+      let tentativa = Number(sessionStorage.getItem("frontbeer:tentativas") || 0);
+
+      if (tentativa >= TENTATIVAS) {
+        sessionStorage.removeItem("frontbeer:tentativas");
+        mensagem("Sem conexão",
+          "Não conseguimos carregar o seu consumo. Chame o atendente — ele tem a sua conta no caixa.");
+        return;
+      }
+
+      sessionStorage.setItem("frontbeer:tentativas", tentativa + 1);
+      mensagem("Sem conexão", e.message + " Tentando de novo…");
+      timer = setTimeout(function () { location.reload(); }, INTERVALO);
       return;
     }
+    sessionStorage.removeItem("frontbeer:tentativas");   // conectou: recomeça a contagem
     await atualizar();
     timer = setInterval(atualizar, INTERVALO);
   })();

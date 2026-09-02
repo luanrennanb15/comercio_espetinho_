@@ -169,21 +169,6 @@ const DB = (() => {
     });
   }
 
-  /* Qualquer espera pode acabar. Vale para a rede inteira, não só para
-     o script: uma consulta que não volta trava a tela do mesmo jeito. */
-  function comPrazo(promessa, prazoMs, oQue) {
-    let relogio;
-    return Promise.race([
-      promessa,
-      new Promise((_, falha) => {
-        relogio = setTimeout(
-          () => falha(new Error("O servidor demorou demais para responder" + (oQue ? " (" + oQue + ")" : "") + ".")),
-          prazoMs || TEMPO_LIMITE
-        );
-      }),
-    ]).finally(() => clearTimeout(relogio));
-  }
-
   /* ---------------- Normalização e validação ---------------- */
   function normalizar(p) {
     return {
@@ -466,16 +451,40 @@ const DB = (() => {
     },
 
     /* Reajuste percentual, opcionalmente restrito a uma categoria */
+    /* Reajuste de preços.
+
+       O cardápio tem dezenas de itens. Salvar um por vez seria uma
+       requisição por produto: lento no celular do balcão e, pior,
+       sujeito a parar no meio — metade dos preços reajustada e metade
+       não, sem ninguém perceber. Aqui vai tudo numa requisição só. */
     async reajustarPrecos(percentual, categoria) {
       const pct = Number(percentual);
       if (!isFinite(pct) || pct <= -100) throw new Error("Percentual inválido.");
       const fator = 1 + pct / 100;
       const lista = await this.listarProdutos(false);
       const alvo = lista.filter((p) => !categoria || p.categoria === categoria);
-      for (const p of alvo) {
-        p.preco = Math.round(p.preco * fator * 100) / 100;
-        await this.salvarProduto(p);
+      if (!alvo.length) return 0;
+
+      alvo.forEach((p) => { p.preco = Math.round(p.preco * fator * 100) / 100; });
+
+      if (modo === "supabase") {
+        const { error } = await sb.from("produtos").upsert(
+          alvo.map((p) => ({
+            id: p.id, nome: p.nome, descricao: p.descricao, categoria: p.categoria,
+            preco: p.preco, imagem_url: p.imagem_url, ativo: p.ativo,
+            esgotado: p.esgotado, alcoolico: p.alcoolico, ordem: p.ordem,
+          }))
+        );
+        if (error) throw traduzirErro(error);
+        return alvo.length;
       }
+
+      const local = lerLocal();
+      alvo.forEach((p) => {
+        const i = local.findIndex((x) => x.id === p.id);
+        if (i !== -1) local[i].preco = p.preco;
+      });
+      gravarLocal(local);
       return alvo.length;
     },
 
@@ -491,7 +500,15 @@ const DB = (() => {
 
     async restaurarExemplos() {
       if (modo === "supabase") {
-        for (const p of this.exemplos) { delete p.id; await this.salvarProduto(p); }
+        /* Uma requisição só, pelo mesmo motivo do reajuste: 33 chamadas
+           em sequência demoram e podem parar na décima. */
+        const linhas = this.exemplos.map((p) => {
+          const c = Object.assign({}, p);
+          delete c.id;
+          return c;
+        });
+        const { error } = await sb.from("produtos").insert(linhas);
+        if (error) throw traduzirErro(error);
         return true;
       }
       gravarLocal(this.exemplos);
@@ -586,8 +603,19 @@ const DB = (() => {
         });
         return mapa;
       }
+      /* Custos são um mapa produto -> custo. Se o armazenamento guardar
+         qualquer outra coisa (uma lista, um número, dado corrompido),
+         gravar por cima falharia em silêncio: JSON.stringify de uma
+         lista descarta propriedades nomeadas, e o custo do produto
+         desapareceria sem nenhum erro na tela. */
       try {
-        return JSON.parse(localStorage.getItem(CHAVE_CUSTOS) || "{}");
+        const bruto = JSON.parse(localStorage.getItem(CHAVE_CUSTOS) || "{}");
+        const ehMapa = bruto && typeof bruto === "object" && !Array.isArray(bruto);
+        if (!ehMapa) {
+          console.warn("Custos locais em formato inesperado, recomeçando vazio.");
+          return {};
+        }
+        return bruto;
       } catch (e) { return {}; }
     },
 

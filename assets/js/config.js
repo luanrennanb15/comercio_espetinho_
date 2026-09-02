@@ -11,12 +11,12 @@ window.APP_CONFIG = {
   lema:        "Bons amigos, boas cervejas, bons momentos.",
 
   /* --- Contato e localização (deixe "" para ocultar) --- */
-  endereco:    "Antônio Silva Saladino, 875",
+  endereco:    "R. Antônio Silva Saladino, 1500 — Parque Vitória Régia, Sorocaba/SP",
   horario:     "Todos os dias, 16h às 2h",
   telefone:    "(15) 98142-7143",
   whatsapp:    "5515981427143",               // só dígitos, com 55 na frente
   instagram:   "frontbeer_adega",             // sem o @
-  mapaUrl:     "",                            // link do Google Maps
+  mapaUrl:     "https://www.google.com/maps/search/?api=1&query=R.+Ant%C3%B4nio+Silva+Saladino,+1500+-+Parque+Vitoria+Regia,+Sorocaba+-+SP,+18078-344",   // vira o botão "Como chegar"
 
   /* --- Regras de operação --- */
   avisoOperacao: "Consumo e retirada no local. Não realizamos entregas.",

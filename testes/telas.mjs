@@ -115,6 +115,7 @@ conf("avisa que não há entrega", /n[ãa]o realizamos entregas/i.test(textoPubl
 conf("avisa que o preço pode mudar", /pre[çc]os sujeitos a altera/i.test(textoPublico));
 conf("o nome da casa aparece", /Front Beer/.test(textoPublico));
 conf("o endereço aparece", /Saladino/.test(textoPublico));
+conf("a cidade aparece no cardápio", /Sorocaba/.test(textoPublico));
 conf("o horário aparece", /16h/.test(textoPublico));
 
 const cfg = publico.window.APP_CONFIG;
@@ -122,8 +123,8 @@ conf("telefone e WhatsApp são o mesmo número",
   cfg.whatsapp.replace(/\D/g, "").endsWith(cfg.telefone.replace(/\D/g, "")),
   "telefone " + cfg.telefone + " · whatsapp " + cfg.whatsapp);
 conf("o WhatsApp tem o código do país", /^55\d{10,11}$/.test(cfg.whatsapp));
-aviso("endereço com cidade e bairro", /,.*-|\/|CEP/i.test(cfg.endereco),
-  "sem cidade não dá para gerar 'Como chegar' nem ligar o site à ficha do Google Maps");
+conf("o endereço tem bairro e cidade", /Sorocaba/i.test(cfg.endereco) && /Vit[óo]ria R[ée]gia/i.test(cfg.endereco));
+conf("existe link de 'Como chegar'", !!cfg.mapaUrl && /^https:\/\/(www\.)?google\.com\/maps/.test(cfg.mapaUrl));
 aviso("siteUrl preenchido", !!cfg.siteUrl,
   "é o endereço que vai dentro do QR Code das mesas");
 publico.fechar();

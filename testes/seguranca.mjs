@@ -414,9 +414,16 @@ if (ld) {
     const doCfg = (campo) => (cfgTexto.match(new RegExp(campo + ':\\s*"([^"]*)"')) || [, ""])[1];
 
     conf("o nome bate com o config.js", ficha.name === doCfg("nome"));
-    conf("o endereço bate com o config.js",
-      ficha.address && ficha.address.streetAddress === doCfg("endereco"),
-      "ficha: " + (ficha.address || {}).streetAddress + " | config: " + doCfg("endereco"));
+    /* No config o endereço é uma linha só, para caber no rodapé. Na ficha
+       ele vem repartido, porque é assim que o Google espera. Então comparo
+       as partes: a rua e o número da ficha têm que estar dentro da linha
+       do config, e a cidade também. */
+    const ruaFicha = ((ficha.address || {}).streetAddress || "").replace(/^R\.\s*/i, "");
+    conf("a rua e o número batem com o config.js",
+      doCfg("endereco").includes(ruaFicha),
+      "ficha: " + ruaFicha + " | config: " + doCfg("endereco"));
+    conf("a cidade da ficha aparece no endereço do config",
+      doCfg("endereco").includes((ficha.address || {}).addressLocality || "\u0000"));
     conf("o telefone bate com o config.js",
       (ficha.telephone || "").replace(/\D/g, "") === doCfg("whatsapp").replace(/\D/g, ""),
       "ficha: " + ficha.telephone + " | config: " + doCfg("whatsapp"));
@@ -426,8 +433,9 @@ if (ld) {
       (ficha.sameAs || []).some((u) => u.includes(doCfg("instagram"))));
     conf("o horário está declarado", Array.isArray(ficha.openingHoursSpecification));
     conf("a imagem da ficha é endereço absoluto", /^https:\/\//.test(ficha.image || ""));
-    aviso("endereço com cidade na ficha", !!(ficha.address || {}).addressLocality,
-      "sem cidade o Google tem dificuldade de casar o site com a ficha do Maps");
+    conf("a ficha tem cidade, estado e CEP",
+      !!(ficha.address || {}).addressLocality && !!ficha.address.addressRegion && !!ficha.address.postalCode,
+      "sem isso o Google tem dificuldade de casar o site com a ficha do Maps");
   }
 }
 

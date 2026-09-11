@@ -240,11 +240,21 @@
 
   function cartao(p) {
     const qtd = quantidadeLancada(p.id);
+
+    /* Quanto resta, para quem está no balcão decidir na hora se vende
+       ou avisa que está acabando. Só aparece quando o item controla
+       estoque E já está no fim: número em todo cartão viraria ruído
+       no meio do movimento. */
+    const resta = DB.estoqueBaixo(p) && !p.esgotado
+      ? '<span class="cartao-produto__resta" title="Restam em estoque">' + esc(p.estoque) + "</span>"
+      : "";
+
     return '<button type="button" class="cartao-produto' + (p.esgotado ? " cartao-produto--esgotado" : "") +
       '" data-id="' + esc(p.id) + '"' + (p.esgotado ? " disabled" : "") + ">" +
       '<span class="cartao-produto__nome">' + esc(p.nome) + (p.esgotado ? " (esgotado)" : "") + "</span>" +
       '<span class="cartao-produto__pe">' +
         '<span class="cartao-produto__preco">' + moeda(p.preco) + "</span>" +
+        resta +
         (qtd ? '<span class="cartao-produto__qtd">' + qtd + "</span>" : "") +
       "</span></button>";
   }
@@ -279,8 +289,8 @@
           custo_unit: DB.custoUnitario(custos[p.id]),
         });
         await recarregarComandas();
+        await carregarProdutos();      // o lançamento já baixou o estoque
         desenharPainel();
-        desenharCatalogo();
       } catch (err) { avisar(err.message, "erro"); }
       return;
     }
@@ -361,8 +371,8 @@
       try {
         await DB.removerItemComanda(comandaAtual.id, chaveItem);
         await recarregarComandas();
+        await carregarProdutos();      // o item removido voltou ao estoque
         desenharPainel();
-        desenharCatalogo();
       } catch (err) { avisar(err.message, "erro"); }
       return;
     }
@@ -457,6 +467,9 @@
         limparVendaRapida();
         await carregarVendasDoDia();
       }
+      /* A venda mexeu no estoque: relê os produtos para o contador de
+         "restam N" no cartão não ficar mostrando número velho. */
+      await carregarProdutos();
     } catch (err) {
       avisar(err.message || "Falha ao registrar.", "erro");
     } finally {
@@ -529,6 +542,110 @@
   setInterval(function () {
     if (vista === "quadro" && comandas.length) desenharQuadro();
   }, 60000);
+
+  /* ---------------- Registrar perda ----------------
+
+     Fica no Caixa porque é aqui que a garrafa quebra. Registro que
+     exige trocar de tela e procurar menu simplesmente não é feito, e
+     um controle de perdas que ninguém alimenta é pior que nenhum:
+     passa a sensação de que está tudo sob controle. */
+
+  function custoDoProduto(p) {
+    const u = DB.custoUnitario(custos[p.id]);
+    return u == null ? 0 : u;
+  }
+
+  function esconderErroPerda() {
+    const e = $("#erroPerda");
+    e.textContent = "";
+    e.classList.add("oculto");
+  }
+
+  function mostrarErroPerda(texto) {
+    const e = $("#erroPerda");
+    e.textContent = texto;
+    e.classList.remove("oculto");
+  }
+
+  function preencherFormularioPerda() {
+    const opcoes = produtos.slice()
+      .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))
+      .map((p) => '<option value="' + esc(p.id) + '">' + esc(p.nome) + "</option>")
+      .join("");
+    $("#perdaProduto").innerHTML = opcoes;
+
+    $("#perdaMotivo").innerHTML = DB.motivosDePerda
+      .map((m) => '<option value="' + esc(m.valor) + '">' + esc(m.rotulo) + "</option>")
+      .join("");
+
+    $("#perdaQtd").value = 1;
+    $("#perdaObs").value = "";
+    atualizarValorPerda();
+    atualizarAjudaMotivo();
+  }
+
+  function atualizarAjudaMotivo() {
+    const escolhido = DB.motivosDePerda.find((m) => m.valor === $("#perdaMotivo").value);
+    $("#perdaMotivoAjuda").textContent = escolhido ? escolhido.ajuda : "";
+  }
+
+  function atualizarValorPerda() {
+    const p = produtos.find((x) => x.id === $("#perdaProduto").value);
+    const qtd = Math.max(1, parseInt($("#perdaQtd").value, 10) || 1);
+    const alvo = $("#perdaValor");
+
+    if (!p) { alvo.textContent = "Escolha o produto para ver quanto custa."; return; }
+
+    const unitario = custoDoProduto(p);
+    if (!unitario) {
+      alvo.innerHTML = "<strong>" + esc(p.nome) + "</strong> não tem custo cadastrado. " +
+        "A perda será registrada com valor zero — cadastre o custo em Produtos para a conta fechar.";
+      return;
+    }
+    alvo.innerHTML = "Custo da perda: <strong>" + moeda(unitario * qtd) + "</strong> " +
+      "<small>(" + qtd + " × " + moeda(unitario) + ")</small>";
+  }
+
+  $("#btnPerda").addEventListener("click", function () {
+    if (!produtos.length) { avisar("Cadastre produtos antes de registrar perdas.", "erro"); return; }
+    esconderErroPerda();
+    preencherFormularioPerda();
+    abrirModal("modalPerda");
+  });
+
+  $("#perdaProduto").addEventListener("change", atualizarValorPerda);
+  $("#perdaQtd").addEventListener("input", atualizarValorPerda);
+  $("#perdaMotivo").addEventListener("change", atualizarAjudaMotivo);
+
+  $("#formPerda").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    esconderErroPerda();
+    const btn = $("#btnSalvarPerda");
+    btn.disabled = true;
+    try {
+      const p = produtos.find((x) => x.id === $("#perdaProduto").value);
+      if (!p) throw new Error("Escolha o produto.");
+      const qtd = parseInt($("#perdaQtd").value, 10);
+
+      await DB.registrarPerda({
+        produto_id: p.id,
+        nome: p.nome,
+        categoria: p.categoria,
+        quantidade: qtd,
+        custo_unit: custoDoProduto(p),
+        motivo: $("#perdaMotivo").value,
+        observacao: $("#perdaObs").value,
+      });
+
+      fecharModal("modalPerda");
+      avisar("Perda registrada: " + qtd + "× " + p.nome + ".", "ok");
+      await carregarProdutos();          // a perda saiu do estoque
+    } catch (err) {
+      mostrarErroPerda(err.message || "Falha ao registrar a perda.");
+    } finally {
+      btn.disabled = false;
+    }
+  });
 
   /* ---------------- Início ---------------- */
   (async function iniciar() {

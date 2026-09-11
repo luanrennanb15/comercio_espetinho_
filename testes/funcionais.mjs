@@ -23,6 +23,7 @@ async function bancoLimpo() {
          testar — é o que acontece na primeira vez que a casa abre. */
       w.localStorage.setItem("frontbeer:produtos", "[]");
       w.localStorage.setItem("frontbeer:vendas", "[]");
+      w.localStorage.setItem("frontbeer:perdas", "[]");
       w.localStorage.setItem("frontbeer:custos", "{}");   // custos são um mapa, não uma lista
       w.localStorage.removeItem("frontbeer:comandas");
     },
@@ -344,6 +345,277 @@ suite("Funcional — um módulo não contamina o outro");
     "apagar o cardápio levou as vendas junto");
   conf("e o histórico ainda sabe o que foi vendido",
     (await DB.listarVendas())[0].itens[0].nome === "Produto Vendido");
+  w.close();
+}
+
+/* ================================================================
+   MÓDULO 8 — Estoque com alerta de reposição
+   ================================================================ */
+suite("Funcional — estoque");
+
+{
+  const w = await bancoLimpo();
+  const DB = w.DB;
+
+  const cerveja = await DB.salvarProduto({
+    nome: "Cerveja Lata", categoria: "Cervejas", preco: 6.5, ordem: 1,
+    controla_estoque: true, estoque: 24, estoque_minimo: 6,
+  });
+  const espeto = await DB.salvarProduto({
+    nome: "Espeto de Carne", categoria: "Espetos", preco: 10, ordem: 2,
+  });
+
+  const doBanco = (id) => DB.listarProdutos(false).then((l) => l.find((p) => p.id === id));
+
+  conf("o estoque é gravado", (await doBanco(cerveja.id)).estoque === 24);
+  conf("quem não controla estoque fica de fora",
+    !(await doBanco(espeto.id)).controla_estoque);
+
+  /* --- A venda tira do estoque --- */
+  await DB.registrarVenda({
+    itens: [{ produto_id: cerveja.id, nome: cerveja.nome, categoria: "Cervejas", preco_unit: 6.5, quantidade: 4 }],
+  });
+  conf("vender 4 baixa de 24 para 20", (await doBanco(cerveja.id)).estoque === 20,
+    "veio " + (await doBanco(cerveja.id)).estoque);
+
+  /* --- Produto sem controle não é afetado --- */
+  await DB.registrarVenda({
+    itens: [{ produto_id: espeto.id, nome: espeto.nome, categoria: "Espetos", preco_unit: 10, quantidade: 5 }],
+  });
+  conf("vender espeto não cria estoque do nada",
+    !(await doBanco(espeto.id)).controla_estoque && !DB.estoqueBaixo(await doBanco(espeto.id)),
+    "item sem controle apareceria no alerta de reposição com zero");
+
+  /* --- Estornar devolve --- */
+  const paraEstornar = await DB.registrarVenda({
+    itens: [{ produto_id: cerveja.id, nome: cerveja.nome, categoria: "Cervejas", preco_unit: 6.5, quantidade: 3 }],
+  });
+  conf("depois de mais 3, sobram 17", (await doBanco(cerveja.id)).estoque === 17);
+  await DB.excluirVenda(paraEstornar.id);
+  conf("estornar devolve ao estoque", (await doBanco(cerveja.id)).estoque === 20,
+    "veio " + (await doBanco(cerveja.id)).estoque + " — um engano no caixa viraria falta de mercadoria");
+
+  /* --- Alerta de reposição --- */
+  conf("com 20 acima do mínimo 6, não alerta", !DB.estoqueBaixo(await doBanco(cerveja.id)));
+  await DB.registrarVenda({
+    itens: [{ produto_id: cerveja.id, nome: cerveja.nome, categoria: "Cervejas", preco_unit: 6.5, quantidade: 14 }],
+  });
+  const restam6 = await doBanco(cerveja.id);
+  conf("sobraram 6", restam6.estoque === 6);
+  conf("ao tocar o mínimo, entra no alerta", DB.estoqueBaixo(restam6));
+  conf("e aparece na lista de reposição",
+    (await DB.listarEstoqueBaixo()).some((p) => p.id === cerveja.id));
+
+  /* --- Ao zerar, some do cardápio sozinho --- */
+  await DB.registrarVenda({
+    itens: [{ produto_id: cerveja.id, nome: cerveja.nome, categoria: "Cervejas", preco_unit: 6.5, quantidade: 6 }],
+  });
+  const zerada = await doBanco(cerveja.id);
+  conf("zerou", zerada.estoque === 0);
+  conf("ao zerar, marca esgotado sozinho", zerada.esgotado === true,
+    "o cliente continuaria pedindo algo que acabou");
+
+  /* Nunca negativo: vender sem ter não pode gerar estoque de -3, senão
+     a reposição vira conta de cabeça. */
+  await DB.registrarVenda({
+    itens: [{ produto_id: cerveja.id, nome: cerveja.nome, categoria: "Cervejas", preco_unit: 6.5, quantidade: 3 }],
+  });
+  conf("o estoque nunca fica negativo", (await doBanco(cerveja.id)).estoque === 0);
+
+  /* --- Entrada de mercadoria --- */
+  await DB.darEntradaEstoque(cerveja.id, 48);
+  const reposta = await doBanco(cerveja.id);
+  conf("entrada de fardo soma ao que tinha", reposta.estoque === 48);
+  conf("repor tira o esgotado sozinho", reposta.esgotado === false,
+    "o item continuaria escondido do cardápio depois de comprado");
+  await confErro("entrada de zero é recusada",
+    () => DB.darEntradaEstoque(cerveja.id, 0), /quantidade/i);
+
+  w.close();
+}
+
+/* ================================================================
+   MÓDULO 9 — Estoque no ciclo da comanda
+   ================================================================ */
+suite("Funcional — estoque e comanda");
+
+{
+  const w = await bancoLimpo();
+  const DB = w.DB;
+  const cerveja = await DB.salvarProduto({
+    nome: "Long Neck", categoria: "Cervejas", preco: 11, ordem: 1,
+    controla_estoque: true, estoque: 10, estoque_minimo: 2,
+  });
+  const doBanco = () => DB.listarProdutos(false).then((l) => l.find((p) => p.id === cerveja.id));
+
+  const c = (await DB.listarComandas())[0];
+  await DB.abrirComanda(c.id);
+
+  /* A baixa acontece no lançamento, não no fechamento. Se esperasse o
+     fechamento, uma comanda aberta a noite toda deixaria o sistema
+     achando que as cervejas ainda estão na geladeira. */
+  await DB.lancarItem(c.id, {
+    produto_id: cerveja.id, nome: cerveja.nome, categoria: "Cervejas",
+    preco_unit: 11, quantidade: 3,
+  });
+  conf("lançar na comanda já baixa o estoque", (await doBanco()).estoque === 7,
+    "veio " + (await doBanco()).estoque);
+
+  /* Remover item lançado por engano devolve */
+  const itens = (await DB.listarComandas()).find((x) => x.id === c.id).itens;
+  await DB.removerItemComanda(c.id, itens[0].id);
+  conf("remover item da comanda devolve ao estoque", (await doBanco()).estoque === 10);
+
+  /* Fechar a conta NÃO pode baixar de novo */
+  await DB.lancarItem(c.id, {
+    produto_id: cerveja.id, nome: cerveja.nome, categoria: "Cervejas",
+    preco_unit: 11, quantidade: 2,
+  });
+  conf("depois de lançar 2, restam 8", (await doBanco()).estoque === 8);
+  await DB.fecharComanda(c.id, "pix");
+  conf("fechar a conta NÃO baixa em dobro", (await doBanco()).estoque === 8,
+    "veio " + (await doBanco()).estoque + " — o estoque estaria saindo duas vezes por venda");
+
+  /* Cancelar comanda devolve tudo */
+  const c2 = (await DB.listarComandas()).find((x) => x.status === "livre");
+  await DB.abrirComanda(c2.id);
+  await DB.lancarItem(c2.id, {
+    produto_id: cerveja.id, nome: cerveja.nome, categoria: "Cervejas",
+    preco_unit: 11, quantidade: 5,
+  });
+  conf("comanda nova lança e baixa", (await doBanco()).estoque === 3);
+  await DB.liberarComanda(c2.id);
+  conf("cancelar a comanda devolve o que não foi consumido",
+    (await doBanco()).estoque === 8, "veio " + (await doBanco()).estoque);
+
+  w.close();
+}
+
+/* ================================================================
+   MÓDULO 10 — O estoque não vaza para o cliente
+   ================================================================ */
+suite("Funcional — estoque é dado interno");
+
+{
+  const w = await bancoLimpo();
+  const DB = w.DB;
+  await DB.salvarProduto({
+    nome: "Cerveja", categoria: "Cervejas", preco: 6.5, ordem: 1,
+    controla_estoque: true, estoque: 99, estoque_minimo: 5,
+  });
+
+  const publico = await DB.listarProdutos(true);
+  conf("o cardápio público não recebe a quantidade",
+    publico.every((p) => p.estoque === undefined && p.controla_estoque === undefined),
+    "quantas caixas a casa tem é informação do negócio, não do cliente");
+
+  const interno = await DB.listarProdutos(false);
+  conf("o painel continua vendo", interno[0].estoque === 99);
+  w.close();
+}
+
+/* ================================================================
+   MÓDULO 11 — Perdas: quebra, vencimento, consumo da casa e brinde
+   ================================================================ */
+suite("Funcional — perdas");
+
+{
+  const w = await bancoLimpo();
+  const DB = w.DB;
+  w.localStorage.setItem("frontbeer:perdas", "[]");
+
+  const cerveja = await DB.salvarProduto({
+    nome: "Cerveja Lata", categoria: "Cervejas", preco: 11, ordem: 1,
+    controla_estoque: true, estoque: 30, estoque_minimo: 6,
+  });
+  /* Fardo de 12 por R$ 77,88 dá R$ 6,49 a lata — o caso real do balcão. */
+  await DB.salvarCusto(cerveja.id, { custo_compra: 77.88, rende_unidades: 12 });
+  const custo = DB.custoUnitario((await DB.listarCustos())[cerveja.id]);
+
+  const doBanco = () => DB.listarProdutos(false).then((l) => l.find((p) => p.id === cerveja.id));
+  const registrar = (motivo, qtd, obs) => DB.registrarPerda({
+    produto_id: cerveja.id, nome: cerveja.nome, categoria: "Cervejas",
+    quantidade: qtd, custo_unit: custo, motivo: motivo, observacao: obs || "",
+  });
+
+  /* --- O motivo é obrigatório, e é o ponto do módulo --- */
+  await confErro("recusa perda sem motivo",
+    () => DB.registrarPerda({ produto_id: cerveja.id, nome: "X", quantidade: 1 }), /motivo/i);
+  await confErro("recusa motivo inventado",
+    () => registrar("sumiu", 1), /motivo/i);
+  await confErro("recusa quantidade zero", () => registrar("quebra", 0), /quantidade/i);
+  await confErro("recusa quantidade negativa", () => registrar("quebra", -5), /quantidade/i);
+
+  /* --- Registrar tira do estoque --- */
+  const p1 = await registrar("quebra", 3, "caiu da bandeja");
+  conf("a perda é registrada", !!p1 && !!p1.id);
+  conf("quebrar 3 tira 3 do estoque", (await doBanco()).estoque === 27,
+    "veio " + (await doBanco()).estoque);
+
+  /* --- Valor é o CUSTO, nunca o preço de venda --- */
+  const lista1 = await DB.listarPerdas();
+  const r1 = DB.resumoDePerdas(lista1);
+  conf("3 latas a R$ 6,49 dão R$ 19,47 de perda",
+    Math.abs(r1.total - 19.47) < 0.02, "veio " + r1.total);
+  conf("NÃO contabiliza pelo preço de venda (seriam R$ 33,00)",
+    Math.abs(r1.total - 33) > 1,
+    "lançar pelo preço inflaria a perda em quase o dobro");
+
+  /* --- Cada motivo é contado separado --- */
+  await registrar("consumo_interno", 2);
+  await registrar("brinde", 1);
+  await registrar("vencimento", 4);
+
+  const R = DB.resumoDePerdas(await DB.listarPerdas());
+  conf("soma 10 unidades no total", R.unidades === 10, "veio " + R.unidades);
+  conf("quebra é contada à parte", Math.abs(R.porMotivo.quebra - 3 * custo) < 0.02);
+  conf("consumo da casa é contado à parte", Math.abs(R.porMotivo.consumo_interno - 2 * custo) < 0.02);
+  conf("brinde é contado à parte", Math.abs(R.porMotivo.brinde - 1 * custo) < 0.02);
+  conf("vencimento é contado à parte", Math.abs(R.porMotivo.vencimento - 4 * custo) < 0.02);
+  conf("os quatro motivos aparecem separados", Object.keys(R.porMotivo).length === 4,
+    "juntar tudo num total esconde qual é o problema");
+
+  /* --- Proporção do faturamento: a leitura que importa --- */
+  const semReceita = DB.resumoDePerdas(await DB.listarPerdas());
+  conf("sem faturamento informado, não inventa percentual",
+    semReceita.percentualDaReceita === null);
+
+  const comReceita = DB.resumoDePerdas(await DB.listarPerdas(), 1000);
+  conf("R$ 64,90 de perda sobre R$ 1.000 dá 6,5%",
+    Math.abs(comReceita.percentualDaReceita - 6.5) < 0.2,
+    "veio " + comReceita.percentualDaReceita);
+
+  /* --- Ranking por produto --- */
+  conf("o produto que mais pesa aparece primeiro",
+    R.porProduto[0] && R.porProduto[0].nome === "Cerveja Lata");
+  conf("e soma as unidades de todos os motivos", R.porProduto[0].unidades === 10);
+
+  /* --- Desfazer devolve ao estoque --- */
+  const estoqueAntes = (await doBanco()).estoque;
+  await DB.excluirPerda(p1.id);
+  conf("excluir a perda devolve ao estoque",
+    (await doBanco()).estoque === estoqueAntes + 3,
+    "um lançamento errado viraria falta de mercadoria que não existe");
+  conf("e some do histórico",
+    (await DB.listarPerdas()).every((p) => p.id !== p1.id));
+
+  /* --- Produto sem custo cadastrado não quebra o registro --- */
+  const espeto = await DB.salvarProduto({ nome: "Espeto", categoria: "Espetos", preco: 10, ordem: 2 });
+  const semCusto = await DB.registrarPerda({
+    produto_id: espeto.id, nome: espeto.nome, categoria: "Espetos",
+    quantidade: 2, custo_unit: null, motivo: "quebra",
+  });
+  conf("perda de item sem custo é aceita, valendo zero",
+    !!semCusto.id && semCusto.custo_unit === 0,
+    "melhor registrar o fato sem valor do que não registrar");
+
+  /* --- O nome fica congelado, como nas vendas --- */
+  await DB.salvarProduto(Object.assign({}, cerveja, { nome: "Cerveja Lata 350ml (novo nome)" }));
+  const depois = await DB.listarPerdas();
+  conf("renomear o produto não reescreve o histórico de perdas",
+    depois.some((p) => p.nome === "Cerveja Lata"),
+    "o histórico mudaria sozinho ao editar o cadastro");
+
   w.close();
 }
 

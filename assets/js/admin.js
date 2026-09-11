@@ -122,6 +122,35 @@
     $("#kpiOcultos").textContent = ocultos;
     $("#kpiMedia").textContent = total ? moeda(media) : "—";
     $("#btnRepor").disabled = esgotados === 0;
+    desenharAlertaEstoque();
+  }
+
+  /* Alerta de reposição.
+
+     Aparece só quando há o que comprar. Um aviso que fica na tela o
+     tempo todo vira paisagem e deixa de ser lido — se está visível,
+     é porque tem coisa acabando. */
+  function desenharAlertaEstoque() {
+    const alvo = $("#alertaEstoque");
+    if (!alvo) return;
+
+    const baixos = produtos.filter((p) => DB.estoqueBaixo(p))
+      .sort((a, b) => a.estoque - b.estoque || a.nome.localeCompare(b.nome, "pt-BR"));
+
+    if (!baixos.length) { alvo.classList.add("oculto"); alvo.innerHTML = ""; return; }
+
+    const acabaram = baixos.filter((p) => p.estoque === 0).length;
+    const titulo = acabaram
+      ? acabaram + (acabaram === 1 ? " item acabou" : " itens acabaram")
+      : "Comprar em breve";
+
+    alvo.innerHTML =
+      "<strong>" + esc(titulo) + "</strong> " +
+      baixos.slice(0, 12).map((p) =>
+        esc(p.nome) + " (" + (p.estoque === 0 ? "acabou" : p.estoque + " restantes") + ")"
+      ).join(" · ") +
+      (baixos.length > 12 ? " e mais " + (baixos.length - 12) + "." : "");
+    alvo.classList.remove("oculto");
   }
 
   /* ---------------- Tabela ---------------- */
@@ -161,6 +190,10 @@
       ? '<span class="selo selo--erro">Esgotado</span>'
       : '<span class="selo selo--ok">Disponível</span>');
     if (p.alcoolico) selos.push('<span class="selo selo--ouro">18+</span>');
+    if (p.controla_estoque) {
+      selos.push('<span class="selo ' + (DB.estoqueBaixo(p) ? "selo--erro" : "selo--vazio") +
+        '" title="Quantidade em estoque">' + esc(p.estoque) + " un.</span>");
+    }
 
     return '<tr class="' + (p.ativo ? "" : "esmaecido") + '" data-id="' + esc(p.id) + '">' +
       '<td data-rotulo="Produto"><div class="produto-nome">' +
@@ -530,8 +563,22 @@
     $("#pAtivo").checked = p ? p.ativo : true;
     $("#pEsgotado").checked = p ? p.esgotado : false;
     $("#pAlcoolico").checked = p ? p.alcoolico : false;
+
+    $("#pControlaEstoque").checked = !!(p && p.controla_estoque);
+    $("#pEstoque").value        = p && p.controla_estoque ? p.estoque : 0;
+    $("#pEstoqueMinimo").value  = p && p.controla_estoque ? p.estoque_minimo : 0;
+    mostrarCamposEstoque();
+
     abrirModal("modalProduto");
   }
+
+  /* Os campos de quantidade só aparecem quando o controle está ligado:
+     dois campos numéricos a mais em todo cadastro atrapalhariam quem
+     cadastra espeto, que é a maioria. */
+  function mostrarCamposEstoque() {
+    $("#areaEstoque").classList.toggle("oculto", !$("#pControlaEstoque").checked);
+  }
+  $("#pControlaEstoque").addEventListener("change", mostrarCamposEstoque);
 
   $("#btnNovo").addEventListener("click", () => abrirFormulario(null));
 
@@ -552,6 +599,9 @@
         ativo: $("#pAtivo").checked,
         esgotado: $("#pEsgotado").checked,
         alcoolico: $("#pAlcoolico").checked,
+        controla_estoque: $("#pControlaEstoque").checked,
+        estoque: $("#pControlaEstoque").checked ? $("#pEstoque").value : 0,
+        estoque_minimo: $("#pControlaEstoque").checked ? $("#pEstoqueMinimo").value : 0,
       });
       /* Custo vai para a tabela protegida, nunca junto do produto */
       const custoInformado = lerCustoDoFormulario();

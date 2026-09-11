@@ -30,6 +30,7 @@
   };
 
   let vendas = [];
+  let perdas = [];
   const graficos = {};
 
   /* Menu lateral + ações próprias desta tela na barra superior */
@@ -119,6 +120,14 @@
 
     try {
       vendas = await DB.listarVendas(de, ate);
+      /* Perda não pode derrubar o relatório: banco sem o módulo ainda
+         precisa mostrar faturamento e lucro normalmente. */
+      try {
+        perdas = await DB.listarPerdas(de, ate);
+      } catch (e) {
+        perdas = [];
+        console.warn("Perdas não carregadas.", e);
+      }
       desenhar(de, ate);
     } catch (e) {
       avisar(e.message || "Falha ao carregar as vendas.", "erro");
@@ -300,6 +309,61 @@
     });
   }
 
+  /* ---------------- Perdas ----------------
+
+     O número que explica por que o lucro do papel não bate com o
+     dinheiro do caixa. Vem separado por motivo de propósito: quebra é
+     problema de manuseio, vencimento é erro de compra, consumo da casa
+     é retirada do dono e brinde é marketing. Quatro decisões
+     diferentes, que um total único esconderia. */
+  function desenharPerdas(faturamento) {
+    const painel = $("#painelPerdas");
+    if (!painel) return;
+
+    if (!perdas.length) { painel.classList.add("oculto"); return; }
+    painel.classList.remove("oculto");
+
+    const R = DB.resumoDePerdas(perdas, faturamento);
+    const rotulos = {};
+    DB.motivosDePerda.forEach((m) => { rotulos[m.valor] = m.rotulo; });
+
+    const motivos = Object.keys(R.porMotivo)
+      .map((k) => ({ chave: k, rotulo: rotulos[k] || k, custo: R.porMotivo[k] }))
+      .sort((a, b) => b.custo - a.custo);
+    const maior = motivos.length ? motivos[0].custo || 1 : 1;
+
+    $("#legendaPerdas").textContent =
+      R.unidades + (R.unidades === 1 ? " unidade" : " unidades") + " · " + moeda(R.total);
+
+    $("#listaPerdas").innerHTML = motivos.map((m, i) =>
+      '<div class="rank-linha">' +
+        '<div class="rank-pos">' + (i + 1) + "</div>" +
+        '<div class="rank-corpo">' +
+          '<div class="rank-nome">' + esc(m.rotulo) + "</div>" +
+          '<div class="rank-barra"><i style="width:' + Math.max(3, (m.custo / maior) * 100).toFixed(1) + '%"></i></div>' +
+        "</div>" +
+        '<div class="rank-valor">' + moeda(m.custo) + "</div>" +
+      "</div>"
+    ).join("");
+
+    /* A leitura que interessa não é o valor, é a proporção. Num bar,
+       perder mais de uns 3% do que se fatura é sinal de problema de
+       manuseio, de compra ou de controle. */
+    const campeao = R.porProduto[0];
+    const partes = [];
+    if (R.percentualDaReceita != null) {
+      partes.push("<strong>" + String(R.percentualDaReceita).replace(".", ",") +
+        "% do faturamento</strong> virou perda no período" +
+        (R.percentualDaReceita > 3 ? " — acima do que se espera num bar." : "."));
+    }
+    if (campeao) {
+      partes.push("O item que mais pesa é <strong>" + esc(campeao.nome) + "</strong> (" +
+        campeao.unidades + " un., " + moeda(campeao.custo) + ").");
+    }
+    partes.push("Valores pelo custo, não pelo preço de venda.");
+    $("#notaPerdas").innerHTML = partes.join(" ");
+  }
+
   /* ---------------- Desenho ---------------- */
   function desenhar(de, ate) {
     const alvo = $("#conteudo");
@@ -354,6 +418,8 @@
     $("#kMargemApoio").textContent = temCusto
       ? "Lucro sobre o custo da mercadoria vendida"
       : "";
+
+    desenharPerdas(r.faturamento);
 
     /* Itens que vendem muito e rendem pouco */
     const atencao = itensDeAtencao();

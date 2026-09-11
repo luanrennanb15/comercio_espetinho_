@@ -23,11 +23,11 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="assets/css/tokens.css?v=20260827c">
-<link rel="stylesheet" href="assets/css/base.css?v=20260827c">
-<link rel="stylesheet" href="assets/css/app.css?v=20260827c">
-<link rel="stylesheet" href="assets/css/admin.css?v=20260827c">
-<link rel="stylesheet" href="assets/css/relatorios.css?v=20260827c">
+<link rel="stylesheet" href="assets/css/tokens.css?v=20260902a">
+<link rel="stylesheet" href="assets/css/base.css?v=20260902a">
+<link rel="stylesheet" href="assets/css/app.css?v=20260902a">
+<link rel="stylesheet" href="assets/css/admin.css?v=20260902a">
+<link rel="stylesheet" href="assets/css/relatorios.css?v=20260902a">
 </head>
 <body data-pagina="relatorios">
 
@@ -130,6 +130,20 @@
     </div>
   </section>
 
+  <!-- Perdas.
+       Fica logo abaixo do lucro de propósito: é o número que explica
+       por que o lucro do papel não bate com o dinheiro do caixa. -->
+  <section class="paineis paineis--largo oculto" id="painelPerdas">
+    <div class="painel-rel">
+      <div class="painel-rel__cabeca">
+        <h2>Perdas do período</h2>
+        <span id="legendaPerdas"></span>
+      </div>
+      <div class="ranking" id="listaPerdas"></div>
+      <p class="nota" id="notaPerdas" style="margin-top:14px"></p>
+    </div>
+  </section>
+
   <section class="paineis paineis--largo oculto" id="painelAtencao">
     <div class="painel-rel">
       <div class="painel-rel__cabeca">
@@ -210,11 +224,11 @@
 </template>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="assets/js/config.js?v=20260827c"></script>
-<script src="assets/js/ui.js?v=20260827c"></script>
-<script src="assets/js/tema.js?v=20260827c"></script>
-<script src="assets/js/nav.js?v=20260827c"></script>
-<script src="assets/js/db.js?v=20260827c"></script>
-<script src="assets/js/relatorios.js?v=20260827c"></script>
+<script src="assets/js/config.js?v=20260902a"></script>
+<script src="assets/js/ui.js?v=20260902a"></script>
+<script src="assets/js/tema.js?v=20260902a"></script>
+<script src="assets/js/nav.js?v=20260902a"></script>
+<script src="assets/js/db.js?v=20260902a"></script>
+<script src="assets/js/relatorios.js?v=20260902a"></script>
 </body>
 </html>

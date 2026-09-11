@@ -23,11 +23,11 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="assets/css/tokens.css?v=20260827c">
-<link rel="stylesheet" href="assets/css/base.css?v=20260827c">
-<link rel="stylesheet" href="assets/css/app.css?v=20260827c">
-<link rel="stylesheet" href="assets/css/admin.css?v=20260827c">
-<link rel="stylesheet" href="assets/css/caixa.css?v=20260827c">
+<link rel="stylesheet" href="assets/css/tokens.css?v=20260902a">
+<link rel="stylesheet" href="assets/css/base.css?v=20260902a">
+<link rel="stylesheet" href="assets/css/app.css?v=20260902a">
+<link rel="stylesheet" href="assets/css/admin.css?v=20260902a">
+<link rel="stylesheet" href="assets/css/caixa.css?v=20260902a">
 </head>
 <body data-pagina="caixa">
 
@@ -72,6 +72,10 @@
     <div class="abas-caixa">
       <button type="button" class="aba-caixa ativa" data-vista="quadro">Comandas</button>
       <button type="button" class="aba-caixa" data-vista="rapida">Venda rápida</button>
+      <!-- Fica no Caixa, e não no painel, porque é aqui que a garrafa
+           quebra. Registro que exige trocar de tela não é registrado. -->
+      <button type="button" class="btn btn--fantasma btn--pequeno" id="btnPerda"
+              style="margin-left:auto">Registrar perda</button>
     </div>
 
     <!-- ---------- Quadro de comandas ---------- -->
@@ -158,11 +162,57 @@
   </div>
 </div>
 
-<script src="assets/js/config.js?v=20260827c"></script>
-<script src="assets/js/ui.js?v=20260827c"></script>
-<script src="assets/js/tema.js?v=20260827c"></script>
-<script src="assets/js/nav.js?v=20260827c"></script>
-<script src="assets/js/db.js?v=20260827c"></script>
-<script src="assets/js/caixa.js?v=20260827c"></script>
+<!-- ==================== REGISTRAR PERDA ==================== -->
+<div class="modal-fundo" id="modalPerda">
+  <form class="modal modal--estreito" id="formPerda" autocomplete="off">
+    <div class="modal__cabeca">
+      <h2>Registrar perda</h2>
+      <button type="button" class="fechar" data-fechar aria-label="Fechar">&times;</button>
+    </div>
+    <div class="modal__corpo">
+      <div id="erroPerda" class="nota nota--erro oculto"></div>
+
+      <div class="campo">
+        <label for="perdaProduto">Produto</label>
+        <select id="perdaProduto" class="entrada" required></select>
+      </div>
+
+      <div class="linha">
+        <div class="campo">
+          <label for="perdaQtd">Quantidade</label>
+          <input type="number" id="perdaQtd" step="1" min="1" value="1" required>
+        </div>
+        <div class="campo">
+          <label for="perdaMotivo">Motivo</label>
+          <select id="perdaMotivo" class="entrada" required></select>
+          <small class="ajuda" id="perdaMotivoAjuda"></small>
+        </div>
+      </div>
+
+      <div class="campo">
+        <label for="perdaObs">Observação</label>
+        <input type="text" id="perdaObs" maxlength="200" placeholder="opcional — o que aconteceu">
+      </div>
+
+      <!-- O valor aparece antes de confirmar, e sempre pelo custo.
+           Ver "isso custou R$ 19,47" na hora muda o comportamento
+           muito mais que descobrir no fim do mês. -->
+      <p class="nota nota--ouro" id="perdaValor" style="margin-top:4px">
+        Escolha o produto para ver quanto custa.
+      </p>
+    </div>
+    <div class="modal__pe">
+      <button type="button" class="btn btn--fantasma" data-fechar>Cancelar</button>
+      <button type="submit" class="btn btn--cancelar" id="btnSalvarPerda">Registrar perda</button>
+    </div>
+  </form>
+</div>
+
+<script src="assets/js/config.js?v=20260902a"></script>
+<script src="assets/js/ui.js?v=20260902a"></script>
+<script src="assets/js/tema.js?v=20260902a"></script>
+<script src="assets/js/nav.js?v=20260902a"></script>
+<script src="assets/js/db.js?v=20260902a"></script>
+<script src="assets/js/caixa.js?v=20260902a"></script>
 </body>
 </html>

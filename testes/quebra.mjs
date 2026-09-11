@@ -183,6 +183,59 @@ conf("banco desatualizado degrada em vez de derrubar a tela",
 window.close();
 
 /* ================================================================
+   7b. Estoque não pode derrubar a venda
+   ================================================================ */
+suite("Quebra — estoque com dados impossíveis");
+
+{
+  const w = await abrirTela("admin.html", {
+    semBanco: true,
+    scripts: ["config.js", "ui.js", "db.js"],
+    antes(x) {
+      x.localStorage.setItem("frontbeer:produtos", "[]");
+      x.localStorage.setItem("frontbeer:vendas", "[]");
+    },
+  });
+  const D = w.DB;
+  await D.init();
+
+  const p = await D.salvarProduto({
+    nome: "Cerveja", categoria: "Cervejas", preco: 6, ordem: 1,
+    controla_estoque: true, estoque: 5, estoque_minimo: 2,
+  });
+  const ler1 = () => D.listarProdutos(false).then((l) => l[0]);
+
+  /* Vender item que já foi excluído do cardápio não pode explodir:
+     o dinheiro precisa entrar mesmo assim. */
+  const orfa = await D.registrarVenda({
+    itens: [{ produto_id: "loc-nao-existe", nome: "Fantasma", categoria: "X", preco_unit: 5, quantidade: 1 }],
+  });
+  conf("venda de produto inexistente é registrada assim mesmo", !!orfa.id);
+
+  /* Quantidade absurda não pode gerar estoque negativo */
+  await D.registrarVenda({
+    itens: [{ produto_id: p.id, nome: p.nome, categoria: "Cervejas", preco_unit: 6, quantidade: 999 }],
+  });
+  conf("estoque para em zero, nunca negativo", (await ler1()).estoque === 0,
+    "veio " + (await ler1()).estoque);
+
+  await confErro("entrada sem produto é recusada",
+    () => D.darEntradaEstoque("", 10), /produto/i);
+  await confErro("entrada com texto no lugar do número é recusada",
+    () => D.darEntradaEstoque(p.id, "abc"), /quantidade/i);
+
+  /* Correção para baixo (quebra de garrafa) usa número negativo */
+  await D.darEntradaEstoque(p.id, 20);
+  await D.darEntradaEstoque(p.id, -3);
+  conf("correção negativa ajusta sem quebrar", (await ler1()).estoque === 17,
+    "veio " + (await ler1()).estoque);
+
+  conf("estoqueBaixo não quebra com produto nulo", DB.estoqueBaixo(null) === false);
+  conf("estoqueBaixo não quebra com objeto vazio", DB.estoqueBaixo({}) === false);
+  w.close();
+}
+
+/* ================================================================
    8. Todas as telas abrem sem erro de script
    ================================================================ */
 suite("Quebra — todas as telas abrem");

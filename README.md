@@ -36,6 +36,8 @@ assets/
 
 supabase/schema.sql     Banco de dados e regras de segurança
 supabase/storage.sql    Armazenamento das fotos enviadas pelo painel
+supabase/estoque.sql    Estoque com alerta de reposição (opcional)
+supabase/perdas.sql     Quebra, vencimento, consumo da casa e brinde
 fontes/                 Originais em alta das imagens (não vão para o ar)
 .vercelignore           O que fica fora do servidor
 testes/rodar.mjs        Executa a bateria inteira de testes
@@ -311,6 +313,121 @@ alternativo, todo campo com rótulo, os dois temas, e os avisos legais.
 
 Recomendações aparecem em amarelo e não reprovam a bateria: são coisas
 que dependem de uma decisão sua, não de um defeito no código.
+
+---
+
+## Estoque com alerta de reposição
+
+Responde uma pergunta só: **o que está perto de acabar?** Não calcula valor de
+estoque, não tem ficha técnica de receita e não controla ingrediente.
+
+O controle é **opcional por produto**, e isso é o centro do desenho. Bebida
+engarrafada funciona bem, porque o que se compra é o que se vende. Espeto e
+porção não: a quantidade sai da brasa e da fritadeira, não de uma prateleira.
+Ligar estoque neles faria o número deixar de bater em uma semana — e estoque
+que não bate é pior que estoque nenhum, porque o dono para de confiar na tela
+inteira, inclusive nas partes que estavam certas.
+
+Isso deixa uma limitação honesta: **só funciona se toda saída passar pelo
+caixa**. Cerveja tirada para o amigo, garrafa quebrada ou consumo interno que
+ninguém registra fazem o número derivar. O módulo é um lembrete de compra, não
+uma auditoria.
+
+### Como se comporta
+
+A baixa acontece na venda do caixa e **no momento em que o item é lançado na
+comanda** — não no fechamento. Se esperasse o fechamento, uma comanda aberta a
+noite toda deixaria o sistema achando que aquelas cervejas ainda estão na
+geladeira, e o caixa venderia as mesmas de novo.
+
+O estoque volta quando a venda é estornada e quando uma comanda é cancelada.
+Fechar a conta não devolve nada: o consumo aconteceu.
+
+Ao zerar, o item é marcado como esgotado sozinho e some do cardápio do cliente.
+Ao receber mercadoria, volta. Melhor o cliente não ver do que pedir algo que
+acabou.
+
+### Duas decisões técnicas que sustentam o módulo
+
+**A conta é feita no Postgres, não no navegador.** Numa sexta à noite pode
+haver dois celulares lançando venda ao mesmo tempo. Se cada um lesse o estoque,
+subtraísse em JavaScript e gravasse de volta, uma das baixas se perderia — os
+dois leem 24, os dois gravam 23, e uma cerveja some do controle sem ninguém
+ver. A função `mover_estoque` faz a subtração dentro do próprio `UPDATE`.
+
+**O estoque não é dado público.** A tabela de produtos é lida por qualquer
+visitante do cardápio, então esconder no JavaScript não esconderia nada. O
+Postgres passa a liberar ao público apenas as colunas do cardápio, uma a uma.
+Por causa disso o cardápio público pede a lista exata de colunas em vez de
+`select *` — trocar de volta quebraria a página com erro de permissão.
+
+Estoque nunca derruba uma venda: se a movimentação falhar, o dinheiro já está
+registrado, que é o que importa.
+
+### Para ativar
+
+Rode `supabase/estoque.sql` no SQL Editor. Depois, no cadastro de cada bebida,
+ligue "Controlar o estoque deste item", informe a quantidade e o ponto de
+aviso. O alerta aparece no topo do painel só quando há o que comprar, e some
+quando não há — aviso permanente vira paisagem e deixa de ser lido.
+
+---
+
+## Perdas: quebra, vencimento, consumo da casa e brinde
+
+Registra a mercadoria que saiu **sem venda**. É o número que explica por que o
+lucro do papel não bate com o dinheiro do caixa.
+
+### O motivo é obrigatório, e é o ponto do módulo
+
+"Sumiram 6 latas" não é diagnóstico. "3 quebraram, 2 o dono bebeu e 1 foi
+cortesia" é. São quatro naturezas diferentes, com quatro decisões diferentes:
+
+**Quebrou ou estragou** é perda operacional — se ficar alta, o problema é
+manuseio. **Venceu** é erro de compra: comprou demais e girou de menos.
+**Consumo da casa** não é perda, é retirada do dono, e misturar isso com
+quebra faz o dono achar que tem um problema de operação quando tem um hábito.
+**Brinde** é marketing, e precisa valer a pena.
+
+Somar tudo num total só esconde qual é o problema, e é por isso que o sistema
+recusa registro sem motivo. O campo de observação existe para o que não coube
+nos quatro.
+
+### O valor é sempre o custo
+
+Uma cerveja de R$ 11,00 que custou R$ 6,49 e quebrou tirou **R$ 6,49** do
+bolso. Lançar R$ 11,00 inflaria a perda em quase o dobro e misturaria dinheiro
+que saiu com faturamento que talvez nem acontecesse. É também como o contador
+enxerga.
+
+Produto sem custo cadastrado ainda pode ser registrado, valendo zero: melhor
+ter o fato sem o valor do que não ter o registro.
+
+### Onde fica, e por quê
+
+O botão está no **Caixa**, não no painel, porque é ali que a garrafa quebra.
+Registro que exige trocar de tela e procurar menu simplesmente não é feito — e
+um controle de perdas que ninguém alimenta é pior que nenhum, porque passa a
+sensação de que está tudo sob controle.
+
+O valor aparece **antes de confirmar**. Ver "isso custou R$ 19,47" na hora
+muda o comportamento muito mais do que descobrir no fim do mês.
+
+Registrar tira do estoque; desfazer devolve. Nome, categoria e custo ficam
+congelados, como nas vendas: renomear um produto não pode reescrever o
+histórico.
+
+### A leitura que interessa
+
+Nos Relatórios, o painel de perdas mostra o total por motivo e — o número que
+importa — **quanto do faturamento virou perda**. Num bar, passar de uns 3% é
+sinal de problema de manuseio, de compra ou de controle.
+
+E há um efeito colateral útil: no dia em que sumir mercadoria sem ninguém
+registrar nada, a diferença entre o estoque do sistema e a prateleira vai
+aparecer. Aí não é quebra — é furto ou descuido.
+
+Para ativar, rode `supabase/perdas.sql` (depois do `estoque.sql`).
 
 ---
 

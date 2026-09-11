@@ -82,6 +82,21 @@
   border-radius: 999px;
 }
 
+/* Quantas restam. Em tom de alerta e discreto: serve para o atendente
+   perceber de canto de olho, sem disputar atenção com o preço, que é
+   o que ele está procurando no cartão. */
+.cartao-produto__resta {
+  margin-left: auto;
+  padding: 1px 7px;
+  font-size: .7rem;
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--erro);
+  background: var(--erro-bg);
+  border-radius: 999px;
+}
+.cartao-produto__resta::after { content: " un."; font-weight: 500; }
+
 .cartao-produto--esgotado { opacity: .38; cursor: not-allowed; }
 .cartao-produto--esgotado:hover { border-color: var(--linha); background: var(--superficie); }
 

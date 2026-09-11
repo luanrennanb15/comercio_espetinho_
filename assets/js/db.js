@@ -13,6 +13,7 @@ const DB = (() => {
   const CHAVE_VENDAS   = "frontbeer:vendas";
   const CHAVE_COMANDAS = "frontbeer:comandas";
   const CHAVE_CUSTOS   = "frontbeer:custos";
+  const CHAVE_PERDAS   = "frontbeer:perdas";
   const CHAVE_SESSAO   = "frontbeer:sessao";
   const CDN_SUPABASE   = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js";
   const BALDE_FOTOS    = "produtos";           // bucket criado por supabase/storage.sql
@@ -109,6 +110,21 @@ const DB = (() => {
     localStorage.setItem(CHAVE_VENDAS, JSON.stringify(lista));
   }
 
+  function lerPerdasLocal() {
+    try {
+      const bruto = localStorage.getItem(CHAVE_PERDAS);
+      const dados = bruto ? JSON.parse(bruto) : [];
+      return Array.isArray(dados) ? dados : [];
+    } catch (e) {
+      console.warn("Perdas locais ilegíveis.", e);
+      return [];
+    }
+  }
+
+  function gravarPerdasLocal(lista) {
+    localStorage.setItem(CHAVE_PERDAS, JSON.stringify(lista));
+  }
+
   function lerComandasLocal() {
     try {
       const bruto = localStorage.getItem(CHAVE_COMANDAS);
@@ -169,9 +185,17 @@ const DB = (() => {
     });
   }
 
+  /* Colunas que o cardápio público pode ler.
+
+     A lista existe porque o estoque NÃO é público: o Postgres libera ao
+     visitante apenas estas colunas, e pedir "select *" sem estar logado
+     passaria a dar erro. Quem está logado continua recebendo tudo. */
+  const COLUNAS_PUBLICAS =
+    "id, nome, descricao, categoria, preco, imagem_url, ativo, esgotado, alcoolico, ordem";
+
   /* ---------------- Normalização e validação ---------------- */
   function normalizar(p) {
-    return {
+    const n = {
       id:         p.id,
       nome:       String(p.nome || "").trim(),
       descricao:  String(p.descricao || "").trim(),
@@ -183,6 +207,81 @@ const DB = (() => {
       alcoolico:  p.alcoolico === true,
       ordem:      Number(p.ordem) || 0,
     };
+
+    /* Estoque só entra quando veio do banco. No cardápio público essas
+       colunas nem são pedidas, e um produto sem controle não deve ganhar
+       um zero do nada — zero aqui significa "acabou", não "não sei". */
+    if (p.controla_estoque !== undefined || p.estoque !== undefined) {
+      n.controla_estoque = p.controla_estoque === true;
+      n.estoque          = Math.max(0, parseInt(p.estoque, 10) || 0);
+      n.estoque_minimo   = Math.max(0, parseInt(p.estoque_minimo, 10) || 0);
+    }
+    return n;
+  }
+
+  /* Precisa repor? Só faz sentido para quem controla estoque. */
+  function estoqueBaixo(p) {
+    return !!p && p.controla_estoque === true && p.estoque <= p.estoque_minimo;
+  }
+
+  /* ------------------------------------------------------------------
+     Movimentação de estoque
+
+     `delta` negativo tira (venda, item lançado na comanda), positivo
+     devolve (estorno, comanda cancelada, entrada de mercadoria).
+
+     No Supabase isso vai para uma função do banco, e não para um update
+     montado aqui, porque dois celulares lançando venda ao mesmo tempo
+     fariam uma das baixas se perder: os dois leem 24, os dois gravam 23.
+     Dentro do UPDATE, o Postgres garante a ordem.
+
+     Estoque nunca pode derrubar uma venda. Se o banco ainda não tem o
+     módulo, ou se o produto foi excluído do cardápio, a movimentação
+     falha em silêncio e a venda segue — dinheiro registrado vale mais
+     que contagem certa.
+  ------------------------------------------------------------------ */
+  async function moverEstoque(movimentos) {
+    const itens = (movimentos || []).filter(
+      (m) => m && m.produto_id && Number(m.delta)
+    ).map((m) => ({ produto_id: String(m.produto_id), delta: Math.trunc(Number(m.delta)) }));
+    if (!itens.length) return;
+
+    if (modo === "supabase") {
+      try {
+        const { error } = await sb.rpc("mover_estoque", { p_itens: itens });
+        if (error) {
+          bancoAntigo = true;
+          console.warn("Estoque não movimentado — rode supabase/estoque.sql.", error.message);
+        }
+      } catch (e) {
+        console.warn("Estoque não movimentado.", e);
+      }
+      return;
+    }
+
+    const lista = lerLocal();
+    let mudou = false;
+    itens.forEach((m) => {
+      const p = lista.find((x) => x.id === m.produto_id);
+      if (!p || p.controla_estoque !== true) return;
+      const novo = Math.max(0, (parseInt(p.estoque, 10) || 0) + m.delta);
+      p.estoque = novo;
+      if (novo === 0) p.esgotado = true;
+      else if (p.esgotado) p.esgotado = false;
+      mudou = true;
+    });
+    if (mudou) gravarLocal(lista);
+  }
+
+  /* Converte itens de venda/comanda em movimentos. `sinal` é -1 para
+     tirar do estoque e +1 para devolver. */
+  function movimentosDe(itens, sinal) {
+    return (itens || [])
+      .filter((i) => i && i.produto_id)
+      .map((i) => ({
+        produto_id: i.produto_id,
+        delta: sinal * Math.max(1, parseInt(i.quantidade, 10) || 1),
+      }));
   }
 
   /* Cadastros antigos sem categoria caem em "Outros" ao serem exibidos */
@@ -203,6 +302,10 @@ const DB = (() => {
         "Foto inválida. Use um link da internet começando com https:// " +
         "ou um arquivo do próprio site, como assets/img/fotos/espeto.jpg"
       );
+    }
+    if (p.controla_estoque !== undefined) {
+      if (p.estoque > 1000000) throw new Error("Quantidade em estoque acima do limite.");
+      if (p.estoque_minimo > 1000000) throw new Error("Estoque mínimo acima do limite.");
     }
   }
 
@@ -357,17 +460,41 @@ const DB = (() => {
       }
     },
 
-    /* --- Leitura --- */
+    /* --- Leitura ---
+
+       `apenasVisiveis` separa dois mundos, não só um filtro:
+
+         true  -> cardápio do cliente. Pede a lista exata de colunas
+                  públicas, porque o visitante não tem permissão de ler
+                  o estoque no banco.
+         false -> painel e caixa, com sessão aberta. Traz tudo.
+    */
     async listarProdutos(apenasVisiveis) {
       const visiveis = apenasVisiveis !== false;
       if (modo === "supabase") {
-        let q = sb.from("produtos").select("*");
+        let q = sb.from("produtos").select(visiveis ? COLUNAS_PUBLICAS : "*");
         if (visiveis) q = q.eq("ativo", true);
         const { data, error } = await q.order("ordem").order("nome");
         if (error) throw traduzirErro(error);
         return (data || []).map(normalizar).map(comCategoria);
       }
-      return ordenar(lerLocal().map(normalizar).map(comCategoria).filter((p) => (visiveis ? p.ativo : true)));
+      const lista = ordenar(lerLocal().map(normalizar).map(comCategoria)
+        .filter((p) => (visiveis ? p.ativo : true)));
+      /* Em demonstração não há banco para esconder coluna, então o
+         cardápio público é limpo aqui, para se comportar igual. */
+      if (visiveis) {
+        lista.forEach((p) => {
+          delete p.controla_estoque; delete p.estoque; delete p.estoque_minimo;
+        });
+      }
+      return lista;
+    },
+
+    /* Itens que precisam de reposição, para o alerta do painel. */
+    async listarEstoqueBaixo() {
+      const lista = await this.listarProdutos(false);
+      return lista.filter(estoqueBaixo)
+        .sort((a, b) => a.estoque - b.estoque || a.nome.localeCompare(b.nome, "pt-BR"));
     },
 
     /* --- Escrita --- */
@@ -381,10 +508,26 @@ const DB = (() => {
           preco: p.preco, imagem_url: p.imagem_url, ativo: p.ativo,
           esgotado: p.esgotado, alcoolico: p.alcoolico, ordem: p.ordem,
         };
-        const req = p.id
-          ? sb.from("produtos").update(dados).eq("id", p.id).select().single()
-          : sb.from("produtos").insert(dados).select().single();
-        const { data, error } = await req;
+        if (p.controla_estoque !== undefined) {
+          dados.controla_estoque = p.controla_estoque;
+          dados.estoque          = p.estoque;
+          dados.estoque_minimo   = p.estoque_minimo;
+        }
+
+        const enviar = (corpo) => (p.id
+          ? sb.from("produtos").update(corpo).eq("id", p.id).select().single()
+          : sb.from("produtos").insert(corpo).select().single());
+
+        let { data, error } = await enviar(dados);
+
+        /* Banco ainda sem o módulo de estoque: salva o resto em vez de
+           recusar o cadastro inteiro por causa de três colunas. */
+        if (error && colunaAusente(error) && dados.controla_estoque !== undefined) {
+          bancoAntigo = true;
+          console.warn("Banco sem as colunas de estoque — rode supabase/estoque.sql.");
+          delete dados.controla_estoque; delete dados.estoque; delete dados.estoque_minimo;
+          ({ data, error } = await enviar(dados));
+        }
         if (error) throw traduzirErro(error);
         return normalizar(data);
       }
@@ -575,6 +718,170 @@ const DB = (() => {
     markupDe: markupDe,
     precoParaMargem: precoParaMargem,
     precoParaMarkup: precoParaMarkup,
+    estoqueBaixo: estoqueBaixo,
+
+    /* Entrada de mercadoria: chegou fardo, soma ao que já tinha.
+       Positivo entra, negativo corrige para baixo (quebra, perda). */
+    async darEntradaEstoque(produtoId, quantidade) {
+      const q = Math.trunc(Number(quantidade) || 0);
+      if (!produtoId) throw new Error("Produto não informado.");
+      if (!q) throw new Error("Informe uma quantidade diferente de zero.");
+      if (Math.abs(q) > 1000000) throw new Error("Quantidade acima do limite.");
+      await moverEstoque([{ produto_id: produtoId, delta: q }]);
+      return true;
+    },
+
+    /* ------------------------------------------------------------
+       PERDAS — mercadoria que saiu sem venda
+
+       Quebrou, venceu, o dono bebeu ou foi cortesia. O motivo é
+       obrigatório porque são naturezas diferentes: perda operacional,
+       erro de compra, retirada do dono e marketing. Somar tudo num
+       total só esconde qual é o problema.
+
+       O valor é sempre o CUSTO, congelado no momento do registro.
+       Uma cerveja de R$ 11 que custou R$ 6,49 tirou R$ 6,49 do bolso;
+       lançar R$ 11 inflaria a perda em quase o dobro.
+    ------------------------------------------------------------ */
+
+    get motivosDePerda() {
+      return [
+        { valor: "quebra",          rotulo: "Quebrou ou estragou",  ajuda: "Caiu, derramou, estourou" },
+        { valor: "vencimento",      rotulo: "Venceu",               ajuda: "Comprou demais e girou de menos" },
+        { valor: "consumo_interno", rotulo: "Consumo da casa",      ajuda: "Dono ou equipe — é retirada, não perda" },
+        { valor: "brinde",          rotulo: "Brinde ao cliente",    ajuda: "Cortesia; conta como marketing" },
+        { valor: "outro",           rotulo: "Outro",                ajuda: "Explique no campo de observação" },
+      ];
+    },
+
+    async registrarPerda(perda) {
+      const motivos = this.motivosDePerda.map((m) => m.valor);
+      const motivo = String(perda && perda.motivo || "");
+      if (motivos.indexOf(motivo) === -1) throw new Error("Escolha o motivo da perda.");
+
+      const nome = String(perda.nome || "").trim().slice(0, 80);
+      if (!nome) throw new Error("Escolha o produto.");
+
+      const quantidade = Math.trunc(Number(perda.quantidade) || 0);
+      if (quantidade <= 0) throw new Error("Informe uma quantidade maior que zero.");
+      if (quantidade > 9999) throw new Error("Quantidade acima do limite.");
+
+      const registro = {
+        produto_id: perda.produto_id && String(perda.produto_id).indexOf("ex-") !== 0 &&
+                    String(perda.produto_id).indexOf("loc-") !== 0 ? perda.produto_id : null,
+        nome: nome,
+        categoria: String(perda.categoria || "Outros").trim() || "Outros",
+        quantidade: quantidade,
+        custo_unit: Math.max(0, Math.round((Number(perda.custo_unit) || 0) * 100) / 100),
+        motivo: motivo,
+        observacao: String(perda.observacao || "").trim().slice(0, 200),
+      };
+
+      if (modo === "supabase") {
+        const { data, error } = await sb.from("perdas").insert(registro).select().single();
+        if (error) {
+          if (/perdas/i.test(error.message || "") || colunaAusente(error)) {
+            bancoAntigo = true;
+            throw new Error("Banco sem o módulo de perdas — rode supabase/perdas.sql.");
+          }
+          throw traduzirErro(error);
+        }
+        /* A mercadoria saiu de verdade: o estoque acompanha. */
+        await moverEstoque([{ produto_id: perda.produto_id, delta: -quantidade }]);
+        return Object.assign({}, data, { produto_id: perda.produto_id || null });
+      }
+
+      const lista = lerPerdasLocal();
+      const item = Object.assign({}, registro, {
+        id: "p-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        criado_em: new Date().toISOString(),
+        produto_id: perda.produto_id || null,
+      });
+      lista.push(item);
+      gravarPerdasLocal(lista);
+      await moverEstoque([{ produto_id: perda.produto_id, delta: -quantidade }]);
+      return item;
+    },
+
+    /* de e ate são objetos Date; ate é inclusivo até o fim do dia */
+    async listarPerdas(de, ate) {
+      const inicio = de ? new Date(de) : new Date(0);
+      const fim = ate ? new Date(ate) : new Date();
+      inicio.setHours(0, 0, 0, 0);
+      fim.setHours(23, 59, 59, 999);
+
+      if (modo === "supabase") {
+        const { data, error } = await sb.from("perdas")
+          .select("id, criado_em, produto_id, nome, categoria, quantidade, custo_unit, motivo, observacao")
+          .gte("criado_em", inicio.toISOString())
+          .lte("criado_em", fim.toISOString())
+          .order("criado_em", { ascending: false });
+        if (error) {
+          if (/perdas/i.test(error.message || "")) { bancoAntigo = true; return []; }
+          throw traduzirErro(error);
+        }
+        return (data || []).map((p) => Object.assign({}, p, {
+          quantidade: Number(p.quantidade) || 0,
+          custo_unit: Number(p.custo_unit) || 0,
+        }));
+      }
+
+      return lerPerdasLocal()
+        .filter((p) => {
+          const d = new Date(p.criado_em);
+          return d >= inicio && d <= fim;
+        })
+        .sort((a, b) => new Date(b.criado_em) - new Date(a.criado_em));
+    },
+
+    /* Desfazer um lançamento errado devolve a mercadoria ao estoque. */
+    async excluirPerda(id) {
+      if (modo === "supabase") {
+        const { data: p } = await sb.from("perdas")
+          .select("produto_id, quantidade").eq("id", id).maybeSingle();
+        const { error } = await sb.from("perdas").delete().eq("id", id);
+        if (error) throw traduzirErro(error);
+        if (p) await moverEstoque([{ produto_id: p.produto_id, delta: p.quantidade }]);
+        return true;
+      }
+      const lista = lerPerdasLocal();
+      const p = lista.find((x) => x.id === id);
+      gravarPerdasLocal(lista.filter((x) => x.id !== id));
+      if (p) await moverEstoque([{ produto_id: p.produto_id, delta: p.quantidade }]);
+      return true;
+    },
+
+    /* Resumo do período: total, por motivo e os itens que mais pesam.
+
+       `receita` é opcional e serve para a conta que realmente importa:
+       quanto da venda está virando perda. Acima de uns 3% num bar,
+       há problema de manuseio, de compra ou de controle. */
+    resumoDePerdas(perdas, receita) {
+      const lista = perdas || [];
+      const custoDe = (p) => (Number(p.custo_unit) || 0) * (Number(p.quantidade) || 0);
+      const total = lista.reduce((s, p) => s + custoDe(p), 0);
+
+      const porMotivo = {};
+      const porProduto = {};
+      lista.forEach((p) => {
+        porMotivo[p.motivo] = (porMotivo[p.motivo] || 0) + custoDe(p);
+        if (!porProduto[p.nome]) porProduto[p.nome] = { nome: p.nome, unidades: 0, custo: 0 };
+        porProduto[p.nome].unidades += Number(p.quantidade) || 0;
+        porProduto[p.nome].custo += custoDe(p);
+      });
+
+      const r = Number(receita);
+      return {
+        total: Math.round(total * 100) / 100,
+        unidades: lista.reduce((s, p) => s + (Number(p.quantidade) || 0), 0),
+        porMotivo: porMotivo,
+        porProduto: Object.keys(porProduto).map((k) => porProduto[k])
+          .sort((a, b) => b.custo - a.custo),
+        percentualDaReceita: isFinite(r) && r > 0
+          ? Math.round((total / r) * 1000) / 10
+          : null,
+      };
+    },
 
     async listarCustos() {
       if (modo === "supabase") {
@@ -667,7 +974,7 @@ const DB = (() => {
       if (modo === "supabase") {
         const { data, error } = await sb
           .from("comandas")
-          .select("id, numero, token, status, aberta_em, comanda_itens(id, nome, categoria, preco_unit, quantidade, criado_em, custo_unit)")
+          .select("id, numero, token, status, aberta_em, comanda_itens(id, produto_id, nome, categoria, preco_unit, quantidade, criado_em, custo_unit)")
           .order("numero");
         if (error) throw traduzirErro(error);
         return (data || []).map((c) => ({
@@ -678,7 +985,7 @@ const DB = (() => {
           aberta_em: c.aberta_em,
           itens: (c.comanda_itens || [])
             .map((i) => ({
-              id: i.id, nome: i.nome, categoria: i.categoria,
+              id: i.id, produto_id: i.produto_id, nome: i.nome, categoria: i.categoria,
               preco_unit: Number(i.preco_unit) || 0,
               quantidade: Number(i.quantidade) || 0,
               criado_em: i.criado_em,
@@ -722,34 +1029,49 @@ const DB = (() => {
       };
       if (!dados.nome) throw new Error("Item inválido.");
 
+      /* O estoque sai aqui, no lançamento, e não ao fechar a conta.
+         Se saísse só no fechamento, uma comanda aberta a noite toda
+         com dez cervejas deixaria o sistema achando que elas ainda
+         estão na geladeira — e o caixa venderia as mesmas de novo. */
       if (modo === "supabase") {
         const { error } = await sb.from("comanda_itens")
           .insert(Object.assign({ comanda_id: comandaId }, dados));
         if (error) throw traduzirErro(error);
+        await moverEstoque(movimentosDe([item], -1));
         return true;
       }
       const lista = lerComandasLocal();
       const c = lista.find((x) => x.id === comandaId);
       if (!c) throw new Error("Comanda não encontrada.");
+      /* Em demonstração o id "loc-" é guardado de verdade, para que
+         remover o item e cancelar a comanda saibam o que devolver. */
       c.itens.push(Object.assign({
         id: "i-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
         criado_em: new Date().toISOString(),
-      }, dados));
+      }, dados, { produto_id: item.produto_id || null }));
       gravarComandasLocal(lista);
+      await moverEstoque(movimentosDe([item], -1));
       return true;
     },
 
     async removerItemComanda(comandaId, itemId) {
       if (modo === "supabase") {
+        /* Lê antes de apagar: depois do delete não há como saber o que
+           devolver para o estoque. */
+        const { data: item } = await sb.from("comanda_itens")
+          .select("produto_id, quantidade").eq("id", itemId).maybeSingle();
         const { error } = await sb.from("comanda_itens").delete().eq("id", itemId);
         if (error) throw traduzirErro(error);
+        if (item) await moverEstoque(movimentosDe([item], +1));
         return true;
       }
       const lista = lerComandasLocal();
       const c = lista.find((x) => x.id === comandaId);
       if (c) {
+        const item = c.itens.find((i) => i.id === itemId);
         c.itens = c.itens.filter((i) => i.id !== itemId);
         gravarComandasLocal(lista);
+        if (item) await moverEstoque(movimentosDe([item], +1));
       }
       return true;
     },
@@ -766,30 +1088,55 @@ const DB = (() => {
         observacao: observacao,
         comanda_numero: c.numero,
         aberta_em: c.aberta_em,
+        /* O estoque já saiu quando cada item foi lançado na comanda.
+           Baixar de novo aqui tiraria tudo em dobro. */
+        baixarEstoque: false,
         itens: c.itens.map((i) => ({
+          produto_id: i.produto_id || null,
           nome: i.nome, categoria: i.categoria,
           preco_unit: i.preco_unit, quantidade: i.quantidade,
           criado_em: i.criado_em, custo_unit: i.custo_unit,
         })),
       });
 
-      await this.liberarComanda(comandaId);
+      /* Conta paga: os itens saem do cartão sem voltar para o estoque,
+         porque foram realmente consumidos. */
+      await this.liberarComanda(comandaId, { devolverEstoque: false });
       return venda;
     },
 
-    /* Devolve o cartão para o quadro, descartando o que houver em aberto */
-    async liberarComanda(comandaId) {
+    /* Devolve o cartão para o quadro, descartando o que houver em aberto.
+
+       Chamado em dois contextos opostos: depois de fechar a conta (o
+       consumo aconteceu) e ao cancelar uma comanda (não aconteceu). Só
+       no segundo o estoque volta. */
+    async liberarComanda(comandaId, opcoes) {
+      const devolver = !opcoes || opcoes.devolverEstoque !== false;
+
       if (modo === "supabase") {
+        let itens = [];
+        if (devolver) {
+          const { data } = await sb.from("comanda_itens")
+            .select("produto_id, quantidade").eq("comanda_id", comandaId);
+          itens = data || [];
+        }
         const rem = await sb.from("comanda_itens").delete().eq("comanda_id", comandaId);
         if (rem.error) throw traduzirErro(rem.error);
         const { error } = await sb.from("comandas")
           .update({ status: "livre", aberta_em: null }).eq("id", comandaId);
         if (error) throw traduzirErro(error);
+        if (devolver && itens.length) await moverEstoque(movimentosDe(itens, +1));
         return true;
       }
+
       const lista = lerComandasLocal();
       const c = lista.find((x) => x.id === comandaId);
-      if (c) { c.status = "livre"; c.aberta_em = null; c.itens = []; gravarComandasLocal(lista); }
+      if (c) {
+        const itens = devolver ? (c.itens || []).slice() : [];
+        c.status = "livre"; c.aberta_em = null; c.itens = [];
+        gravarComandasLocal(lista);
+        if (itens.length) await moverEstoque(movimentosDe(itens, +1));
+      }
       return true;
     },
 
@@ -827,7 +1174,16 @@ const DB = (() => {
       const pagamento = pagamentosValidos.indexOf(venda.pagamento) !== -1 ? venda.pagamento : "dinheiro";
       const observacao = String(venda.observacao || "").trim().slice(0, 200);
 
+      /* `produto_id` é anulado quando começa com "ex-" ou "loc-": a
+         chave estrangeira do Postgres só aceita produto que exista na
+         tabela, e esses são ids de exemplo e de modo demonstração.
+
+         Mas o estoque precisa do id original — em demonstração TODOS os
+         produtos têm id "loc-", e usar a lista já limpa faria o estoque
+         nunca se mexer fora do Supabase. Por isso o id verdadeiro
+         viaja junto, em `ref`, e some antes de ir para o banco. */
       const itens = (venda.itens || []).map((i) => ({
+        ref:        i.produto_id || null,
         produto_id: i.produto_id && String(i.produto_id).indexOf("ex-") !== 0 && String(i.produto_id).indexOf("loc-") !== 0
           ? i.produto_id : null,
         nome:       String(i.nome || "").trim(),
@@ -839,6 +1195,16 @@ const DB = (() => {
       })).filter((i) => i.nome);
 
       if (!itens.length) throw new Error("Adicione ao menos um item à venda.");
+
+      const movimentosVenda = movimentosDe(
+        itens.map((i) => ({ produto_id: i.ref, quantidade: i.quantidade })), -1);
+
+      /* O que vai para o banco não leva `ref`. */
+      const semRef = (i) => {
+        const c = Object.assign({}, i);
+        delete c.ref;
+        return c;
+      };
 
       const total = Math.round(itens.reduce((s, i) => s + i.preco_unit * i.quantidade, 0) * 100) / 100;
 
@@ -859,7 +1225,7 @@ const DB = (() => {
         }
         if (error) throw traduzirErro(error);
 
-        const linhas = itens.map((i) => Object.assign({ venda_id: data.id }, i));
+        const linhas = itens.map((i) => Object.assign({ venda_id: data.id }, semRef(i)));
         let res = await sb.from("venda_itens").insert(linhas);
 
         if (res.error && colunaAusente(res.error)) {
@@ -874,7 +1240,10 @@ const DB = (() => {
           await sb.from("vendas").delete().eq("id", data.id);   // desfaz a venda incompleta
           throw traduzirErro(res.error);
         }
-        return Object.assign({}, data, { itens: itens });
+        /* O estoque sai depois da venda estar gravada. Se a baixa
+           falhar, o dinheiro já está registrado — é o que importa. */
+        if (venda.baixarEstoque !== false) await moverEstoque(movimentosVenda);
+        return Object.assign({}, data, { itens: itens.map(semRef) });
       }
 
       const lista = lerVendasLocal();
@@ -886,10 +1255,13 @@ const DB = (() => {
         observacao: observacao,
         comanda_numero: venda.comanda_numero || null,
         aberta_em: venda.aberta_em || null,
-        itens: itens,
+        /* Sem chave estrangeira aqui, então o id original fica guardado.
+           É ele que permite ao estorno saber o que devolver ao estoque. */
+        itens: itens.map((i) => Object.assign(semRef(i), { produto_id: i.ref || null })),
       };
       lista.push(registro);
       gravarVendasLocal(lista);
+      if (venda.baixarEstoque !== false) await moverEstoque(movimentosVenda);
       return registro;
     },
 
@@ -912,7 +1284,7 @@ const DB = (() => {
 
         let { data, error } = await consulta(
           "id, criado_em, total, pagamento, observacao, comanda_numero, aberta_em, " +
-          "venda_itens(nome, categoria, preco_unit, quantidade, criado_em, custo_unit)"
+          "venda_itens(produto_id, nome, categoria, preco_unit, quantidade, criado_em, custo_unit)"
         );
 
         if (error && colunaAusente(error)) {
@@ -920,7 +1292,7 @@ const DB = (() => {
           console.warn("Banco sem as colunas de comanda — rode supabase/comandas.sql.");
           ({ data, error } = await consulta(
             "id, criado_em, total, pagamento, observacao, " +
-            "venda_itens(nome, categoria, preco_unit, quantidade)"
+            "venda_itens(produto_id, nome, categoria, preco_unit, quantidade)"
           ));
         }
         if (error) throw traduzirErro(error);
@@ -930,6 +1302,7 @@ const DB = (() => {
           comanda_numero: v.comanda_numero || null,
           aberta_em: v.aberta_em || null,
           itens: (v.venda_itens || []).map((i) => ({
+            produto_id: i.produto_id || null,
             nome: i.nome, categoria: i.categoria,
             preco_unit: Number(i.preco_unit) || 0,
             quantidade: Number(i.quantidade) || 0,
@@ -947,13 +1320,22 @@ const DB = (() => {
         .sort((a, b) => new Date(b.criado_em) - new Date(a.criado_em));
     },
 
+    /* Estornar devolve ao estoque o que a venda tinha tirado. Sem isso o
+       número só cairia, e um engano no caixa viraria falta de mercadoria
+       que não existe. */
     async excluirVenda(id) {
       if (modo === "supabase") {
+        const { data: itens } = await sb.from("venda_itens")
+          .select("produto_id, quantidade").eq("venda_id", id);
         const { error } = await sb.from("vendas").delete().eq("id", id);
         if (error) throw traduzirErro(error);
+        if (itens && itens.length) await moverEstoque(movimentosDe(itens, +1));
         return true;
       }
-      gravarVendasLocal(lerVendasLocal().filter((v) => v.id !== id));
+      const todas = lerVendasLocal();
+      const venda = todas.find((v) => v.id === id);
+      gravarVendasLocal(todas.filter((v) => v.id !== id));
+      if (venda) await moverEstoque(movimentosDe(venda.itens, +1));
       return true;
     },
 

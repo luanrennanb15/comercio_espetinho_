@@ -84,10 +84,30 @@
     try {
       produtos = await DB.listarProdutos(false);
       desenharCategorias();
+      avisarSeFaltaModulo();
       desenhar();
     } catch (e) {
       avisar(e.message || "Falha ao carregar o estoque.", "erro");
     }
+  }
+
+  /* O banco pode não ter as colunas de estoque ainda. Quando isso
+     acontece, elas simplesmente não voltam na consulta — nenhum erro.
+     Então a ausência é detectada aqui, na abertura da tela, em vez de
+     o dono descobrir depois de preencher o formulário e clicar. */
+  function avisarSeFaltaModulo() {
+    const alvo = $("#avisoSemModulo");
+    const faltando = DB.modo === "supabase" && produtos.length > 0 &&
+      produtos.every((p) => p.controla_estoque === undefined);
+
+    if (!faltando) { alvo.classList.add("oculto"); alvo.innerHTML = ""; return; }
+
+    alvo.innerHTML = "<strong>Falta um passo no banco.</strong> " +
+      "O módulo de estoque ainda não foi instalado, então ligar o controle " +
+      "aqui não vai gravar nada. Abra o Supabase, vá em <strong>SQL Editor → " +
+      "New query</strong>, cole o conteúdo de <code>supabase/estoque.sql</code> " +
+      "e clique em Run. Depois recarregue esta página.";
+    alvo.classList.remove("oculto");
   }
 
   /* ---------------- Indicadores e alerta ---------------- */
@@ -267,9 +287,20 @@
         esgotado: qtd === 0 ? true : false,
       });
 
-      fecharModal("modalConfigurar");
-      avisar(p.nome + ": estoque ligado com " + qtd + " unidade(s).", "ok");
+      /* Só comemora depois de reler do banco e confirmar que gravou.
+         Avisar "ligado" na fé de que o servidor aceitou foi exatamente
+         o que fez o dono achar que tinha ligado sem ter ligado. */
       await recarregar();
+      const conferido = acharProduto(p.id);
+      if (!conferido || conferido.controla_estoque !== true) {
+        throw new Error(
+          "O banco aceitou a gravação mas o estoque não ficou ligado. " +
+          "Confira se o arquivo supabase/estoque.sql foi executado no Supabase."
+        );
+      }
+
+      fecharModal("modalConfigurar");
+      avisar(p.nome + ": estoque ligado com " + conferido.estoque + " unidade(s).", "ok");
     } catch (err) {
       mostrarErro($("#erroConfigurar"), err.message || "Falha ao salvar.");
     } finally {

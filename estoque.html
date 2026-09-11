@@ -23,10 +23,10 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="assets/css/tokens.css?v=20260902b">
-<link rel="stylesheet" href="assets/css/base.css?v=20260902b">
-<link rel="stylesheet" href="assets/css/app.css?v=20260902b">
-<link rel="stylesheet" href="assets/css/admin.css?v=20260902b">
+<link rel="stylesheet" href="assets/css/tokens.css?v=20260902c">
+<link rel="stylesheet" href="assets/css/base.css?v=20260902c">
+<link rel="stylesheet" href="assets/css/app.css?v=20260902c">
+<link rel="stylesheet" href="assets/css/admin.css?v=20260902c">
 </head>
 <body data-pagina="estoque">
 
@@ -61,6 +61,11 @@
     <header class="barra" data-barra></header>
 
     <main class="pagina">
+
+      <!-- Aviso de módulo não instalado. Detectado na abertura da tela,
+           e não só na hora de salvar: descobrir que faltava rodar um SQL
+           depois de preencher o formulário é frustrante à toa. -->
+      <section class="nota nota--erro oculto" id="avisoSemModulo" style="margin-bottom:20px"></section>
 
       <!-- O alerta aparece só quando há o que comprar. Aviso permanente
            vira paisagem e deixa de ser lido. -->
@@ -232,11 +237,11 @@
   </form>
 </div>
 
-<script src="assets/js/config.js?v=20260902b"></script>
-<script src="assets/js/ui.js?v=20260902b"></script>
-<script src="assets/js/tema.js?v=20260902b"></script>
-<script src="assets/js/nav.js?v=20260902b"></script>
-<script src="assets/js/db.js?v=20260902b"></script>
-<script src="assets/js/estoque.js?v=20260902b"></script>
+<script src="assets/js/config.js?v=20260902c"></script>
+<script src="assets/js/ui.js?v=20260902c"></script>
+<script src="assets/js/tema.js?v=20260902c"></script>
+<script src="assets/js/nav.js?v=20260902c"></script>
+<script src="assets/js/db.js?v=20260902c"></script>
+<script src="assets/js/estoque.js?v=20260902c"></script>
 </body>
 </html>

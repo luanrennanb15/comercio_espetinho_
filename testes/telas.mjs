@@ -192,6 +192,26 @@ conf("Estoque e Perdas ficam num grupo próprio, separados de Operação",
   /grupo:\s*"Controle"/.test(nav),
   "enterrados dentro de outra tela, não seriam usados");
 
+/* Cada assunto mora numa tela só. Estoque no cadastro de produto e na
+   tela de Estoque significaria a mesma regra em dois lugares — e um
+   dia os dois discordariam. */
+suite("Telas — cada assunto num lugar só");
+
+conf("o cadastro de produto NÃO tem campos de estoque",
+  !/id="pControlaEstoque"|id="pEstoque"/.test(ler("admin.html")),
+  "estoque pertence à tela de Estoque");
+conf("o painel de Produtos não mexe em estoque",
+  !/controla_estoque/.test(ler("assets/js/admin.js")));
+conf("a tela de Estoque é quem liga e desliga o controle",
+  /controla_estoque:\s*true/.test(ler("assets/js/estoque.js")) &&
+  /controla_estoque:\s*false/.test(ler("assets/js/estoque.js")));
+conf("o Caixa não duplica o formulário de perdas",
+  !/registrarPerda/.test(ler("assets/js/caixa.js")),
+  "a mesma regra em dois lugares acaba discordando");
+conf("mas o Caixa leva até Perdas",
+  /href="perdas\.html"/.test(ler("caixa.html")),
+  "é no balcão que a garrafa quebra");
+
 /* Cada tela interna precisa do seu próprio script — copiar o HTML sem
    criar o JS deixaria a página bonita e morta. */
 ["estoque", "perdas"].forEach((p) => {

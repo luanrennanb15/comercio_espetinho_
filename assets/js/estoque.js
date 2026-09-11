@@ -40,6 +40,13 @@
     return produtos.find((p) => p.id === id);
   }
 
+  /* Salva os campos de estoque sem tocar no resto do cadastro. O objeto
+     do produto vai inteiro porque salvarProduto espera o cadastro
+     completo — nome, categoria e preço seguem como estão. */
+  async function gravarEstoque(p, dados) {
+    await DB.salvarProduto(Object.assign({}, p, dados));
+  }
+
   /* ---------------- Acesso ---------------- */
   $("#formAcesso").addEventListener("submit", async function (e) {
     e.preventDefault();
@@ -76,6 +83,7 @@
   async function recarregar() {
     try {
       produtos = await DB.listarProdutos(false);
+      desenharCategorias();
       desenhar();
     } catch (e) {
       avisar(e.message || "Falha ao carregar o estoque.", "erro");
@@ -89,8 +97,8 @@
     const zerados = lista.filter((p) => p.estoque === 0);
 
     $("#kpiControlados").textContent = lista.length;
+    $("#kpiSemControle").textContent = produtos.length - lista.length;
     $("#kpiRepor").textContent = repor.length;
-    $("#kpiZerados").textContent = zerados.length;
     $("#kpiUnidades").textContent = lista.reduce((s, p) => s + p.estoque, 0);
 
     const alvo = $("#alertaEstoque");
@@ -108,44 +116,74 @@
     alvo.classList.remove("oculto");
   }
 
-  /* ---------------- Tabela ---------------- */
+  /* ---------------- Tabela ----------------
+
+     Lista TODOS os produtos cadastrados, com ou sem controle ligado.
+     É daqui que o controle é ligado e desligado: o dono vê o cardápio
+     inteiro e escolhe o que faz sentido contar, sem precisar abrir a
+     ficha de cada produto para descobrir. */
   function filtrados() {
     const t = chave($("#buscaEstoque").value);
-    const situacaoFiltro = $("#soRepor").value;
-    return controlados()
+    const situacaoFiltro = $("#filtroSituacao").value;
+    const cat = $("#filtroCategoria").value;
+
+    return produtos
       .filter((p) => {
+        const ligado = p.controla_estoque === true;
+        if (situacaoFiltro === "ligado" && !ligado) return false;
+        if (situacaoFiltro === "desligado" && ligado) return false;
         if (situacaoFiltro === "repor" && !DB.estoqueBaixo(p)) return false;
-        if (situacaoFiltro === "zerado" && p.estoque !== 0) return false;
+        if (situacaoFiltro === "zerado" && !(ligado && p.estoque === 0)) return false;
+        if (cat && p.categoria !== cat) return false;
         if (t && chave(p.nome).indexOf(t) === -1 && chave(p.categoria).indexOf(t) === -1) return false;
         return true;
       })
       .sort((a, b) => {
-        /* O que precisa repor sobe: é o motivo de a tela existir. */
-        const ra = DB.estoqueBaixo(a) ? 0 : 1;
-        const rb = DB.estoqueBaixo(b) ? 0 : 1;
-        return ra - rb || a.estoque - b.estoque || a.nome.localeCompare(b.nome, "pt-BR");
+        /* O que precisa repor sobe; quem não é controlado desce. É o
+           motivo de a tela existir — ela abre já mostrando a compra. */
+        const peso = (p) => (DB.estoqueBaixo(p) ? 0 : p.controla_estoque ? 1 : 2);
+        return peso(a) - peso(b) ||
+               (a.controla_estoque && b.controla_estoque ? a.estoque - b.estoque : 0) ||
+               a.nome.localeCompare(b.nome, "pt-BR");
       });
   }
 
   function situacao(p) {
+    if (!p.controla_estoque) return '<span class="selo selo--vazio">Sem controle</span>';
     if (p.estoque === 0) return '<span class="selo selo--erro">Acabou</span>';
     if (DB.estoqueBaixo(p)) return '<span class="selo selo--erro">Repor</span>';
     return '<span class="selo selo--ok">Em estoque</span>';
   }
 
   function linha(p) {
-    return '<tr data-id="' + esc(p.id) + '">' +
+    const ligado = p.controla_estoque === true;
+
+    const acoes = ligado
+      ? '<button type="button" class="btn btn--confirmar btn--pequeno" data-acao="entrada">Entrada</button>' +
+        '<button type="button" class="btn btn--fantasma btn--pequeno" data-acao="corrigir">Contar</button>' +
+        '<button type="button" class="btn btn--fantasma btn--pequeno" data-acao="configurar">Ajustes</button>'
+      : '<button type="button" class="btn btn--pequeno" data-acao="configurar">Ligar estoque</button>';
+
+    return '<tr class="' + (ligado ? "" : "esmaecido") + '" data-id="' + esc(p.id) + '">' +
       '<td data-rotulo="Produto"><div class="produto-nome"><div><strong>' + esc(p.nome) + "</strong>" +
-        (p.esgotado ? "<small>fora do cardápio enquanto estiver zerado</small>" : "") +
+        (!p.ativo ? "<small>oculto no cardápio</small>"
+                  : ligado && p.esgotado ? "<small>fora do cardápio enquanto estiver zerado</small>" : "") +
       "</div></div></td>" +
       '<td data-rotulo="Categoria">' + esc(p.categoria) + "</td>" +
-      '<td data-rotulo="Em estoque" class="preco-celula">' + esc(p.estoque) + "</td>" +
-      '<td data-rotulo="Avisar em">' + esc(p.estoque_minimo) + "</td>" +
+      '<td data-rotulo="Em estoque" class="preco-celula">' + (ligado ? esc(p.estoque) : "—") + "</td>" +
+      '<td data-rotulo="Avisar em">' + (ligado ? esc(p.estoque_minimo) : "—") + "</td>" +
       '<td data-rotulo="Situação">' + situacao(p) + "</td>" +
-      '<td data-rotulo="Ações"><div class="acoes-celula">' +
-        '<button type="button" class="btn btn--confirmar btn--pequeno" data-acao="entrada">Entrada</button>' +
-        '<button type="button" class="btn btn--fantasma btn--pequeno" data-acao="corrigir">Corrigir</button>' +
-      "</div></td></tr>";
+      '<td data-rotulo="Ações"><div class="acoes-celula">' + acoes + "</div></td></tr>";
+  }
+
+  function desenharCategorias() {
+    const atual = $("#filtroCategoria").value;
+    const cats = [];
+    produtos.forEach((p) => { if (p.categoria && cats.indexOf(p.categoria) === -1) cats.push(p.categoria); });
+    cats.sort((a, b) => a.localeCompare(b, "pt-BR"));
+    $("#filtroCategoria").innerHTML = '<option value="">Todas as categorias</option>' +
+      cats.map((c) => '<option value="' + esc(c) + '">' + esc(c) + "</option>").join("");
+    if (cats.indexOf(atual) !== -1) $("#filtroCategoria").value = atual;
   }
 
   function desenhar() {
@@ -157,18 +195,19 @@
 
     corpo.innerHTML = lista.map(linha).join("");
 
-    const nenhumControlado = controlados().length === 0;
-    vazia.classList.toggle("oculto", !nenhumControlado);
-    $("#tabelaEstoque").classList.toggle("oculto", nenhumControlado);
+    const semProdutos = produtos.length === 0;
+    vazia.classList.toggle("oculto", !semProdutos);
+    $("#tabelaEstoque").classList.toggle("oculto", semProdutos);
 
-    if (!nenhumControlado && !lista.length) {
+    if (!semProdutos && !lista.length) {
       corpo.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:26px">' +
-        "Nenhum item encontrado com esse filtro.</td></tr>";
+        "Nenhum produto encontrado com esse filtro.</td></tr>";
     }
   }
 
   $("#buscaEstoque").addEventListener("input", desenhar);
-  $("#soRepor").addEventListener("change", desenhar);
+  $("#filtroSituacao").addEventListener("change", desenhar);
+  $("#filtroCategoria").addEventListener("change", desenhar);
 
   /* ---------------- Ações da tabela ---------------- */
   $("#corpoEstoque").addEventListener("click", function (e) {
@@ -178,8 +217,91 @@
     const p = acharProduto(id);
     if (!p) return;
 
-    if (btn.getAttribute("data-acao") === "entrada") abrirEntrada(p);
-    else abrirCorrecao(p);
+    const acao = btn.getAttribute("data-acao");
+    if (acao === "entrada") abrirEntrada(p);
+    else if (acao === "corrigir") abrirCorrecao(p);
+    else abrirConfigurar(p);
+  });
+
+  /* ---------------- Ligar, ajustar e desligar ---------------- */
+  function abrirConfigurar(p) {
+    limparErro($("#erroConfigurar"));
+    const ligado = p.controla_estoque === true;
+
+    $("#configurarId").value = p.id;
+    $("#tituloConfigurar").textContent = ligado ? "Ajustes do estoque" : "Ligar estoque";
+    $("#configQtd").value = ligado ? p.estoque : 0;
+    $("#configMinimo").value = ligado ? p.estoque_minimo : 6;
+    $("#btnDesligar").classList.toggle("oculto", !ligado);
+    $("#btnSalvarConfig").textContent = ligado ? "Salvar" : "Ligar estoque";
+
+    $("#configurarResumo").innerHTML = "<strong>" + esc(p.nome) + "</strong> — " +
+      (ligado
+        ? "controle ligado."
+        : "conte o que tem hoje e escolha o ponto de aviso.");
+
+    abrirModal("modalConfigurar");
+  }
+
+  $("#formConfigurar").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    limparErro($("#erroConfigurar"));
+    const btn = $("#btnSalvarConfig");
+    btn.disabled = true;
+    try {
+      const p = acharProduto($("#configurarId").value);
+      if (!p) throw new Error("Produto não encontrado.");
+
+      const qtd = parseInt($("#configQtd").value, 10);
+      const min = parseInt($("#configMinimo").value, 10);
+      if (isNaN(qtd) || qtd < 0) throw new Error("Informe a quantidade que tem hoje.");
+      if (isNaN(min) || min < 0) throw new Error("Informe o ponto de aviso.");
+
+      await gravarEstoque(p, {
+        controla_estoque: true,
+        estoque: qtd,
+        estoque_minimo: min,
+        /* Ligar com quantidade acima de zero tira o esgotado que possa
+           ter ficado de antes — senão o item continuaria escondido do
+           cardápio sem motivo. */
+        esgotado: qtd === 0 ? true : false,
+      });
+
+      fecharModal("modalConfigurar");
+      avisar(p.nome + ": estoque ligado com " + qtd + " unidade(s).", "ok");
+      await recarregar();
+    } catch (err) {
+      mostrarErro($("#erroConfigurar"), err.message || "Falha ao salvar.");
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  $("#btnDesligar").addEventListener("click", async function () {
+    const p = acharProduto($("#configurarId").value);
+    if (!p) return;
+
+    const ok = await confirmar({
+      titulo: "Desligar controle de estoque",
+      texto: p.nome + " deixa de ser contado e some desta lista.\n" +
+             "O produto continua no cardápio normalmente.",
+      confirmar: "Desligar", perigo: true,
+    });
+    if (!ok) return;
+
+    try {
+      await gravarEstoque(p, {
+        controla_estoque: false, estoque: 0, estoque_minimo: 0,
+        /* Sem controle, quem manda no esgotado é o botão do painel.
+           Deixar marcado esconderia o item do cardápio para sempre. */
+        esgotado: false,
+      });
+      fecharModal("modalConfigurar");
+      avisar(p.nome + ": controle de estoque desligado.", "ok");
+      await recarregar();
+    } catch (err) {
+      mostrarErro($("#erroConfigurar"), err.message || "Falha ao desligar.");
+    }
   });
 
   /* ---------------- Entrada de mercadoria ---------------- */

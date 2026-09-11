@@ -371,6 +371,18 @@ suite("Funcional — estoque");
   conf("quem não controla estoque fica de fora",
     !(await doBanco(espeto.id)).controla_estoque);
 
+  /* Ligar e desligar o controle é feito pela tela de Estoque, salvando
+     o produto com os campos novos — o cadastro do produto não mexe
+     neles. Salvar o produto SEM enviar estoque não pode zerar nada. */
+  await DB.salvarProduto({
+    id: cerveja.id, nome: "Cerveja Lata", categoria: "Cervejas", preco: 7.5, ordem: 1,
+  });
+  const depoisDeEditar = await doBanco(cerveja.id);
+  conf("editar o produto sem mexer no estoque preserva a quantidade",
+    depoisDeEditar.estoque === 24 && depoisDeEditar.controla_estoque === true,
+    "veio estoque " + depoisDeEditar.estoque + ", controle " + depoisDeEditar.controla_estoque);
+  conf("mas o que foi editado muda", depoisDeEditar.preco === 7.5);
+
   /* --- A venda tira do estoque --- */
   await DB.registrarVenda({
     itens: [{ produto_id: cerveja.id, nome: cerveja.nome, categoria: "Cervejas", preco_unit: 6.5, quantidade: 4 }],
@@ -421,6 +433,27 @@ suite("Funcional — estoque");
     itens: [{ produto_id: cerveja.id, nome: cerveja.nome, categoria: "Cervejas", preco_unit: 6.5, quantidade: 3 }],
   });
   conf("o estoque nunca fica negativo", (await doBanco(cerveja.id)).estoque === 0);
+
+  /* --- Ligar e desligar pelo caminho da tela de Estoque ---
+     Ela salva o produto inteiro com os campos de estoque junto. */
+  const antesDeLigar = await doBanco(espeto.id);
+  await DB.salvarProduto(Object.assign({}, antesDeLigar, {
+    controla_estoque: true, estoque: 30, estoque_minimo: 5, esgotado: false,
+  }));
+  const ligado = await doBanco(espeto.id);
+  conf("ligar o controle pela tela de Estoque funciona",
+    ligado.controla_estoque === true && ligado.estoque === 30);
+  conf("e não estraga o resto do cadastro",
+    ligado.nome === "Espeto de Carne" && ligado.preco === antesDeLigar.preco);
+
+  await DB.salvarProduto(Object.assign({}, ligado, {
+    controla_estoque: false, estoque: 0, estoque_minimo: 0, esgotado: false,
+  }));
+  const desligado = await doBanco(espeto.id);
+  conf("desligar o controle funciona", desligado.controla_estoque === false);
+  conf("desligar NÃO deixa o item esgotado no cardápio", desligado.esgotado === false,
+    "o produto sumiria do cardápio para sempre");
+  conf("e o produto continua no cardápio", desligado.ativo === true);
 
   /* --- Entrada de mercadoria --- */
   await DB.darEntradaEstoque(cerveja.id, 48);

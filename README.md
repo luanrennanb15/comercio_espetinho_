@@ -366,12 +366,30 @@ Por causa disso o cardápio público pede a lista exata de colunas em vez de
 Estoque nunca derruba uma venda: se a movimentação falhar, o dinheiro já está
 registrado, que é o que importa.
 
+### Tudo acontece na tela de Estoque
+
+A tela lista **todos os produtos cadastrados**, com ou sem controle ligado, e
+é dela que se liga e desliga. O cadastro de produto não tem campo de estoque
+nenhum, de propósito: aquele formulário responde "o que é este produto e por
+quanto vende", enquanto quantidade em prateleira é outra pergunta, que muda
+toda semana. Misturar as duas deixaria o cadastro longo e faria o dono abrir a
+ficha do produto para uma tarefa que é de conferência, não de cadastro.
+
+Na lista, cada item desligado tem um botão **Ligar estoque**: conta a
+prateleira, escolhe o ponto de aviso, pronto. Depois de ligado, aparecem
+**Entrada** (chegou mercadoria), **Contar** (acertar com a prateleira) e
+**Ajustes** (mudar o ponto de aviso ou desligar).
+
+A lista já abre ordenada pelo que precisa repor, e o alerta no topo aparece só
+quando há o que comprar — aviso permanente vira paisagem e deixa de ser lido.
+
+Desligar o controle não tira o produto do cardápio: ele só deixa de ser
+contado e some desta lista.
+
 ### Para ativar
 
-Rode `supabase/estoque.sql` no SQL Editor. Depois, no cadastro de cada bebida,
-ligue "Controlar o estoque deste item", informe a quantidade e o ponto de
-aviso. O alerta aparece no topo do painel só quando há o que comprar, e some
-quando não há — aviso permanente vira paisagem e deixa de ser lido.
+Rode `supabase/estoque.sql` no SQL Editor. Depois é só abrir **Estoque** e
+ligar as bebidas uma a uma.
 
 ---
 

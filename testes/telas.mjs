@@ -168,4 +168,38 @@ const tokens = ler("assets/css/tokens.css");
 conf("os dois temas vivem no mesmo arquivo de cores",
   /:root\s*\{/.test(tokens) && /\[data-tema="claro"\]/.test(tokens));
 
+/* ================================================================
+   7. Menu lateral
+
+   O menu é o mapa do sistema. Tela que existe e não está nele não é
+   encontrada; item no menu que não existe dá 404 na cara do dono.
+   ================================================================ */
+suite("Telas — menu lateral");
+
+const nav = ler("assets/js/nav.js");
+
+["caixa.html", "admin.html", "relatorios.html", "estoque.html", "perdas.html", "cartoes.html"]
+  .forEach((t) => conf(t + " aparece no menu", nav.includes('href: "' + t + '"')));
+
+[...nav.matchAll(/href:\s*"([\w.-]+\.html)"/g)].forEach((m) =>
+  conf("o menu não aponta para tela inexistente: " + m[1], existe(m[1])));
+
+["estoque", "perdas"].forEach((p) =>
+  conf(p + ": a barra superior tem título próprio",
+    new RegExp(p + ":\\s*\\{\\s*titulo:").test(nav)));
+
+conf("Estoque e Perdas ficam num grupo próprio, separados de Operação",
+  /grupo:\s*"Controle"/.test(nav),
+  "enterrados dentro de outra tela, não seriam usados");
+
+/* Cada tela interna precisa do seu próprio script — copiar o HTML sem
+   criar o JS deixaria a página bonita e morta. */
+["estoque", "perdas"].forEach((p) => {
+  conf(p + ".html carrega o seu próprio script",
+    ler(p + ".html").includes("assets/js/" + p + ".js"));
+  conf("assets/js/" + p + ".js existe", existe("assets/js/" + p + ".js"));
+  conf(p + ".html se identifica para o menu",
+    new RegExp('data-pagina="' + p + '"').test(ler(p + ".html")));
+});
+
 encerrar();

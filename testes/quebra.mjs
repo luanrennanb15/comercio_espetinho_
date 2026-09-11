@@ -241,6 +241,7 @@ suite("Quebra — estoque com dados impossíveis");
 suite("Quebra — todas as telas abrem");
 
 for (const tela of ["index.html", "admin.html", "caixa.html", "relatorios.html",
+                    "estoque.html", "perdas.html",
                     "comanda.html", "cartoes.html", "qrcode.html", "diagnostico.html"]) {
   const t = await abrirTela(tela);
   conf(tela + " abre sem erro de script", t.erros.length === 0, t.erros.join(" | "));

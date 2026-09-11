@@ -12,6 +12,8 @@ index.html              Cardápio público (é o link/QR Code do cliente)
 admin.html              Painel interno — cadastro de produtos
 caixa.html              Caixa — lançamento das vendas do balcão
 relatorios.html         Relatórios de faturamento e desempenho
+estoque.html            Estoque, entrada de mercadoria e reposição
+perdas.html             Quebra, vencimento, consumo da casa e brinde
 qrcode.html             Gerador da placa de QR Code para as mesas
 manual.html             Manual do proprietário (feito para imprimir)
 
@@ -405,13 +407,28 @@ ter o fato sem o valor do que não ter o registro.
 
 ### Onde fica, e por quê
 
-O botão está no **Caixa**, não no painel, porque é ali que a garrafa quebra.
-Registro que exige trocar de tela e procurar menu simplesmente não é feito — e
-um controle de perdas que ninguém alimenta é pior que nenhum, porque passa a
-sensação de que está tudo sob controle.
+**Perdas** e **Estoque** são telas próprias, num grupo "Controle" do menu
+lateral, separadas de Operação. São as duas telas que o dono abre para decidir
+o que comprar e entender para onde o dinheiro foi — decisões diferentes de
+vender e de cadastrar. Enterradas dentro de outra tela, não seriam usadas.
+
+O Caixa tem um **atalho** para Perdas, não uma cópia do formulário: é no balcão
+que a garrafa quebra, e obrigar a procurar no menu no meio do movimento é o que
+faz o registro não acontecer. Mas a regra vive num lugar só — formulário
+duplicado é regra duplicada, e um dia os dois discordam.
 
 O valor aparece **antes de confirmar**. Ver "isso custou R$ 19,47" na hora
 muda o comportamento muito mais do que descobrir no fim do mês.
+
+### Corrigir contagem não é registrar perda
+
+A tela de Estoque tem "Corrigir", onde o dono conta a prateleira e digita o que
+viu; o sistema calcula a diferença sozinho. Isso apenas **acerta o número**.
+
+Quando se sabe o que aconteceu com a mercadoria, o lugar é Perdas, com motivo.
+A separação é proposital: usar a correção para tudo faria o estoque bater e o
+relatório não saber explicar nada — que é exatamente o problema que o módulo
+existe para resolver.
 
 Registrar tira do estoque; desfazer devolve. Nome, categoria e custo ficam
 congelados, como nas vendas: renomear um produto não pode reescrever o

@@ -14,6 +14,8 @@ Allow: /assets/
 Disallow: /admin.html
 Disallow: /caixa.html
 Disallow: /relatorios.html
+Disallow: /estoque.html
+Disallow: /perdas.html
 Disallow: /cartoes.html
 Disallow: /qrcode.html
 Disallow: /manual.html

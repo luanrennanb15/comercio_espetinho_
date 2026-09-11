@@ -141,5 +141,6 @@ export async function abrirTela(arquivo, opcoes = {}) {
 
 /* Lista das telas do sistema, separadas por quem pode abrir. */
 export const TELAS_PUBLICAS = ["index.html", "comanda.html"];
-export const TELAS_INTERNAS = ["admin.html", "caixa.html", "relatorios.html", "cartoes.html", "qrcode.html"];
+export const TELAS_INTERNAS = ["admin.html", "caixa.html", "relatorios.html",
+                               "estoque.html", "perdas.html", "cartoes.html", "qrcode.html"];
 export const TODAS_TELAS = [...TELAS_PUBLICAS, ...TELAS_INTERNAS, "manual.html", "diagnostico.html"];

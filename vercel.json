@@ -35,7 +35,7 @@
       ]
     },
     {
-      "source": "/(admin|caixa|relatorios|cartoes|qrcode|manual|diagnostico|comanda).html",
+      "source": "/(admin|caixa|relatorios|estoque|perdas|cartoes|qrcode|manual|diagnostico|comanda).html",
       "headers": [
         { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
       ]

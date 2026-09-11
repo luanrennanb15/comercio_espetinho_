@@ -25,10 +25,10 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="assets/css/tokens.css?v=20260902a">
-<link rel="stylesheet" href="assets/css/base.css?v=20260902a">
-<link rel="stylesheet" href="assets/css/app.css?v=20260902a">
-<link rel="stylesheet" href="assets/css/admin.css?v=20260902a">
+<link rel="stylesheet" href="assets/css/tokens.css?v=20260902b">
+<link rel="stylesheet" href="assets/css/base.css?v=20260902b">
+<link rel="stylesheet" href="assets/css/app.css?v=20260902b">
+<link rel="stylesheet" href="assets/css/admin.css?v=20260902b">
 </head>
 <body data-pagina="produtos">
 
@@ -81,10 +81,6 @@
       <div class="indicador"><div class="indicador__rotulo">Ocultos</div><div class="indicador__valor" id="kpiOcultos">0</div></div>
       <div class="indicador indicador--ouro"><div class="indicador__rotulo">Preço médio</div><div class="indicador__valor" id="kpiMedia">—</div></div>
     </section>
-
-    <!-- Alerta de reposição: aparece só quando há o que comprar.
-         É a pergunta que o estoque existe para responder. -->
-    <section class="nota nota--erro oculto" id="alertaEstoque" style="margin-bottom:20px" aria-live="polite"></section>
 
     <div class="ferramentas">
       <div class="busca-caixa">
@@ -252,36 +248,14 @@
           </div>
         </div>
 
-        <!-- ---------- Estoque ----------
-             Desligado por padrão, e de propósito. Só compensa em bebida
-             e produto embalado, onde o que se compra é o que se vende.
-             Em espeto e porção a quantidade sai da brasa, não de uma
-             prateleira: o número deixaria de bater em uma semana, e
-             estoque que não bate faz o dono desconfiar da tela inteira. -->
-        <div class="bloco-custo">
-          <div class="bloco-custo__cabeca">
-            <h3>Estoque</h3>
-            <span>opcional — use em bebida e produto embalado</span>
-          </div>
+        <!-- Estoque NÃO fica aqui, de propósito.
 
-          <label class="chave">
-            <input type="checkbox" id="pControlaEstoque">
-            <span>Controlar o estoque deste item<small>Deixe desligado em espeto, porção e petisco.</small></span>
-          </label>
-
-          <div class="linha oculto" id="areaEstoque">
-            <div class="campo">
-              <label for="pEstoque">Quantidade disponível</label>
-              <input type="number" id="pEstoque" step="1" min="0" value="0">
-              <small class="ajuda">Baixa sozinha na venda e volta no estorno.</small>
-            </div>
-            <div class="campo">
-              <label for="pEstoqueMinimo">Avisar quando chegar em</label>
-              <input type="number" id="pEstoqueMinimo" step="1" min="0" value="0">
-              <small class="ajuda">Nesse ponto o item entra no alerta de reposição.</small>
-            </div>
-          </div>
-        </div>
+             Este formulário responde "o que é este produto e por quanto
+             vende". Quantidade em prateleira é outra pergunta, que muda
+             toda semana e pertence à tela de Estoque. Misturar as duas
+             deixaria o cadastro longo e faria o dono abrir a ficha do
+             produto para uma tarefa que é de conferência, não de
+             cadastro. -->
 
         <div class="campo">
           <label for="pOrdem">Ordem de exibição</label>
@@ -386,11 +360,11 @@
   </div>
 </div>
 
-<script src="assets/js/config.js?v=20260902a"></script>
-<script src="assets/js/ui.js?v=20260902a"></script>
-<script src="assets/js/tema.js?v=20260902a"></script>
-<script src="assets/js/nav.js?v=20260902a"></script>
-<script src="assets/js/db.js?v=20260902a"></script>
-<script src="assets/js/admin.js?v=20260902a"></script>
+<script src="assets/js/config.js?v=20260902b"></script>
+<script src="assets/js/ui.js?v=20260902b"></script>
+<script src="assets/js/tema.js?v=20260902b"></script>
+<script src="assets/js/nav.js?v=20260902b"></script>
+<script src="assets/js/db.js?v=20260902b"></script>
+<script src="assets/js/admin.js?v=20260902b"></script>
 </body>
 </html>

@@ -23,10 +23,10 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="assets/css/tokens.css?v=20260902a">
-<link rel="stylesheet" href="assets/css/base.css?v=20260902a">
-<link rel="stylesheet" href="assets/css/app.css?v=20260902a">
-<link rel="stylesheet" href="assets/css/admin.css?v=20260902a">
+<link rel="stylesheet" href="assets/css/tokens.css?v=20260902b">
+<link rel="stylesheet" href="assets/css/base.css?v=20260902b">
+<link rel="stylesheet" href="assets/css/app.css?v=20260902b">
+<link rel="stylesheet" href="assets/css/admin.css?v=20260902b">
 </head>
 <body data-pagina="estoque">
 
@@ -67,9 +67,9 @@
       <section class="nota nota--erro oculto" id="alertaEstoque" style="margin-bottom:20px" aria-live="polite"></section>
 
       <section class="indicadores" aria-label="Resumo do estoque">
-        <div class="indicador"><div class="indicador__rotulo">Itens controlados</div><div class="indicador__valor" id="kpiControlados">0</div></div>
+        <div class="indicador"><div class="indicador__rotulo">Com estoque ligado</div><div class="indicador__valor" id="kpiControlados">0</div></div>
+        <div class="indicador"><div class="indicador__rotulo">Sem controle</div><div class="indicador__valor" id="kpiSemControle">0</div></div>
         <div class="indicador indicador--erro"><div class="indicador__rotulo">Precisam repor</div><div class="indicador__valor" id="kpiRepor">0</div></div>
-        <div class="indicador indicador--erro"><div class="indicador__rotulo">Acabaram</div><div class="indicador__valor" id="kpiZerados">0</div></div>
         <div class="indicador indicador--ouro"><div class="indicador__rotulo">Unidades em estoque</div><div class="indicador__valor" id="kpiUnidades">0</div></div>
       </section>
 
@@ -81,11 +81,14 @@
           <input type="search" id="buscaEstoque" class="entrada" placeholder="Buscar produto..."
                  autocomplete="off" aria-label="Buscar produto no estoque">
         </div>
-        <select id="soRepor" class="entrada" aria-label="Filtrar situação do estoque">
-          <option value="">Todos os itens</option>
-          <option value="repor">Só o que precisa repor</option>
-          <option value="zerado">Só o que acabou</option>
+        <select id="filtroSituacao" class="entrada" aria-label="Filtrar situação do estoque">
+          <option value="">Todos os produtos</option>
+          <option value="ligado">Com estoque ligado</option>
+          <option value="desligado">Sem controle</option>
+          <option value="repor">Precisam repor</option>
+          <option value="zerado">Acabaram</option>
         </select>
+        <select id="filtroCategoria" class="entrada" aria-label="Filtrar por categoria"></select>
         <span class="espaco"></span>
       </div>
 
@@ -105,17 +108,63 @@
         </table>
 
         <div class="estado-vazio oculto" id="areaVazia">
-          <h3>Nenhum item com estoque controlado</h3>
+          <h3>Nenhum produto cadastrado</h3>
           <p>
-            Abra <strong>Produtos</strong>, edite uma bebida e ligue
-            “Controlar o estoque deste item”. Use apenas em bebida e produto
-            embalado — em espeto e porção a conta não fecha.
+            Cadastre o cardápio em <strong>Produtos</strong> e volte aqui para
+            ligar o estoque das bebidas.
           </p>
         </div>
       </div>
 
+      <p class="nota" style="margin-top:16px">
+        Ligue o controle apenas em <strong>bebida e produto embalado</strong>,
+        onde o que se compra é o que se vende. Em espeto e porção a quantidade
+        sai da brasa, não da prateleira: o número deixaria de bater em uma
+        semana — e estoque que não bate faz desconfiar da tela inteira.
+      </p>
+
     </main>
   </div>
+</div>
+
+<!-- ==================== LIGAR / CONFIGURAR ESTOQUE ==================== -->
+<div class="modal-fundo" id="modalConfigurar">
+  <form class="modal modal--estreito" id="formConfigurar" autocomplete="off">
+    <div class="modal__cabeca">
+      <h2 id="tituloConfigurar">Ligar estoque</h2>
+      <button type="button" class="fechar" data-fechar aria-label="Fechar">&times;</button>
+    </div>
+    <div class="modal__corpo">
+      <div id="erroConfigurar" class="nota nota--erro oculto"></div>
+      <input type="hidden" id="configurarId">
+
+      <p class="nota nota--ouro" id="configurarResumo" style="margin-top:0"></p>
+
+      <div class="linha">
+        <div class="campo">
+          <label for="configQtd">Quantidade que tem hoje</label>
+          <input type="number" id="configQtd" step="1" min="0" value="0" required>
+          <small class="ajuda">Conte a prateleira e digite. Depois disso o sistema cuida sozinho.</small>
+        </div>
+        <div class="campo">
+          <label for="configMinimo">Avisar quando chegar em</label>
+          <input type="number" id="configMinimo" step="1" min="0" value="6" required>
+          <small class="ajuda">Pense em quanto vende entre uma compra e outra, com folga.</small>
+        </div>
+      </div>
+
+      <p class="nota" id="notaDesligar" style="margin-bottom:0">
+        Desligar o controle não apaga o produto do cardápio — ele só deixa de
+        ser contado e some desta lista.
+      </p>
+    </div>
+    <div class="modal__pe">
+      <button type="button" class="btn btn--perigo oculto" id="btnDesligar">Desligar controle</button>
+      <span class="espaco" style="flex:1"></span>
+      <button type="button" class="btn btn--fantasma" data-fechar>Cancelar</button>
+      <button type="submit" class="btn btn--confirmar" id="btnSalvarConfig">Salvar</button>
+    </div>
+  </form>
 </div>
 
 <!-- ==================== ENTRADA DE MERCADORIA ==================== -->
@@ -183,11 +232,11 @@
   </form>
 </div>
 
-<script src="assets/js/config.js?v=20260902a"></script>
-<script src="assets/js/ui.js?v=20260902a"></script>
-<script src="assets/js/tema.js?v=20260902a"></script>
-<script src="assets/js/nav.js?v=20260902a"></script>
-<script src="assets/js/db.js?v=20260902a"></script>
-<script src="assets/js/estoque.js?v=20260902a"></script>
+<script src="assets/js/config.js?v=20260902b"></script>
+<script src="assets/js/ui.js?v=20260902b"></script>
+<script src="assets/js/tema.js?v=20260902b"></script>
+<script src="assets/js/nav.js?v=20260902b"></script>
+<script src="assets/js/db.js?v=20260902b"></script>
+<script src="assets/js/estoque.js?v=20260902b"></script>
 </body>
 </html>

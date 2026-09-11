@@ -68,6 +68,64 @@
 .indicador--erro  .indicador__valor { color: var(--erro); }
 .indicador--ok    .indicador__valor { color: var(--sucesso); }
 
+/* Legenda curta sob o número. Existe para dizer o que ele significa
+   sem obrigar a decorar: "saiu do bolso" e "deixou de faturar" lado
+   a lado impedem que os dois sejam lidos como a mesma coisa. */
+.indicador__apoio {
+  margin-top: 7px;
+  font-size: .74rem;
+  line-height: 1.4;
+  color: var(--texto-fraco);
+}
+.indicador__apoio:empty { display: none; }
+
+/* ---------- Custo e venda lado a lado (modal de perdas) ----------
+   Os dois números nunca se somam, e a diagramação diz isso: caixas
+   separadas, cores diferentes, sem total embaixo. O custo é o
+   prejuízo real e vem primeiro; a venda é contexto. */
+.valores-perda {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 4px 0 14px;
+}
+.valor-perda {
+  padding: 12px 14px;
+  border: 1px solid var(--linha);
+  border-left-width: 3px;
+  border-radius: var(--raio);
+  background: var(--fundo-fundo, var(--superficie));
+}
+.valor-perda span {
+  display: block;
+  font-size: .68rem;
+  font-weight: 600;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--texto-fraco);
+}
+.valor-perda strong {
+  display: block;
+  margin-top: 5px;
+  font-family: var(--fonte-titulo);
+  font-size: 1.3rem;
+  line-height: 1;
+}
+.valor-perda small {
+  display: block;
+  margin-top: 5px;
+  font-size: .75rem;
+  color: var(--texto-fraco);
+}
+.valor-perda--custo { border-left-color: var(--erro); }
+.valor-perda--custo strong { color: var(--erro); }
+.valor-perda--venda { border-left-color: var(--ouro); }
+.valor-perda--venda strong { color: var(--ouro); }
+
+@media (max-width: 420px) {
+  .valores-perda { grid-template-columns: 1fr; }
+}
+
 /* ---------- Barra de ferramentas ---------- */
 .ferramentas {
   display: flex;
@@ -141,6 +199,18 @@
 .produto-nome small { color: var(--texto-fraco); font-size: .78rem; }
 
 .preco-celula { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--ouro); white-space: nowrap; }
+
+/* Venda é contexto, não o placar. Deixá-la com o mesmo peso do custo
+   faria o olho somar os dois — que é exatamente a leitura errada. */
+.preco-celula--venda { font-weight: 500; color: var(--texto-suave); }
+
+/* Traço explicado. Sem o pontilhado ninguém descobre que há um
+   porquê por trás; sem o title, o porquê não chega. */
+.sem-valor {
+  color: var(--texto-fraco);
+  cursor: help;
+  border-bottom: 1px dotted var(--linha-forte);
+}
 
 .acoes-celula { display: flex; gap: 6px; justify-content: flex-end; }
 

@@ -746,9 +746,15 @@ const DB = (() => {
        erro de compra, retirada do dono e marketing. Somar tudo num
        total só esconde qual é o problema.
 
-       O valor é sempre o CUSTO, congelado no momento do registro.
+       O prejuízo é sempre o CUSTO, congelado no momento do registro.
        Uma cerveja de R$ 11 que custou R$ 6,49 tirou R$ 6,49 do bolso;
-       lançar R$ 11 inflaria a perda em quase o dobro.
+       somar R$ 11 inflaria a perda em quase o dobro.
+
+       O preço de venda fica guardado ao lado, também congelado, e
+       nunca somado ao custo. São perguntas diferentes: quanto saiu
+       do bolso, e quanto deixou de entrar no caixa. Quebrar o
+       destilado mais caro da casa e quebrar uma água mineral podem
+       custar parecido e significar coisas bem diferentes.
     ------------------------------------------------------------ */
 
     get motivosDePerda() {
@@ -780,6 +786,7 @@ const DB = (() => {
         categoria: String(perda.categoria || "Outros").trim() || "Outros",
         quantidade: quantidade,
         custo_unit: Math.max(0, Math.round((Number(perda.custo_unit) || 0) * 100) / 100),
+        preco_unit: Math.max(0, Math.round((Number(perda.preco_unit) || 0) * 100) / 100),
         motivo: motivo,
         observacao: String(perda.observacao || "").trim().slice(0, 200),
       };
@@ -787,6 +794,20 @@ const DB = (() => {
       if (modo === "supabase") {
         const { data, error } = await sb.from("perdas").insert(registro).select().single();
         if (error) {
+          /* Coluna de preço ausente: o banco tem o módulo de perdas de
+             uma versão anterior. Aqui a perda em si é mais importante
+             que o número secundário, então grava sem o preço em vez de
+             recusar o registro — e diz o que fazer para completar. */
+          if (colunaAusente(error) && /preco_unit/i.test(error.message || "")) {
+            bancoAntigo = true;
+            delete registro.preco_unit;
+            const nova = await sb.from("perdas").insert(registro).select().single();
+            if (nova.error) throw traduzirErro(nova.error);
+            await moverEstoque([{ produto_id: perda.produto_id, delta: -quantidade }]);
+            return Object.assign({}, nova.data, {
+              produto_id: perda.produto_id || null, preco_unit: 0,
+            });
+          }
           if (/perdas/i.test(error.message || "") || colunaAusente(error)) {
             bancoAntigo = true;
             throw new Error("Banco sem o módulo de perdas — rode supabase/perdas.sql.");
@@ -818,11 +839,26 @@ const DB = (() => {
       fim.setHours(23, 59, 59, 999);
 
       if (modo === "supabase") {
-        const { data, error } = await sb.from("perdas")
-          .select("id, criado_em, produto_id, nome, categoria, quantidade, custo_unit, motivo, observacao")
+        const campos = "id, criado_em, produto_id, nome, categoria, " +
+                       "quantidade, custo_unit, motivo, observacao";
+
+        const buscar = (lista) => sb.from("perdas")
+          .select(lista)
           .gte("criado_em", inicio.toISOString())
           .lte("criado_em", fim.toISOString())
           .order("criado_em", { ascending: false });
+
+        let { data, error } = await buscar(campos + ", preco_unit");
+
+        /* Banco com o módulo de perdas de antes da coluna de preço.
+           Repete sem ela para a tela continuar de pé, e marca o banco
+           como antigo — a tela usa isso para explicar ao dono por que
+           a coluna Venda aparece zerada, em vez de deixá-lo achar que
+           os produtos não têm preço. */
+        if (error && colunaAusente(error)) {
+          bancoAntigo = true;
+          ({ data, error } = await buscar(campos));
+        }
         if (error) {
           if (/perdas/i.test(error.message || "")) { bancoAntigo = true; return []; }
           throw traduzirErro(error);
@@ -830,6 +866,7 @@ const DB = (() => {
         return (data || []).map((p) => Object.assign({}, p, {
           quantidade: Number(p.quantidade) || 0,
           custo_unit: Number(p.custo_unit) || 0,
+          preco_unit: Number(p.preco_unit) || 0,
         }));
       }
 
@@ -865,22 +902,39 @@ const DB = (() => {
        há problema de manuseio, de compra ou de controle. */
     resumoDePerdas(perdas, receita) {
       const lista = perdas || [];
-      const custoDe = (p) => (Number(p.custo_unit) || 0) * (Number(p.quantidade) || 0);
+      const qtdDe   = (p) => Number(p.quantidade) || 0;
+      const custoDe = (p) => (Number(p.custo_unit) || 0) * qtdDe(p);
+      const vendaDe = (p) => (Number(p.preco_unit) || 0) * qtdDe(p);
+
       const total = lista.reduce((s, p) => s + custoDe(p), 0);
+      const totalVenda = lista.reduce((s, p) => s + vendaDe(p), 0);
 
       const porMotivo = {};
       const porProduto = {};
       lista.forEach((p) => {
         porMotivo[p.motivo] = (porMotivo[p.motivo] || 0) + custoDe(p);
-        if (!porProduto[p.nome]) porProduto[p.nome] = { nome: p.nome, unidades: 0, custo: 0 };
-        porProduto[p.nome].unidades += Number(p.quantidade) || 0;
+        if (!porProduto[p.nome]) porProduto[p.nome] = { nome: p.nome, unidades: 0, custo: 0, venda: 0 };
+        porProduto[p.nome].unidades += qtdDe(p);
         porProduto[p.nome].custo += custoDe(p);
+        porProduto[p.nome].venda += vendaDe(p);
       });
 
       const r = Number(receita);
       return {
         total: Math.round(total * 100) / 100,
-        unidades: lista.reduce((s, p) => s + (Number(p.quantidade) || 0), 0),
+
+        /* Guardado separado, nunca somado ao custo. Juntar os dois
+           contaria o mesmo prejuízo duas vezes. */
+        totalVenda: Math.round(totalVenda * 100) / 100,
+
+        unidades: lista.reduce((s, p) => s + qtdDe(p), 0),
+
+        /* Quantos registros entraram valendo zero. Perda sem custo
+           cadastrado desaparece do ranking por motivo, que é
+           justamente onde se decide o que atacar — então a tela
+           precisa poder cobrar o conserto. */
+        semCusto: lista.filter((p) => !(Number(p.custo_unit) > 0)).length,
+
         porMotivo: porMotivo,
         porProduto: Object.keys(porProduto).map((k) => porProduto[k])
           .sort((a, b) => b.custo - a.custo),

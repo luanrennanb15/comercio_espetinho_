@@ -46,6 +46,14 @@
     return u == null ? 0 : u;
   }
 
+  /* O preço do cardápio no momento do registro. Fica congelado no
+     banco junto com o custo: reajustar a cerveja em novembro não pode
+     reescrever quanto valia a que quebrou em março. */
+  function precoDoProduto(p) {
+    const v = Number(p && p.preco);
+    return isFinite(v) && v > 0 ? Math.round(v * 100) / 100 : 0;
+  }
+
   /* ---------------- Datas ---------------- */
   function paraCampo(d) {
     const p = (n) => String(n).padStart(2, "0");
@@ -159,10 +167,15 @@
     const R = DB.resumoDePerdas(perdas, faturamento);
 
     $("#kpiCusto").textContent = moeda(R.total);
+    $("#kpiVenda").textContent = moeda(R.totalVenda);
     $("#kpiUnidades").textContent = R.unidades;
-    $("#kpiRegistros").textContent = perdas.length;
+    $("#kpiRegistros").textContent = perdas.length === 1
+      ? "1 registro" : perdas.length + " registros";
     $("#kpiPercentual").textContent = R.percentualDaReceita == null
       ? "—" : String(R.percentualDaReceita).replace(".", ",") + "%";
+
+    avisarSemModulo();
+    avisarSemCusto(R);
 
     /* A proporção diz mais que o valor. Num bar, passar de uns 3% do
        faturamento é sinal de problema de manuseio, compra ou controle. */
@@ -182,6 +195,43 @@
 
     desenharMotivos(R);
     desenharTabela();
+  }
+
+  /* Banco com o módulo de perdas anterior à coluna de preço. Sem este
+     aviso, a coluna Venda apareceria zerada e o dono concluiria que os
+     produtos estão sem preço — procurando o defeito no lugar errado. */
+  function avisarSemModulo() {
+    const alvo = $("#avisoSemModulo");
+    const faltando = DB.modo === "supabase" && DB.bancoDesatualizado &&
+      perdas.length > 0 && perdas.every((p) => !p.preco_unit);
+
+    if (!faltando) { alvo.classList.add("oculto"); alvo.innerHTML = ""; return; }
+    alvo.innerHTML = "<strong>Falta um passo no banco.</strong> " +
+      "A coluna de preço de venda ainda não existe, por isso a coluna " +
+      "<strong>Venda</strong> aparece zerada. Abra o Supabase, vá em " +
+      "<strong>SQL Editor → New query</strong>, cole o conteúdo de " +
+      "<code>supabase/perdas.sql</code> e clique em Run. Depois recarregue " +
+      "esta página. Os registros antigos continuam sem preço, porque ele " +
+      "não foi guardado na hora — os novos passam a ter.";
+    alvo.classList.remove("oculto");
+  }
+
+  /* Perda com custo zero some do ranking por motivo, que é exatamente
+     onde se decide o que atacar. Um total que exclui metade dos casos
+     em silêncio é pior que nenhum total. */
+  function avisarSemCusto(R) {
+    const alvo = $("#avisoSemCusto");
+    if (!R.semCusto) { alvo.classList.add("oculto"); alvo.innerHTML = ""; return; }
+
+    const n = R.semCusto;
+    alvo.innerHTML = "<strong>" + n + (n === 1
+        ? " registro está valendo R$ 0,00</strong> porque o produto não tinha "
+        : " registros estão valendo R$ 0,00</strong> porque os produtos não tinham ") +
+      "custo cadastrado quando a perda foi lançada. " +
+      (n === 1 ? "Ele não entra" : "Eles não entram") + " nos totais acima. " +
+      'Cadastre o custo em <a href="admin.html">Produtos</a>, apague ' +
+      (n === 1 ? "o registro" : "os registros") + " aqui e lance de novo.";
+    alvo.classList.remove("oculto");
   }
 
   function desenharMotivos(R) {
@@ -238,13 +288,27 @@
     tabela.classList.remove("oculto");
 
     if (!lista.length) {
-      corpo.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:26px">' +
+      corpo.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:26px">' +
         "Nenhuma perda encontrada com esse filtro.</td></tr>";
       return;
     }
 
-    corpo.innerHTML = lista.map((p) =>
-      '<tr data-id="' + esc(p.id) + '">' +
+    corpo.innerHTML = lista.map(function (p) {
+      const custo = (Number(p.custo_unit) || 0) * p.quantidade;
+      const venda = (Number(p.preco_unit) || 0) * p.quantidade;
+
+      /* Zero explicado vale mais que zero mudo: o traço com o título
+         diz que falta cadastro, não que o produto é de graça. */
+      const celulaCusto = custo > 0
+        ? moeda(custo)
+        : '<span class="sem-valor" title="Produto sem custo cadastrado — ' +
+          'este registro não entra nos totais">—</span>';
+      const celulaVenda = venda > 0
+        ? moeda(venda)
+        : '<span class="sem-valor" title="Preço não foi guardado neste ' +
+          'registro">—</span>';
+
+      return '<tr data-id="' + esc(p.id) + '">' +
         '<td data-rotulo="Quando">' + esc(quando(p.criado_em)) + "</td>" +
         '<td data-rotulo="Produto"><div class="produto-nome"><div><strong>' + esc(p.nome) + "</strong>" +
           (p.observacao ? "<small>" + esc(p.observacao) + "</small>" : "") +
@@ -252,12 +316,13 @@
         '<td data-rotulo="Qtd.">' + esc(p.quantidade) + "</td>" +
         '<td data-rotulo="Motivo"><span class="selo selo--vazio">' +
           esc(ROTULOS[p.motivo] || p.motivo) + "</span></td>" +
-        '<td data-rotulo="Custo" class="preco-celula">' + moeda(p.custo_unit * p.quantidade) + "</td>" +
+        '<td data-rotulo="Custo" class="preco-celula">' + celulaCusto + "</td>" +
+        '<td data-rotulo="Venda" class="preco-celula preco-celula--venda">' + celulaVenda + "</td>" +
         '<td data-rotulo="Ações"><div class="acoes-celula">' +
           '<button type="button" class="btn btn--perigo btn--pequeno" data-acao="excluir" ' +
             'aria-label="Excluir perda de ' + esc(p.nome) + '">Excluir</button>' +
-        "</div></td></tr>"
-    ).join("");
+        "</div></td></tr>";
+    }).join("");
   }
 
   $("#buscaPerda").addEventListener("input", desenharTabela);
@@ -314,18 +379,49 @@
   function atualizarValor() {
     const p = produtos.find((x) => x.id === $("#perdaProduto").value);
     const qtd = Math.max(1, parseInt($("#perdaQtd").value, 10) || 1);
-    const alvo = $("#perdaValor");
+    const nota = $("#perdaValor");
+    const caixas = $("#perdaValores");
+    const btn = $("#btnSalvarPerda");
 
-    if (!p) { alvo.textContent = "Escolha o produto para ver quanto custa."; return; }
+    function bloquear(motivo) {
+      caixas.classList.add("oculto");
+      nota.className = "nota nota--erro";
+      nota.innerHTML = motivo;
+      btn.disabled = true;
+    }
+
+    if (!p) { bloquear("Escolha o produto."); return; }
 
     const unitario = custoDoProduto(p);
+
+    /* Sem custo, o registro entraria valendo R$ 0,00 e sumiria do
+       ranking por motivo — o dono veria a linha na tabela e um total
+       que não a inclui. Melhor não deixar entrar do que deixar entrar
+       mentindo: o conserto são dois campos na tela de Produtos. */
     if (!unitario) {
-      alvo.innerHTML = "<strong>" + esc(p.nome) + "</strong> não tem custo cadastrado. " +
-        "A perda será registrada com valor zero — cadastre o custo em Produtos para a conta fechar.";
+      bloquear("<strong>" + esc(p.nome) + " não tem custo cadastrado.</strong> " +
+        "Sem ele a perda entraria valendo R$ 0,00 e não apareceria nos totais. " +
+        'Abra <a href="admin.html">Produtos</a>, edite ' + esc(p.nome) +
+        " e preencha quanto você paga por ele. Depois volte aqui.");
       return;
     }
-    alvo.innerHTML = "Custo da perda: <strong>" + moeda(unitario * qtd) + "</strong> " +
-      "<small>(" + qtd + " × " + moeda(unitario) + ")</small>";
+
+    const preco = precoDoProduto(p);
+    caixas.classList.remove("oculto");
+    btn.disabled = false;
+
+    $("#perdaCusto").textContent = moeda(unitario * qtd);
+    $("#perdaCustoDetalhe").textContent = qtd + " × " + moeda(unitario);
+
+    $("#perdaVenda").textContent = preco ? moeda(preco * qtd) : "—";
+    $("#perdaVendaDetalhe").textContent = preco
+      ? qtd + " × " + moeda(preco)
+      : "produto sem preço no cardápio";
+
+    nota.className = "nota";
+    nota.innerHTML = "O <strong>custo</strong> é o dinheiro que saiu do bolso — é ele " +
+      "que entra nos totais. O <strong>valor de venda</strong> é o que deixaria de " +
+      "entrar no caixa, guardado só para consulta. Os dois nunca se somam.";
   }
 
   $("#btnNovaPerda").addEventListener("click", function () {
@@ -349,12 +445,22 @@
       if (!p) throw new Error("Escolha o produto.");
       const qtd = parseInt($("#perdaQtd").value, 10);
 
+      /* O botão já fica desabilitado sem custo, mas a checagem se
+         repete aqui: botão desabilitado é aparência, e o formulário
+         ainda pode ser enviado por Enter ou pelo teclado. */
+      const unitario = custoDoProduto(p);
+      if (!unitario) {
+        throw new Error(p.nome + " não tem custo cadastrado. " +
+          "Preencha o custo em Produtos antes de registrar esta perda.");
+      }
+
       await DB.registrarPerda({
         produto_id: p.id,
         nome: p.nome,
         categoria: p.categoria,
         quantidade: qtd,
-        custo_unit: custoDoProduto(p),
+        custo_unit: unitario,
+        preco_unit: precoDoProduto(p),
         motivo: $("#perdaMotivo").value,
         observacao: $("#perdaObs").value,
       });
@@ -366,7 +472,10 @@
     } catch (err) {
       mostrarErro($("#erroPerda"), err.message || "Falha ao registrar a perda.");
     } finally {
-      btn.disabled = false;
+      /* Reabrir pelo atualizarValor, e não com `btn.disabled = false`:
+         se o produto continua sem custo, o botão precisa continuar
+         travado. Liberar por reflexo no finally desfaria o bloqueio. */
+      atualizarValor();
     }
   });
 

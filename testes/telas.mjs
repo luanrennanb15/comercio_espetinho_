@@ -222,4 +222,58 @@ conf("mas o Caixa leva até Perdas",
     new RegExp('data-pagina="' + p + '"').test(ler(p + ".html")));
 });
 
+/* ================================================================
+   Perdas — custo e venda lado a lado, nunca somados
+   ================================================================ */
+suite("Telas — custo e venda na tela de Perdas");
+
+{
+  const html = ler("perdas.html");
+  const js   = ler("assets/js/perdas.js");
+
+  /* Quantas colunas o cabeçalho declara e quantas as linhas escrevem
+     precisam bater. Uma célula a mais desalinha a tabela inteira e o
+     dono acaba lendo o custo na coluna de venda. */
+  const cabecalho = (html.match(/<thead>[\s\S]*?<\/thead>/) || [""])[0];
+  /* `<th[ >]` e não `<th`: o próprio <thead> entraria na conta. */
+  const colunas = (cabecalho.match(/<th[ >]/g) || []).length;
+  const celulas = (js.match(/data-rotulo="/g) || []).length;
+
+  conf("a tabela tem coluna de Custo", />\s*Custo\s*</.test(cabecalho));
+  conf("a tabela tem coluna de Venda", />\s*Venda\s*</.test(cabecalho));
+  conf("as células da linha batem com o cabeçalho", colunas === celulas,
+    colunas + " colunas no cabeçalho e " + celulas + " células por linha");
+  conf("o aviso de filtro vazio ocupa a largura certa",
+    new RegExp('colspan="' + colunas + '"').test(js),
+    "colspan errado deixa a linha torta");
+
+  conf("o resumo tem um indicador para cada um",
+    /id="kpiCusto"/.test(html) && /id="kpiVenda"/.test(html));
+  conf("e cada indicador diz o que significa",
+    /saiu do bolso/.test(html) && /deixou de faturar/.test(html),
+    "dois valores em dinheiro lado a lado sem legenda serão somados de cabeça");
+  conf("o percentual do faturamento se declara como sendo do custo",
+    /pelo custo/.test(html));
+
+  /* O bloqueio é o conserto do relato "registrei e apareceu 0,00". */
+  conf("produto sem custo trava o botão de salvar",
+    /btn\.disabled = true/.test(js) && /não tem custo cadastrado/.test(js));
+  conf("e o aviso leva até onde se resolve",
+    /href="admin\.html"/.test(js),
+    "dizer que falta cadastro sem dizer onde é meio recado");
+  conf("o envio por Enter também é barrado",
+    /if \(!unitario\) \{[\s\S]{0,240}throw new Error/.test(js),
+    "botão desabilitado é aparência; o formulário ainda envia pelo teclado");
+  conf("o finally não reabre o botão por reflexo",
+    !/finally \{\s*btn\.disabled = false;\s*\}/.test(js),
+    "liberar no finally desfaria o bloqueio em produto sem custo");
+
+  conf("registros antigos valendo zero são denunciados, não escondidos",
+    /avisarSemCusto/.test(js) && /id="avisoSemCusto"/.test(html),
+    "um total que exclui metade dos casos em silêncio é pior que total nenhum");
+  conf("banco sem a coluna de preço explica a coluna Venda zerada",
+    /avisarSemModulo/.test(js) && /perdas\.sql/.test(js),
+    "sem isso o dono procura o defeito no cadastro de preço");
+}
+
 encerrar();

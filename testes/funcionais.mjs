@@ -568,7 +568,8 @@ suite("Funcional — perdas");
   const doBanco = () => DB.listarProdutos(false).then((l) => l.find((p) => p.id === cerveja.id));
   const registrar = (motivo, qtd, obs) => DB.registrarPerda({
     produto_id: cerveja.id, nome: cerveja.nome, categoria: "Cervejas",
-    quantidade: qtd, custo_unit: custo, motivo: motivo, observacao: obs || "",
+    quantidade: qtd, custo_unit: custo, preco_unit: cerveja.preco,
+    motivo: motivo, observacao: obs || "",
   });
 
   /* --- O motivo é obrigatório, e é o ponto do módulo --- */
@@ -593,6 +594,29 @@ suite("Funcional — perdas");
   conf("NÃO contabiliza pelo preço de venda (seriam R$ 33,00)",
     Math.abs(r1.total - 33) > 1,
     "lançar pelo preço inflaria a perda em quase o dobro");
+
+  /* --- O preço de venda existe ao lado, e nunca somado --- */
+  conf("guarda o preço de venda congelado no registro",
+    Math.abs(lista1[0].preco_unit - 11) < 0.01, "veio " + lista1[0].preco_unit);
+  conf("3 latas de R$ 11,00 dão R$ 33,00 de venda perdida",
+    Math.abs(r1.totalVenda - 33) < 0.02, "veio " + r1.totalVenda);
+  conf("nenhum total é a soma dos dois (seriam R$ 52,47)",
+    Math.abs(r1.total - 52.47) > 1 && Math.abs(r1.totalVenda - 52.47) > 1,
+    "somar custo e venda contaria o mesmo prejuízo duas vezes");
+  conf("o percentual do faturamento continua saindo do CUSTO",
+    Math.abs(DB.resumoDePerdas(lista1, 1000).percentualDaReceita - 1.9) < 0.2,
+    "se usasse a venda daria 3,3% — quase o dobro do prejuízo real");
+
+  /* Reajustar o preço depois não pode reescrever a história: a lata
+     que quebrou em março valia R$ 11,00, não R$ 15,00. Relê o produto
+     do banco antes de mexer, para não devolver o estoque ao valor
+     antigo junto com o preço. */
+  const antesDoReajuste = await doBanco();
+  await DB.salvarProduto(Object.assign({}, antesDoReajuste, { preco: 15 }));
+  const congelado = (await DB.listarPerdas()).find((p) => p.id === p1.id);
+  conf("reajustar o preço não muda perdas já registradas",
+    Math.abs(congelado.preco_unit - 11) < 0.01, "veio " + congelado.preco_unit);
+  await DB.salvarProduto(Object.assign({}, antesDoReajuste, { preco: 11 }));
 
   /* --- Cada motivo é contado separado --- */
   await registrar("consumo_interno", 2);
@@ -632,15 +656,28 @@ suite("Funcional — perdas");
   conf("e some do histórico",
     (await DB.listarPerdas()).every((p) => p.id !== p1.id));
 
-  /* --- Produto sem custo cadastrado não quebra o registro --- */
+  /* --- Produto sem custo: a camada de dados aceita, a TELA é quem
+         barra. O db.js é chamado também por importação e por scripts,
+         onde recusar apagaria o fato; a decisão de não deixar entrar
+         pela mão do dono pertence ao formulário, que sabe oferecer o
+         caminho do conserto. --- */
   const espeto = await DB.salvarProduto({ nome: "Espeto", categoria: "Espetos", preco: 10, ordem: 2 });
   const semCusto = await DB.registrarPerda({
     produto_id: espeto.id, nome: espeto.nome, categoria: "Espetos",
     quantidade: 2, custo_unit: null, motivo: "quebra",
   });
-  conf("perda de item sem custo é aceita, valendo zero",
+  conf("perda de item sem custo é aceita pela camada de dados, valendo zero",
     !!semCusto.id && semCusto.custo_unit === 0,
     "melhor registrar o fato sem valor do que não registrar");
+
+  /* O total esconderia esse registro sem avisar. `semCusto` é o que
+     permite à tela cobrar o conserto em vez de mostrar um número
+     incompleto com cara de completo. */
+  const comBuraco = DB.resumoDePerdas(await DB.listarPerdas());
+  conf("o resumo conta quantos registros estão valendo zero",
+    comBuraco.semCusto === 1, "veio " + comBuraco.semCusto);
+  conf("e não infla o total com eles", Math.abs(comBuraco.total - 45.43) < 0.02,
+    "veio " + comBuraco.total);
 
   /* --- O nome fica congelado, como nas vendas --- */
   await DB.salvarProduto(Object.assign({}, cerveja, { nome: "Cerveja Lata 350ml (novo nome)" }));

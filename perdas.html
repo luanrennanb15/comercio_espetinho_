@@ -80,11 +80,20 @@
         </div>
       </div>
 
+      <!-- Avisos que precisam ser vistos antes de qualquer número:
+           um número errado lido como certo é pior que número nenhum. -->
+      <section class="nota nota--erro oculto" id="avisoSemModulo" style="margin-bottom:16px"></section>
+      <section class="nota nota--erro oculto" id="avisoSemCusto" style="margin-bottom:16px"></section>
+
+      <!-- Custo e venda ficam lado a lado e NUNCA somados.
+           O custo é o dinheiro que saiu do bolso; a venda é o que
+           deixou de entrar no caixa. Somar contaria o mesmo prejuízo
+           duas vezes, e é por isso que só o custo tem destaque de erro. -->
       <section class="indicadores" aria-label="Resumo das perdas">
-        <div class="indicador indicador--erro"><div class="indicador__rotulo">Custo das perdas</div><div class="indicador__valor" id="kpiCusto">R$ 0,00</div></div>
-        <div class="indicador"><div class="indicador__rotulo">Unidades</div><div class="indicador__valor" id="kpiUnidades">0</div></div>
-        <div class="indicador indicador--ouro"><div class="indicador__rotulo">% do faturamento</div><div class="indicador__valor" id="kpiPercentual">—</div></div>
-        <div class="indicador"><div class="indicador__rotulo">Registros</div><div class="indicador__valor" id="kpiRegistros">0</div></div>
+        <div class="indicador indicador--erro"><div class="indicador__rotulo">Custo das perdas</div><div class="indicador__valor" id="kpiCusto">R$ 0,00</div><div class="indicador__apoio">saiu do bolso</div></div>
+        <div class="indicador indicador--ouro"><div class="indicador__rotulo">Valor de venda</div><div class="indicador__valor" id="kpiVenda">R$ 0,00</div><div class="indicador__apoio">deixou de faturar</div></div>
+        <div class="indicador"><div class="indicador__rotulo">Unidades</div><div class="indicador__valor" id="kpiUnidades">0</div><div class="indicador__apoio" id="kpiRegistros"></div></div>
+        <div class="indicador"><div class="indicador__rotulo">% do faturamento</div><div class="indicador__valor" id="kpiPercentual">—</div><div class="indicador__apoio">pelo custo</div></div>
       </section>
 
       <p class="nota" id="notaPercentual" style="margin-bottom:20px"></p>
@@ -121,6 +130,7 @@
               <th>Qtd.</th>
               <th>Motivo</th>
               <th>Custo</th>
+              <th>Venda</th>
               <th style="text-align:right">Ações</th>
             </tr>
           </thead>
@@ -173,10 +183,21 @@
         <input type="text" id="perdaObs" maxlength="200" placeholder="opcional — o que aconteceu">
       </div>
 
-      <!-- O valor aparece antes de confirmar, e sempre pelo custo.
-           Ver "isso custou R$ 19,47" na hora muda o comportamento muito
+      <!-- Os dois valores aparecem antes de confirmar. Ver "custou
+           R$ 19,47 e valia R$ 33,00" na hora muda o comportamento muito
            mais do que descobrir no fim do mês. -->
-      <p class="nota nota--ouro" id="perdaValor" style="margin-top:4px">
+      <div class="valores-perda oculto" id="perdaValores">
+        <div class="valor-perda valor-perda--custo">
+          <span>Custo</span><strong id="perdaCusto">—</strong>
+          <small id="perdaCustoDetalhe"></small>
+        </div>
+        <div class="valor-perda valor-perda--venda">
+          <span>Valor de venda</span><strong id="perdaVenda">—</strong>
+          <small id="perdaVendaDetalhe"></small>
+        </div>
+      </div>
+
+      <p class="nota" id="perdaValor" style="margin-top:4px">
         Escolha o produto para ver quanto custa.
       </p>
     </div>

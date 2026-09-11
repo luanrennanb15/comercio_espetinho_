@@ -225,6 +225,17 @@ img { max-width: 100%; display: block; }
 .nota--ouro  { color: var(--ouro-claro); background: var(--alerta-bg); border-left-color: var(--ouro); }
 .nota--erro  { color: #F0B5AB;           background: var(--erro-bg);   border-left-color: var(--erro); }
 
+/* Quando o aviso diz onde resolver, o link precisa parecer um link.
+   Herdar a cor do texto sem sublinhado transformaria a instrução em
+   letra morta: ninguém clica no que não parece clicável. */
+.nota a {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.nota a:hover { text-decoration-thickness: 2px; }
+
 /* ---------- Modal ---------- */
 .modal-fundo {
   position: fixed;

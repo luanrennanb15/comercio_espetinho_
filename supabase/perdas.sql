@@ -53,6 +53,21 @@ create table if not exists public.perdas (
   observacao  text          not null default '' check (char_length(observacao) <= 200)
 );
 
+/* Preço de venda, também congelado.
+   Não é dinheiro que saiu do bolso — é dinheiro que não entrou. Os
+   dois números respondem perguntas diferentes e por isso ficam lado
+   a lado em vez de somados: o custo é o prejuízo real, o preço é o
+   tamanho da oportunidade perdida. Quem olha só o custo subestima o
+   estrago de quebrar a garrafa mais cara da casa. */
+alter table public.perdas add column if not exists preco_unit numeric(10,2) not null default 0;
+
+alter table public.perdas drop constraint if exists perdas_preco_valido;
+alter table public.perdas add  constraint perdas_preco_valido
+  check (preco_unit >= 0 and preco_unit <= 100000);
+
+comment on column public.perdas.preco_unit is
+  'Preço de venda por unidade no momento do registro, congelado. Receita que deixou de entrar.';
+
 comment on table  public.perdas            is 'Saídas de mercadoria sem venda: quebra, vencimento, consumo interno e brinde';
 comment on column public.perdas.custo_unit is 'Custo por unidade no momento do registro, congelado';
 comment on column public.perdas.motivo     is 'Separa perda operacional de retirada do dono e de marketing';
@@ -87,7 +102,8 @@ select
   date_trunc('month', criado_em)::date as mes,
   motivo,
   sum(quantidade)                      as unidades,
-  sum(quantidade * custo_unit)         as custo_total
+  sum(quantidade * custo_unit)         as custo_total,
+  sum(quantidade * preco_unit)         as venda_total
 from public.perdas
 group by 1, 2
 order by 1 desc, 4 desc;

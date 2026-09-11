@@ -236,6 +236,35 @@ suite("Quebra — estoque com dados impossíveis");
 }
 
 /* ================================================================
+   7c. Falha silenciosa: o pior desfecho possível
+   ================================================================ */
+suite("Quebra — ligar estoque sem o banco preparado");
+
+{
+  /* Houve um "plano B" que, se o banco não tivesse as colunas de
+     estoque, salvava o produto sem elas e devolvia sucesso. A tela
+     mostrava "estoque ligado" e nada era gravado — o dono repetia a
+     operação e passava a desconfiar de si, não do sistema.
+
+     Estes testes existem para esse plano B não voltar. */
+  const db = ler("assets/js/db.js");
+
+  conf("o código não salva sem estoque e finge que deu certo",
+    !/delete dados\.controla_estoque/.test(db),
+    "o plano B silencioso voltou");
+  conf("banco sem o módulo dá erro em português, dizendo o que fazer",
+    /supabase\/estoque\.sql/.test(db) && /m[óo]dulo de estoque/i.test(db));
+
+  const tela = ler("assets/js/estoque.js");
+  conf("a tela avisa na abertura, não só ao salvar",
+    /avisarSeFaltaModulo/.test(tela),
+    "descobrir depois de preencher o formulário é frustrante à toa");
+  conf("a tela confere no banco antes de dizer que ligou",
+    /controla_estoque !== true/.test(tela),
+    "comemorar antes de conferir foi a origem do problema");
+}
+
+/* ================================================================
    8. Todas as telas abrem sem erro de script
    ================================================================ */
 suite("Quebra — todas as telas abrem");

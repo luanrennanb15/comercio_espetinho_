@@ -518,15 +518,22 @@ const DB = (() => {
           ? sb.from("produtos").update(corpo).eq("id", p.id).select().single()
           : sb.from("produtos").insert(corpo).select().single());
 
-        let { data, error } = await enviar(dados);
+        const { data, error } = await enviar(dados);
 
-        /* Banco ainda sem o módulo de estoque: salva o resto em vez de
-           recusar o cadastro inteiro por causa de três colunas. */
+        /* Banco sem o módulo de estoque.
+
+           Aqui havia um "plano B" que salvava o produto sem as colunas
+           de estoque e devolvia sucesso. Parecia prudente e era o pior
+           dos mundos: quem clicava em "ligar estoque" via a mensagem
+           verde e nada era gravado. Falha silenciosa em ação deliberada
+           é pior que erro na cara — o dono repete, desconfia de si e
+           não do sistema. Agora ela fala. */
         if (error && colunaAusente(error) && dados.controla_estoque !== undefined) {
           bancoAntigo = true;
-          console.warn("Banco sem as colunas de estoque — rode supabase/estoque.sql.");
-          delete dados.controla_estoque; delete dados.estoque; delete dados.estoque_minimo;
-          ({ data, error } = await enviar(dados));
+          throw new Error(
+            "O banco ainda não tem o módulo de estoque. Abra o Supabase, " +
+            "vá em SQL Editor e rode o arquivo supabase/estoque.sql."
+          );
         }
         if (error) throw traduzirErro(error);
         return normalizar(data);

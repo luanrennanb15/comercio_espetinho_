@@ -240,11 +240,21 @@
 
   function cartao(p) {
     const qtd = quantidadeLancada(p.id);
+
+    /* Quanto resta, para quem está no balcão decidir na hora se vende
+       ou avisa que está acabando. Só aparece quando o item controla
+       estoque E já está no fim: número em todo cartão viraria ruído
+       no meio do movimento. */
+    const resta = DB.estoqueBaixo(p) && !p.esgotado
+      ? '<span class="cartao-produto__resta" title="Restam em estoque">' + esc(p.estoque) + "</span>"
+      : "";
+
     return '<button type="button" class="cartao-produto' + (p.esgotado ? " cartao-produto--esgotado" : "") +
       '" data-id="' + esc(p.id) + '"' + (p.esgotado ? " disabled" : "") + ">" +
       '<span class="cartao-produto__nome">' + esc(p.nome) + (p.esgotado ? " (esgotado)" : "") + "</span>" +
       '<span class="cartao-produto__pe">' +
         '<span class="cartao-produto__preco">' + moeda(p.preco) + "</span>" +
+        resta +
         (qtd ? '<span class="cartao-produto__qtd">' + qtd + "</span>" : "") +
       "</span></button>";
   }
@@ -279,8 +289,8 @@
           custo_unit: DB.custoUnitario(custos[p.id]),
         });
         await recarregarComandas();
+        await carregarProdutos();      // o lançamento já baixou o estoque
         desenharPainel();
-        desenharCatalogo();
       } catch (err) { avisar(err.message, "erro"); }
       return;
     }
@@ -361,8 +371,8 @@
       try {
         await DB.removerItemComanda(comandaAtual.id, chaveItem);
         await recarregarComandas();
+        await carregarProdutos();      // o item removido voltou ao estoque
         desenharPainel();
-        desenharCatalogo();
       } catch (err) { avisar(err.message, "erro"); }
       return;
     }
@@ -457,6 +467,9 @@
         limparVendaRapida();
         await carregarVendasDoDia();
       }
+      /* A venda mexeu no estoque: relê os produtos para o contador de
+         "restam N" no cartão não ficar mostrando número velho. */
+      await carregarProdutos();
     } catch (err) {
       avisar(err.message || "Falha ao registrar.", "erro");
     } finally {
@@ -529,6 +542,10 @@
   setInterval(function () {
     if (vista === "quadro" && comandas.length) desenharQuadro();
   }, 60000);
+
+  /* Perdas têm tela própria (perdas.html). O Caixa só leva até lá, por
+     um link — duplicar o formulário aqui significaria manter a mesma
+     regra em dois lugares, e um dia os dois discordariam. */
 
   /* ---------------- Início ---------------- */
   (async function iniciar() {

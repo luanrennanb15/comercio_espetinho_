@@ -23,11 +23,11 @@
   } catch (e) {}
 })();
 </script>
-<link rel="stylesheet" href="assets/css/tokens.css?v=20260827c">
-<link rel="stylesheet" href="assets/css/base.css?v=20260827c">
-<link rel="stylesheet" href="assets/css/app.css?v=20260827c">
-<link rel="stylesheet" href="assets/css/admin.css?v=20260827c">
-<link rel="stylesheet" href="assets/css/caixa.css?v=20260827c">
+<link rel="stylesheet" href="assets/css/tokens.css?v=20260902a">
+<link rel="stylesheet" href="assets/css/base.css?v=20260902a">
+<link rel="stylesheet" href="assets/css/app.css?v=20260902a">
+<link rel="stylesheet" href="assets/css/admin.css?v=20260902a">
+<link rel="stylesheet" href="assets/css/caixa.css?v=20260902a">
 </head>
 <body data-pagina="caixa">
 
@@ -72,6 +72,12 @@
     <div class="abas-caixa">
       <button type="button" class="aba-caixa ativa" data-vista="quadro">Comandas</button>
       <button type="button" class="aba-caixa" data-vista="rapida">Venda rápida</button>
+      <!-- Atalho, não duplicata: a tela de Perdas é a dona do assunto.
+           Ele existe porque é no balcão que a garrafa quebra, e obrigar
+           a procurar no menu no meio do movimento é o que faz o registro
+           não acontecer. -->
+      <a class="btn btn--fantasma btn--pequeno" href="perdas.html"
+         style="margin-left:auto">Registrar perda</a>
     </div>
 
     <!-- ---------- Quadro de comandas ---------- -->
@@ -158,11 +164,11 @@
   </div>
 </div>
 
-<script src="assets/js/config.js?v=20260827c"></script>
-<script src="assets/js/ui.js?v=20260827c"></script>
-<script src="assets/js/tema.js?v=20260827c"></script>
-<script src="assets/js/nav.js?v=20260827c"></script>
-<script src="assets/js/db.js?v=20260827c"></script>
-<script src="assets/js/caixa.js?v=20260827c"></script>
+<script src="assets/js/config.js?v=20260902a"></script>
+<script src="assets/js/ui.js?v=20260902a"></script>
+<script src="assets/js/tema.js?v=20260902a"></script>
+<script src="assets/js/nav.js?v=20260902a"></script>
+<script src="assets/js/db.js?v=20260902a"></script>
+<script src="assets/js/caixa.js?v=20260902a"></script>
 </body>
 </html>

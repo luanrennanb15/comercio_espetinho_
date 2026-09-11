@@ -18,6 +18,8 @@ const NAV = (() => {
     qrcode:    '<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2v2h-2zM18 14h2M14 18h2M18 18h2"/>',
     manual:    '<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M9 8h7M9 12h7"/>',
     cartoes:   '<rect x="3" y="6" width="13" height="14" rx="2"/><path d="M8 6V4h13v14h-2"/><path d="M7 11h5M7 15h3"/>',
+    estoque:   '<path d="M3 8l9-4 9 4v8l-9 4-9-4z"/><path d="M3 8l9 4 9-4M12 12v8"/>',
+    perdas:    '<path d="M12 3.5 2.5 20h19z"/><path d="M12 10v4M12 17h.01"/>',
     sair:      '<path d="M15 17l5-5-5-5"/><path d="M20 12H9"/><path d="M12 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6"/>',
     menu:      '<path d="M4 7h16M4 12h16M4 17h16"/>',
     externo:   '<path d="M14 4h6v6"/><path d="M20 4l-8 8"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
@@ -29,13 +31,25 @@ const NAV = (() => {
     caixa:      { titulo: "Caixa",      apoio: "Lançamento das vendas do balcão" },
     relatorios: { titulo: "Relatórios", apoio: "Faturamento e desempenho do período" },
     cartoes:    { titulo: "Cartões de comanda", apoio: "Imprimir os cartões com QR Code" },
+    estoque:    { titulo: "Estoque",    apoio: "Quantidades, entrada de mercadoria e reposição" },
+    perdas:     { titulo: "Perdas",     apoio: "Quebra, vencimento, consumo da casa e brinde" },
   };
 
+  /* Estoque e Perdas ficam num grupo próprio, e não dentro de Operação.
+
+     São as duas telas que o dono abre para decidir o que comprar e
+     entender para onde o dinheiro foi — decisões diferentes de vender e
+     cadastrar. Escondidas dentro de outra tela, simplesmente não seriam
+     usadas, e controle que ninguém alimenta é pior que nenhum: passa a
+     sensação de que está tudo sob controle. */
   const MENU = [
     { grupo: "Operação" },
     { id: "caixa",      rotulo: "Caixa",      href: "caixa.html",      icone: "caixa" },
     { id: "produtos",   rotulo: "Produtos",   href: "admin.html",      icone: "produtos" },
     { id: "relatorios", rotulo: "Relatórios", href: "relatorios.html", icone: "relatorios" },
+    { grupo: "Controle" },
+    { id: "estoque",    rotulo: "Estoque",    href: "estoque.html",    icone: "estoque" },
+    { id: "perdas",     rotulo: "Perdas",     href: "perdas.html",     icone: "perdas" },
     { grupo: "Comandas" },
     { id: "cartoes",    rotulo: "Cartões",    href: "cartoes.html",    icone: "cartoes" },
     { grupo: "Divulgação" },

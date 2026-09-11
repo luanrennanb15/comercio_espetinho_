@@ -200,7 +200,7 @@ conf("todo dado do banco passa por esc em algum ponto de cada tela",
    ================================================================ */
 suite("Segurança — permissões do banco");
 
-const tabelasSensiveis = ["vendas", "venda_itens", "comandas", "comanda_itens", "produto_custos"];
+const tabelasSensiveis = ["vendas", "venda_itens", "comandas", "comanda_itens", "produto_custos", "perdas"];
 tabelasSensiveis.forEach((t) => {
   const criada = new RegExp("create table if not exists public\\." + t, "i").test(sqlTudo);
   if (!criada) return;
@@ -215,6 +215,76 @@ conf("produtos: o público lê apenas os itens ativos",
   /create policy[^;]*for select\s+to anon\s+using \(ativo = true\)/is.test(sqlTudo));
 conf("produtos: gravar exige login",
   /create policy[^;]*for insert\s+to authenticated/is.test(sqlTudo));
+
+/* ---- Estoque ----
+   Quantas caixas a casa tem é informação do negócio. Como a tabela de
+   produtos é lida por qualquer visitante do cardápio, esconder no
+   JavaScript não esconderia nada: a proteção tem que ser no Postgres,
+   coluna a coluna. */
+const estoqueSql = (sql.find((s) => s.nome === "estoque.sql") || {}).texto || "";
+if (estoqueSql) {
+  suite("Segurança — estoque não é dado público");
+
+  conf("a permissão ampla do público sobre produtos é revogada",
+    /revoke select on public\.produtos\s+from anon/i.test(estoqueSql));
+  conf("o público recebe permissão apenas nas colunas do cardápio",
+    /grant select \([^)]*nome[^)]*preco[^)]*\)\s*on public\.produtos to anon/is.test(estoqueSql));
+  conf("as colunas de estoque NÃO estão na lista pública",
+    !/grant select \([^)]*estoque[^)]*\)\s*on public\.produtos to anon/is.test(estoqueSql),
+    "o visitante conseguiria ler o estoque da casa");
+  conf("a equipe autenticada continua vendo tudo",
+    /grant select, insert, update, delete on public\.produtos to authenticated/i.test(estoqueSql));
+
+  conf("a movimentação é função de banco, não update solto",
+    /create or replace function public\.mover_estoque/i.test(estoqueSql),
+    "ler e gravar pelo navegador perderia baixas com dois caixas simultâneos");
+  conf("a função respeita as permissões de quem chama",
+    /security invoker/i.test(estoqueSql));
+  conf("a função fixa o search_path", /set search_path/i.test(estoqueSql));
+  conf("o público não pode movimentar estoque",
+    /revoke all on function public\.mover_estoque\(jsonb\) from anon/i.test(estoqueSql));
+  conf("só quem está logado movimenta",
+    /grant execute on function public\.mover_estoque\(jsonb\) to authenticated/i.test(estoqueSql));
+  conf("o estoque nunca pode ficar negativo no banco",
+    /check \(estoque >= 0/i.test(estoqueSql));
+
+  conf("o cardápio público pede colunas nomeadas, não select *",
+    /COLUNAS_PUBLICAS/.test(ler("assets/js/db.js")) &&
+    !/select\("\*"\)[^;]*eq\("ativo", true\)/.test(ler("assets/js/db.js")),
+    "com select * o cardápio passaria a dar erro de permissão");
+  conf("a lista de colunas públicas não inclui estoque",
+    !/COLUNAS_PUBLICAS[\s\S]{0,300}?estoque/.test(ler("assets/js/db.js")));
+}
+
+/* ---- Perdas ----
+   Quanto uma casa quebra por mês não é assunto de quem lê o cardápio,
+   e o motivo ("consumo da casa") é ainda mais sensível: diz quanto o
+   dono tira para si. O público não tem nada aqui, nem leitura. */
+const perdasSql = (sql.find((s) => s.nome === "perdas.sql") || {}).texto || "";
+if (perdasSql) {
+  suite("Segurança — perdas");
+
+  conf("row level security ligado",
+    /alter table public\.perdas\s+enable row level security/i.test(perdasSql));
+  conf("o público não tem nenhuma permissão",
+    /revoke all on public\.perdas\s+from anon/i.test(perdasSql));
+  conf("só a equipe autenticada gerencia",
+    /grant select, insert, update, delete on public\.perdas to authenticated/i.test(perdasSql));
+  conf("a view de resumo respeita quem consulta",
+    /alter view public\.perdas_por_motivo set \(security_invoker = on\)/i.test(perdasSql));
+  conf("a view também não é pública",
+    /revoke all on public\.perdas_por_motivo from anon/i.test(perdasSql));
+
+  conf("o motivo é uma lista fechada no banco",
+    /check \(motivo in \('quebra'/i.test(perdasSql),
+    "campo livre viraria 'sumiu' e o relatório não diagnosticaria nada");
+  conf("quantidade tem piso e teto",
+    /quantidade > 0 and quantidade <= \d+/i.test(perdasSql));
+  conf("o custo é congelado no registro",
+    /custo_unit[\s\S]{0,120}congelad|congelad[\s\S]{0,200}custo/i.test(perdasSql));
+  conf("nome e categoria também ficam congelados",
+    /nome\s+text\s+not null/i.test(perdasSql));
+}
 conf("faturamento: permissões do público explicitamente revogadas",
   /revoke all on public\.vendas\s+from anon/i.test(sqlTudo) &&
   /revoke all on public\.venda_itens\s+from anon/i.test(sqlTudo));

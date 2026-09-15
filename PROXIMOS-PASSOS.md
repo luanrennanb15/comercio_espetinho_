@@ -1,20 +1,34 @@
 # Front Beer — o que falta
 
-Situação em 2 de setembro de 2026.
+Situação em 11 de setembro de 2026.
 
-O sistema está pronto e no ar em <https://espetinho-front-beer.vercel.app>.
-Search Console verificado, sitemap enviado, página liberada para indexação.
-O que resta é quase tudo fora do código.
+O sistema está no ar em <https://espetinho-front-beer.vercel.app>. Search
+Console verificado, sitemap enviado, página liberada para indexação. Estoque e
+Perdas entraram e estão testados. O que resta é quase tudo fora do código.
 
 ---
 
-## 1. Amanhã, no bar, com o dono
+## 0. Agora, antes de qualquer outra coisa
 
-São as coisas que só dão para fazer no local ou que dependem dele.
+São três passos curtos e um depende do outro.
+
+**Rodar o `supabase/perdas.sql` de novo.** Ele ganhou a coluna `preco_unit`,
+que guarda o preço de venda congelado. Sem ela a coluna *Venda* na tela de
+Perdas fica zerada. Pode rodar quantas vezes quiser, não duplica nada.
+
+**Push e merge.** A versão de cache está em `20260902d`. Enquanto não subir,
+o navegador continua servindo o JavaScript antigo — foi o que fez as colunas
+novas aparecerem sem funcionar.
+
+**Ctrl+Shift+R** na tela de Perdas depois que o Vercel terminar o deploy.
+
+---
+
+## 1. No bar, com o dono
 
 ### Confirmar o número da rua
 
-Você me passou 875 no começo e 1500 depois. Coloquei **1500** no site. Olhe a
+Você me passou 875 no começo e 1500 depois. Está **1500** no site. Olhe a
 fachada e confirme — esse número vai para o cardápio, para a ficha do Google e
 para a placa das mesas. Errado, manda cliente para a casa errada.
 
@@ -62,7 +76,27 @@ e o Vercel na hora de cobrar pelo sistema.
 
 ---
 
-## 2. Depois, no computador
+## 2. No computador
+
+### Cadastrar os custos — é o que destrava o resto
+
+Virou a pendência mais cara de todas. Sem custo lançado:
+
+- o relatório mostra faturamento, mas não mostra lucro;
+- a calculadora de markup não serve para nada;
+- **a tela de Perdas agora recusa o registro**, porque perda valendo R$ 0,00
+  entra na tabela e some do total, que é pior que não registrar.
+
+Você já tem um caso assim no sistema: o registro de *51 Dose* está valendo
+R$ 0,00 exatamente por isso. Cadastre o custo, apague o registro e lance de novo.
+
+### Ligar o estoque das bebidas
+
+Em Estoque, produto por produto. Vale para o que é embalado — lata, garrafa,
+long neck. **Não ligue em espeto e porção:** a quantidade sai da brasa e da
+fritadeira, não de uma prateleira, e o número deixaria de bater em uma semana.
+Estoque que não bate é pior que estoque nenhum, porque o dono para de confiar
+na tela.
 
 ### Imprimir e testar os QR Codes
 
@@ -75,12 +109,6 @@ de comanda. **Teste um cartão com o celular antes de plastificar os vinte** —
 No painel, há erros de digitação que aparecem para o cliente: "Hiniken"
 (Heineken), "Red Bul" (Red Bull), e a categoria "Espetinho" no singular
 enquanto as outras estão no plural.
-
-### Cadastrar os custos
-
-Sem custo lançado, o relatório mostra faturamento mas não lucro, e a
-calculadora de markup não serve para nada. É onde o sistema começa a pagar o
-próprio preço.
 
 ### Instagram
 
@@ -117,7 +145,19 @@ podem ser apagadas.
 
 ---
 
-## 4. Quando for vender para outro cliente
+## 4. Ideias paradas, para decidir depois
+
+**Unidades de venda.** Vender o mesmo produto em fardo, dose e garrafa, com o
+estoque descontando na unidade certa. É a funcionalidade que mais mudaria o
+dia a dia de uma adega, e a que mais mexe no sistema. Fica para quando o
+básico estiver rodando há algumas semanas.
+
+**Perdas por período comparado.** Hoje a tela mostra o período escolhido. Ver
+"este mês contra o mês passado" transformaria o número em tendência.
+
+---
+
+## 5. Quando for vender para outro cliente
 
 **Banco separado para a prévia.** Hoje produção e prévia falam com o mesmo
 Supabase: o código é isolado, os dados não. Mexer no admin pela prévia altera o
@@ -131,11 +171,16 @@ usuário, preencher o `config.js`, trocar as imagens, publicar.
 
 ## Como rodar os testes
 
-Na pasta do projeto:
+Clique duas vezes em **`RODAR-TESTES.bat`** na pasta do projeto. Na primeira vez
+ele baixa sozinho a biblioteca que os testes usam; depois é rápido. O resultado
+fica na tela e em `testes/resultado.txt`.
+
+Pela linha de comando, se preferir:
 
 ```
-npm install jsdom      (só na primeira vez)
+npm install
 node testes/rodar.mjs
 ```
 
-403 verificações em seis suítes. Rode sempre antes de dar push.
+São 560 verificações em seis suítes — unitários, segurança, funcionais, quebra,
+telas e capa. Rode sempre antes de dar push.

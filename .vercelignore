@@ -16,6 +16,9 @@ supabase/
 # Bateria de testes
 testes/
 package.json
+package-lock.json
+node_modules/
+RODAR-TESTES.bat
 
 # Documentação do projeto (é para quem mantém, não para quem visita)
 README.md

@@ -223,8 +223,11 @@
     const alvo = $("#avisoSemCusto");
     if (!R.semCusto) { alvo.classList.add("oculto"); alvo.innerHTML = ""; return; }
 
+    /* `n` é uma contagem, nunca poderia conter HTML — mas o auditor de
+       segurança não tem como saber disso olhando o código, e abrir
+       exceção para "esse aqui é seguro" é como as brechas nascem. */
     const n = R.semCusto;
-    alvo.innerHTML = "<strong>" + n + (n === 1
+    alvo.innerHTML = "<strong>" + esc(n) + (n === 1
         ? " registro está valendo R$ 0,00</strong> porque o produto não tinha "
         : " registros estão valendo R$ 0,00</strong> porque os produtos não tinham ") +
       "custo cadastrado quando a perda foi lançada. " +

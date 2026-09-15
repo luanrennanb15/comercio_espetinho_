@@ -1,0 +1,16 @@
+# =====================================================================
+# O que NÃO entra no repositório.
+# =====================================================================
+
+# Bibliotecas baixadas pelo npm. São 39 pacotes e milhares de arquivos,
+# reconstruídos a qualquer momento com `npm install`. Versionar isso
+# incha o repositório e polui todo diff.
+node_modules/
+
+# Saída da bateria de testes: muda a cada execução e não é código.
+testes/resultado.txt
+
+# Lixo do sistema
+Thumbs.db
+desktop.ini
+.DS_Store

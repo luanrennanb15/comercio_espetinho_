@@ -188,7 +188,10 @@ window.close();
 suite("Quebra — estoque com dados impossíveis");
 
 {
-  const w = await abrirTela("admin.html", {
+  /* abrirTela devolve { window, doc, erros, fechar } — não a janela.
+     Pegar o DB direto do retorno dava `undefined` e derrubava a suíte
+     inteira antes da primeira verificação. */
+  const { window: w, fechar } = await abrirTela("admin.html", {
     semBanco: true,
     scripts: ["config.js", "ui.js", "db.js"],
     antes(x) {
@@ -197,6 +200,8 @@ suite("Quebra — estoque com dados impossíveis");
     },
   });
   const D = w.DB;
+  conf("a camada de dados subiu na tela de teste", !!D,
+    "sem isso o resto desta suíte não prova nada");
   await D.init();
 
   const p = await D.salvarProduto({
@@ -230,9 +235,9 @@ suite("Quebra — estoque com dados impossíveis");
   conf("correção negativa ajusta sem quebrar", (await ler1()).estoque === 17,
     "veio " + (await ler1()).estoque);
 
-  conf("estoqueBaixo não quebra com produto nulo", DB.estoqueBaixo(null) === false);
-  conf("estoqueBaixo não quebra com objeto vazio", DB.estoqueBaixo({}) === false);
-  w.close();
+  conf("estoqueBaixo não quebra com produto nulo", D.estoqueBaixo(null) === false);
+  conf("estoqueBaixo não quebra com objeto vazio", D.estoqueBaixo({}) === false);
+  fechar();
 }
 
 /* ================================================================
